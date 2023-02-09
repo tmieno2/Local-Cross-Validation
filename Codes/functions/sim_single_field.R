@@ -36,8 +36,7 @@ sim_single_field <- function(i, raw_data, num_repeats, num_folds) {
   # /*+++++++++++++++++++++++++++++++++++
   analysis_results_folds <-
     lapply(
-      # 1:num_it,
-      1:3,
+      1:num_it,
       function(x) analyze_local_all(x, spatial_folds, data)
     )
 
