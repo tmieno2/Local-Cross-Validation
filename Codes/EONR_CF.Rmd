@@ -1,0 +1,115 @@
+---
+title: "CF_EONR_predictions"
+author: "Mona Mousavi"
+date: "2023-01-09"
+output: html_document
+---
+
+# Read data
+```{r}
+library(here)
+read_data <- readRDS(here("all_sim_data.rds"))
+data_field_1 <- read_data[3, ]$reg_data[[1]]$data[[1]]
+data <- data_field_1[, c("theta_b2_2", "theta_b2_1","theta_b1_2" ,"theta_b1_1","Nk_2_1","Nk_2_2" ,
+                         "Nk_1_1","Nk_1_2" ,"plateau_2_1" ,"plateau_2_2" ,  "plateau_1_1" ,
+                         "plateau_1_2" ,"yield" ,  "N_tgt")] %>% tibble::rowid_to_column(., "id")
+```
+
+
+
+# Import corn and N price
+```{r}
+pCorn <- readRDS(here("pCorn.rds"))
+pN <- readRDS(here("pN.rds"))
+```
+
+
+# Create the treat and the control list  
+```{r}
+treat <- sort(unique(data$N_tgt))[-1]     
+
+control <- min(unique(data$N_tgt))        
+```
+
+# CF
+
+```{r}
+Find_EONR_CF <- function(i) {
+  
+  cf_data <- data %>% 
+    filter(N_tgt %in% c(control, treat[i]))%>% 
+    mutate(treat = case_when(
+      N_tgt == control  ~ 0,
+      N_tgt == treat[i]  ~ 1)) 
+  
+  # CF: Stage 1  
+  rf_trained_y <-
+    regression_forest(
+      X = cf_data[, .(theta_b2_2, theta_b2_1, theta_b1_2, theta_b1_1, Nk_2_1, Nk_2_2, Nk_1_1, Nk_1_2, plateau_2_1, plateau_2_2, 
+                   plateau_1_1,plateau_1_2)],
+      Y = cf_data[, yield]
+    ) 
+  
+  #=== out-of-bag prediction of Y ===#
+  cf_data[, y_hat := rf_trained_y$predictions]
+  
+  #=== calculate y_hat ===#
+  cf_data[, y_tilde := yield - y_hat]
+  
+  rf_trained_t <-
+    probability_forest(
+      X = cf_data[, .(theta_b2_2, theta_b2_1, theta_b1_2, theta_b1_1, Nk_2_1, Nk_2_2, Nk_1_1, Nk_1_2, plateau_2_1, plateau_2_2, 
+                      plateau_1_1,plateau_1_2)],
+      Y = cf_data[, factor(treat)],
+    )
+  
+  #=== out-of-bag prediction of T ===#
+  cf_data[, t_hat := rf_trained_t$predictions[, 2]]
+  
+  #=== calculate t_hat ===#
+  cf_data[, t_tilde := treat - t_hat] 
+  
+  # train CF
+  
+  cf_trained <-
+    causal_forest(
+      X = cf_data[, .(theta_b2_2, theta_b2_1, theta_b1_2, theta_b1_1, Nk_2_1, Nk_2_2, Nk_1_1, Nk_1_2, plateau_2_1, plateau_2_2, 
+                   plateau_1_1,plateau_1_2)],
+      Y = cf_data[, yield],
+      W = cf_data[, treat],
+      Y.hat = cf_data[, y_hat],
+      W.hat = cf_data[, t_hat],
+      tune.parameters = "all"
+    )
+ 
+new_data <- data[, .(theta_b2_2, theta_b2_1, theta_b1_2, theta_b1_1, Nk_2_1, Nk_2_2, Nk_1_1, Nk_1_2, plateau_2_1, plateau_2_2, 
+                     plateau_1_1,plateau_1_2)] %>% as.matrix()  
+  
+ pred <- predict(cf_trained, new_data)  %>% tibble()
+ 
+ df <- expand.grid(predictions = pred$predictions, treat = treat) %>% 
+  #--- convert the matrix to a data.frame ---#
+  data.frame()
+ 
+ Profit_change <- pred %>% mutate(profit= pCorn*predictions-pN*(treat[i]-control), treat =treat[i]) %>% subset(., select=-c(predictions)) 
+ 
+# Profit_change <- pred %>% mutate("profit_{i}" :=pCorn*predictions-pN*(treat[i]-control) , treat=treat[i]) %>% subset(., select=-c(predictions))%>%
+#   
+  
+ return( Profit_change) 
+}
+
+EONR_CF <-  mclapply(1:length(treat), Find_EONR_CF , mc.cores = detectCores() - 1)
+
+
+CF_1 <- EONR_CF[[1]]%>% tibble::rowid_to_column(., "id")
+CF_2 <- EONR_CF[[2]]%>% tibble::rowid_to_column(., "id")
+CF_3 <- EONR_CF[[3]]%>% tibble::rowid_to_column(., "id")
+CF_4 <- EONR_CF[[4]]%>% tibble::rowid_to_column(., "id")
+
+# Combine CF models
+CF_combined <- rbind(CF_1, CF_2, CF_3, CF_4)
+
+Result_EONR_CF <- setDT(CF_combined)[, .SD[which.max(profit)], by=id]
+
+```
