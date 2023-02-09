@@ -21,19 +21,25 @@ list.files(here::here("GitControlled/Codes/functions/"), full.names = TRUE) %>%
 
 # Run simulation
 
+## Data
+
+```{r}
+all_data_files <- list.files(here::here("Shared/Data/SimData"), full.names = TRUE)
+```
+
 ## Set up simulations
 
 ```{r}
-raw_data <- readRDS(here::here("Shared/Data/all_sim_data.rds"))
-
 cov_list <- c(
-  "N", "theta_b2_2", "theta_b2_1", "theta_b1_2", "theta_b1_1", "Nk_2_1", "Nk_2_2",
-  "Nk_1_1", "Nk_1_2", "plateau_2_1", "plateau_2_2", "plateau_1_1", "plateau_1_2"
+  "N", "theta_b2_2", "theta_b1_2",
+  "Nk_2_1", "Nk_2_2", "Nk_1_1", "Nk_1_2",
+  "plateau_2_1", "plateau_2_2", "plateau_1_1", "plateau_1_2"
 )
 
 cov_list_cf <- c(
-  "theta_b2_2", "theta_b2_1", "theta_b1_2", "theta_b1_1", "Nk_2_1", "Nk_2_2",
-  "Nk_1_1", "Nk_1_2", "plateau_2_1", "plateau_2_2", "plateau_1_1", "plateau_1_2"
+  "theta_b2_2", "theta_b1_2",
+  "Nk_2_1", "Nk_2_2", "Nk_1_1", "Nk_1_2",
+  "plateau_2_1", "plateau_2_2", "plateau_1_1", "plateau_1_2"
 )
 
 pCorn <- 6.25 / 25.4 # $/kg
@@ -45,19 +51,23 @@ pN <- 1 / 0.453592 # $/kg
 num_repeats <- 10
 num_folds <- 6
 
+results_dir <- paste0("Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds", num_folds)
+dir.create(results_dir)
+
 sim_results <-
   pbmclapply(
-    1:200,
-    function(x) sim_single_field(x, raw_data, num_repeats, num_folds),
-    mc.cores = 6
+    1:length(all_data_files),
+    function(x) {
+      sim_single_field(
+        file_path = all_data_files[x],
+        results_dir = results_dir,
+        num_repeats,
+        num_folds
+      )
+    },
+    mc.cores = 5
   )
 
-saveRDS(
-  sim_results,
-  here(paste0(
-    "Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds", num_folds, ".rds"
-  ))
-)
 ```
 
 ```{r}

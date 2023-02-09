@@ -68,6 +68,8 @@ find_opt_vra_BRF_whole_field <- function(entire_data, X_all, Y_all) {
     setnames("N", "opt_N_hat") %>%
     .[, method := "S-learner (BRF)"]
 
+  rm(boosted_forest_all)
+
   return(opt_EONR)
 }
 
@@ -98,6 +100,8 @@ find_opt_vra_RF_whole_field <- function(entire_data, X_all, Y_all) {
     setnames("N", "opt_N_hat") %>%
     .[, method := "S-learner (RF)"]
 
+  rm(regression_forest_all)
+
   return(opt_EONR)
 }
 
@@ -105,7 +109,7 @@ find_opt_vra_Linear_whole_field <- function(entire_data) {
   N_data <- data.table(N = seq(min(entire_data$N), max(entire_data$N), by = 1))
 
 
-  linear_all <- lm(yield ~ theta_b2_2 * N + theta_b2_1 * N + theta_b1_2 * N + theta_b1_1 * N + Nk_2_1 * N + Nk_2_2 * N + Nk_1_1 * N + Nk_1_2 * N + plateau_2_1 * N + plateau_2_2 * N + plateau_1_1 * N + plateau_1_2 * N + I(N^2),
+  linear_all <- lm(yield ~ theta_b2_2 * N + theta_b1_2 * N + Nk_2_1 * N + Nk_2_2 * N + Nk_1_1 * N + Nk_1_2 * N + plateau_2_1 * N + plateau_2_2 * N + plateau_1_1 * N + plateau_1_2 * N + I(N^2),
     data = entire_data
   )
 
@@ -125,6 +129,8 @@ find_opt_vra_Linear_whole_field <- function(entire_data) {
     setnames("N", "opt_N_hat") %>%
     .[, method := "S-learner (Linear)"]
 
+  rm(lienar_all)
+
   return(opt_EONR)
 }
 
@@ -141,7 +147,8 @@ find_opt_vra_CF_whole_field <- function(data) {
   macf_tau <-
     grf::multi_arm_causal_forest(
       X, Y, W_f,
-      num.threads = 1
+      num.threads = 1,
+      num.trees = 1000
     )
 
   # /*+++++++++++++++++++++++++++++++++++
@@ -167,6 +174,8 @@ find_opt_vra_CF_whole_field <- function(data) {
     .[, .(aunit_id, N_high = as.numeric(N_high))] %>%
     setnames("N_high", "opt_N_hat") %>%
     .[, method := "R-learner (CF)"]
+
+  rm(macf_tau)
 
   return(macf_results)
 }

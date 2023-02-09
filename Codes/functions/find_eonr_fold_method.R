@@ -104,7 +104,10 @@ analyze_local_BRF <- function(data, X, Y, test_data) {
     .[, .(aunit_id, yield, yield_hat)] %>%
     .[, method := "S-learner (BRF)"]
 
+  rm(boosted_forest)
+
   return(list(opt_EONR = opt_EONR, yield_hat_data = yield_hat_data))
+
 }
 
 # analyze_local_RF(data, X, Y, test_data)
@@ -137,6 +140,8 @@ analyze_local_RF <- function(data, X, Y, test_data) {
     .[, .(aunit_id, yield, yield_hat)] %>%
     .[, method := "S-learner (RF)"]
 
+  rm(regression_forest)
+
   return(list(opt_EONR = opt_EONR, yield_hat_data = yield_hat_data))
 }
 
@@ -145,7 +150,7 @@ analyze_local_RF <- function(data, X, Y, test_data) {
 analyze_local_Linear <- function(data, test_data, train_data) {
   N_data <- data.table(N = seq(min(data$N), max(data$N), by = 1))
 
-  linear_trained <- lm(yield ~ theta_b2_2 * N + theta_b2_1 * N + theta_b1_2 * N + theta_b1_1 * N + Nk_2_1 * N + Nk_2_2 * N + Nk_1_1 * N + Nk_1_2 * N + plateau_2_1 * N + plateau_2_2 * N + plateau_1_1 * N + plateau_1_2 * N + I(N^2),
+  linear_trained <- lm(yield ~ theta_b2_2 * N + theta_b1_2 * N + Nk_2_1 * N + Nk_2_2 * N + Nk_1_1 * N + Nk_1_2 * N + plateau_2_1 * N + plateau_2_2 * N + plateau_1_1 * N + plateau_1_2 * N + I(N^2),
     data = train_data
   )
 
@@ -173,21 +178,26 @@ analyze_local_Linear <- function(data, test_data, train_data) {
     .[, .(aunit_id, yield, yield_hat)] %>%
     .[, method := "S-learner (Linear)"]
 
+
+  rm(lienar_trained)
+
   return(list(opt_EONR = opt_EONR, yield_hat_data = yield_hat_data))
 }
 
 analyze_local_gam <- function(data, test_data) {
   N_data <- data.table(N = seq(min(data$N), max(data$N), by = 1))
 
-  gam <- gam(yield ~ s(N, k = 4, m = 2), data = test_data)
+  gam_trained <- gam(yield ~ s(N, k = 4, m = 2), data = test_data)
 
   opt_EONR <-
     copy(N_data) %>%
-    .[, y_hat := predict(gam, newdata = .)] %>%
+    .[, y_hat := predict(gam_trained, newdata = .)] %>%
     .[, pi_hat := (pCorn * y_hat) - (pN * N)] %>%
     .[, .SD[which.max(pi_hat), ]] %>%
     setnames("N", "opt_N_hat") %>%
     .[, method := "GAM"]
+
+  rm(gam_trained)
 
   return(opt_EONR)
 }
@@ -198,7 +208,8 @@ analyze_local_CF <- function(data, X_cf_train, Y, W_f, test_data) {
   macf_tau <-
     grf::multi_arm_causal_forest(
       X_cf_train, Y, W_f,
-      num.threads = 1
+      num.threads = 1,
+      num.trees = 1000
     )
 
   N_levels <- unique(test_data$N_tgt)
@@ -214,7 +225,6 @@ analyze_local_CF <- function(data, X_cf_train, Y, W_f, test_data) {
     .[, c("N_high", "N_low") := tstrsplit(variable, " - ", fixed = TRUE)] %>%
     .[, N_dif := as.numeric(N_high) - as.numeric(N_low)]
 
-
   opt_EONR <-
     copy(macf_delta) %>%
     .[, profit := pCorn * value - pN * N_dif] %>%
@@ -224,6 +234,8 @@ analyze_local_CF <- function(data, X_cf_train, Y, W_f, test_data) {
     .[, .(aunit_id, N_high = as.numeric(N_high))] %>%
     setnames("N_high", "opt_N_hat") %>%
     .[, method := "R-learner (CF)"]
+
+  rm(macf_tau)
 
   return(list(opt_EONR = opt_EONR, yield_hat_data = NULL))
 }

@@ -1,8 +1,10 @@
-sim_single_field <- function(i, raw_data, num_repeats, num_folds) {
-  print(paste0("Working on field ", i))
+sim_single_field <- function(file_path, results_dir, num_repeats, num_folds) {
+  print(paste0("Working on ", file_path))
   # load the data
+  w_data <- readRDS(file_path)
+
   data <-
-    raw_data[3, ]$reg_data[[1]]$data[[i]] %>%
+    w_data$data[[1]] %>%
     # find true EONR
     .[, opt_N := (pN / pCorn - b1) / (2 * b2)] %>%
     .[, opt_N := pmin(Nk, opt_N)] %>%
@@ -69,7 +71,8 @@ sim_single_field <- function(i, raw_data, num_repeats, num_folds) {
     rmse_local_eonr %>%
     rmse_yield[., on = "method"] %>%
     rmse_eonr_whole[., on = "method"] %>%
-    .[, field_number := i]
+    .[, sim := w_data$sim]
+  
+  saveRDS(data_to_return, here(results_dir, paste0("sim_results_", w_data$sim, ".rds")))
 
-  return(data_to_return)
 }
