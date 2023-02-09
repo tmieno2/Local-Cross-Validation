@@ -70,21 +70,3 @@ sim_results <-
 
 ```
 
-```{r}
-num_repeats <- 5
-num_folds <- 5
-
-sim_results <-
-  mclapply(
-    1:200,
-    function(x) sim_single_field(x, raw_data, num_repeats, num_folds),
-    mc.cores = 6
-  )
-
-saveRDS(
-  sim_results,
-  here(paste0(
-    "Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds", num_folds, ".rds"
-  ))
-)
-```
