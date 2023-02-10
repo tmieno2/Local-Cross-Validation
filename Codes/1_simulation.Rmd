@@ -1,5 +1,5 @@
 ---
-title: "Simulation_results"
+title: "Run Simulations"
 author: "Mona Mousavi"
 date: "2023-02-07"
 output: html_document
@@ -9,7 +9,8 @@ output: html_document
 
 + To see if the cross validation method based on local EONR can select the right model (the best in predicting EONR)
   - local EONR (GAM) vs EONR estaimtes from ML-based methods
-+ How do we check whether our method is working or not (comparing with true EONR)
++ How do we check whether our method is working or not (comparing with true EONR) 
++ How does the number of folds and repetas affect the usefulness of our cross-validation approach?
 
 # Preparation
 
@@ -51,7 +52,7 @@ pN <- 1 / 0.453592 # $/kg
 num_repeats <- 10
 num_folds <- 6
 
-results_dir <- paste0("Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds", num_folds)
+results_dir <- paste0("Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds)
 dir.create(results_dir)
 
 sim_results <-
@@ -67,6 +68,5 @@ sim_results <-
     },
     mc.cores = 5
   )
-
 ```
 
