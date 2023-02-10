@@ -1,0 +1,16 @@
+# Function dependency graph
+
+## Load all the functinos
+
+```{r, results = "hide"}
+library(tidyverse)
+list.files(here::here("GitControlled/Codes/functions/"), full.names = TRUE) %>%
+  lapply(., source)
+```
+
+## Display the function dependency graph
+```{r}
+fcn_dependencies <- foodwebr::foodweb()
+plot(fcn_dependencies)
+```
+

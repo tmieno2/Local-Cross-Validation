@@ -52,12 +52,13 @@ pN <- 1 / 0.453592 # $/kg
 num_repeats <- 10
 num_folds <- 6
 
+#--- create a directory to store the results ---#
 results_dir <- paste0("Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds)
 dir.create(results_dir)
 
 sim_results <-
   pbmclapply(
-    1:length(all_data_files),
+    71:length(all_data_files),
     function(x) {
       sim_single_field(
         file_path = all_data_files[x],
@@ -66,7 +67,7 @@ sim_results <-
         num_folds
       )
     },
-    mc.cores = 5
+    mc.cores = 2
   )
 ```
 
