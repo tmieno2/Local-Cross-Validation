@@ -5,32 +5,11 @@
 #' # Preparation
 # /*===========================================================
 # === Packages ===#
-library(sp)
-library(spdep)
-library(spatialreg)
-library(sf)
-library(raster)
 library(data.table)
 library(tidyverse)
-library(dplyr)
-library(magrittr)
-library(gstat)
-library(GWmodel)
-library(scam)
-library(parallel)
-library(magic)
-library(stringr)
-library(ggplot2)
-library(tictoc)
-library(here)
-options(stringsAsFactors = FALSE)
 
-# === Set working directory ===#
-
-# === load functions ===#
-#* source all the functions in the Functions folder
-fs::dir_ls("/Users/tmieno2/Dropbox/R-Package/pasim/R", full.names = TRUE) %>%
-  lapply(., function(x) source(x))
+# devtools::install_github("tmieno2/pasim")
+library(pasim)
 ```
 
 ```{r}
@@ -53,28 +32,33 @@ sim_data <-
     # field_col = c(36, 72, 144), # the number of cell columns
     field_col = 144, # the number of cell columns
     #* how tall the field is
-    field_row = 72, # the number of row columns
-    sp_range = c(600),
-    # gstat_model = "Exp",
-    gstat_model = "Sph"
+    field_row = 72 # the number of row columns
   ) %>%
-  #--- Add trial design layout ---#
-  assign_trial_design(., design = c("Latin Square Fixed 6")) %>%
-  #--- Generate true field parameters ---#
-  gen_field_parameters(., nsim = 500) %>%
+  #--- add trial design layout ---#
+  assign_trial_design(
+    design = "Latin Square Fixed 5"
+  ) %>%
+  #--- generate true field parameters ---#
+  mutate(field_pars = list(
+    gen_field_parameters(
+      field_sf,
+      sp_range = 600,
+      gstat_model = "Sph",
+      nsim = 500
+    )
+  )) %>%
   #--- generate trial design ---#
   mutate(trial_design = list(
-    gen_trial_design(field_sf, field_pars, design_name, num_treatments)
+    gen_trial_design(field_sf, field_pars, design_name, num_treatments, Nk_minus = 40, Nk_plus = 20)
   )) %>%
   #--- generate regression data ---#
   mutate(reg_data = list(
-    gen_reg_data(field_pars, field_sf, trial_design)
+    gen_analysis_data(field_pars, field_sf, field_au_sf, trial_design)
   )) %>%
   #--- create the weight matrix if necessary ---#
   mutate(weight_matrix = list(
     gen_weight_matrix(reg_data, cutoff = 50)
   ))
-
 
 #* save the data
 saveRDS(sim_data, here::here("Shared/Data/raw_sim_data.rds"))
@@ -86,6 +70,8 @@ saveRDS(sim_data, here::here("Shared/Data/raw_sim_data.rds"))
 sim_data <-
   readRDS(here::here("Shared/Data/raw_sim_data.rds")) %>%
   data.table()
+
+saveRDS(sim_data$weight_matrix[[1]], here::here("Shared/Data/weight_matrix.rds"))
 
 reg_data_all <- sim_data$reg_data[[1]]
 

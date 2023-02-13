@@ -20,7 +20,7 @@ list.files(here::here("GitControlled/Codes/functions/"), full.names = TRUE) %>%
   lapply(., source)
 ```
 
-# Run simulation
+# Simulation setup
 
 ## Data
 
@@ -28,46 +28,73 @@ list.files(here::here("GitControlled/Codes/functions/"), full.names = TRUE) %>%
 all_data_files <- list.files(here::here("Shared/Data/SimData"), full.names = TRUE)
 ```
 
-## Set up simulations
+## Set up simulations (global variables)
 
 ```{r}
-cov_list <- c(
-  "N", "theta_b2_2", "theta_b1_2",
-  "Nk_2_1", "Nk_2_2", "Nk_1_1", "Nk_1_2",
-  "plateau_2_1", "plateau_2_2", "plateau_1_1", "plateau_1_2"
-)
-
-cov_list_cf <- c(
-  "theta_b2_2", "theta_b1_2",
-  "Nk_2_1", "Nk_2_2", "Nk_1_1", "Nk_1_2",
-  "plateau_2_1", "plateau_2_2", "plateau_1_1", "plateau_1_2"
-)
+x_vars <-
+  c(
+    "theta_b2_2", "theta_b1_2",
+    "Nk_2_1", "Nk_2_2", "Nk_1_1", "Nk_1_2",
+    "plateau_2_1", "plateau_2_2", "plateau_1_1", "plateau_1_2"
+  )
 
 pCorn <- 6.25 / 25.4 # $/kg
 pN <- 1 / 0.453592 # $/kg
 ```
 
-## Run simulations
+# VRA for the whole field by method
 ```{r}
-num_repeats <- 10
-num_folds <- 6
+models <- c("brf", "rf", "lm", "se", "cf")
+
+pbmclapply(
+  1:length(all_data_files),
+  #--- loop over fields (sim) ---#
+  function(x) {
+    find_vra_single_whole_field(
+      file_path = all_data_files[x],
+      x_vars = x_vars,
+      models = models
+    )
+  },
+  mc.cores = 10
+)
+```
+
+# Run model-selection simulations
+
+```{r}
+num_repeats <- 5
+num_folds <- 5
 
 #--- create a directory to store the results ---#
 results_dir <- paste0("Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds)
 dir.create(results_dir)
 
-sim_results <-
+#--- create seed for spatial cross-validation ---#
+data_seed <-
+  data.table(
+    file = all_data_files
+  ) %>%
+  .[, resampling_seed := rnorm(1), by = file]
+
+saveRDS(data_seed, here::here(results_dir, "data_seed.rds"))
+
+data_seed <- readRDS(here::here(results_dir, "data_seed.rds"))
+
   pbmclapply(
-    71:length(all_data_files),
+    1:length(all_data_files),
     function(x) {
-      sim_single_field(
-        file_path = all_data_files[x],
+      model_selection_sim_single_field(
+        file_path = data_seed[x, file],
+        models = c("lm", "se"),
         results_dir = results_dir,
+        resampling_seed = data_seed[x, resampling_seed],
         num_repeats,
         num_folds
       )
     },
-    mc.cores = 2
-  )
+    mc.cores = 10
 ```
+
+
 
