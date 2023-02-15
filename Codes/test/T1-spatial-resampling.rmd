@@ -1,0 +1,198 @@
+```{r}
+library(data.table)
+library(sf)
+library(spatialsample)
+library(tidyverse)
+raw_data <- readRDS(here::here("Shared/Data/raw_sim_data.rds"))
+
+field_au_sf <-
+  raw_data$field_au_sf[[1]] %>%
+  st_as_sf()
+```
+
+```{r}
+num_folds <- 7
+num_repeats <- 10
+
+spatial_folds <-
+  spatial_clustering_cv(
+    field_au_sf,
+    v = num_folds,
+    repeats = num_repeats
+  ) %>%
+  rowwise() %>%
+  mutate(
+    training_ids = list(analysis(splits) %>% data.table() %>% .[, aunit_id]),
+    test_ids = list(assessment(splits) %>% data.table() %>% .[, aunit_id])
+  ) %>%
+  data.table() %>%
+  setnames(c("id", "id2"), c("repeats", "folds")) %>%
+  .[, .(repeats, folds, training_ids, test_ids)]
+
+num_it <- nrow(spatial_folds)
+
+similar_test_mat <- matrix(0, num_it, num_it)
+for (i in 1:num_it) {
+  for (j in 1:num_it) {
+    duplicated_nums <-
+      mean(spatial_folds[, test_ids][[i]] %in% spatial_folds[, test_ids][[j]])
+    similar_test_mat[i, j] <- duplicated_nums
+  }
+}
+
+diag(similar_test_mat) <- 0
+
+drop_ids <-
+  lapply(
+    1:nrow(spatial_folds),
+    function(x) {
+      sim_rows <- which(similar_test_mat[, x] > 0.8)
+      drop_or_not <- which(similar_test_mat[x, sim_rows] > 0.8)
+      group <- c(x, sim_rows[drop_or_not]) %>% .[order(.)]
+      return(data.table(group = list(group)))
+    }
+  ) %>%
+  rbindlist() %>%
+  rowwise() %>%
+  mutate(n_in_group = length(group)) %>%
+  filter(n_in_group > 1) %>%
+  data.table() %>%
+  .[, group] %>%
+  unique() %>%
+  lapply(., function(x) x[-1]) %>%
+  unlist() %>%
+  unique()
+
+spatial_folds[, .(test_data, repeats, folds)] %>%
+  unnest(test_data) %>%
+  st_as_sf() %>%
+  ggplot() +
+  geom_sf(aes(fill = folds)) +
+  facet_grid(repeats ~ .)
+```
+
+# Test
+
+```{r}
+# === create grids (on top of IL state border) ===#
+# any spatial object will do. IL state border is picked
+# just because it is easy to get without reading a shapefile
+
+grids_il <-
+  tigris::counties(
+    state = "IL",
+    progress_bar = FALSE
+  ) %>%
+  st_as_sf() %>%
+  st_make_grid(n = c(30, 30)) %>%
+  st_as_sf() %>%
+  mutate(id := 1:n()) %>%
+  rename(geometry = x)
+
+# === set up a model ===#
+g_temp <-
+  gstat(
+    formula = z ~ 1,
+    locations = ~ X + Y,
+    beta = 0,
+    dummy = T,
+    model = vgm(
+      psill = 20,
+      range = 100,
+      nugget = 0,
+      model = "Sph"
+    ),
+    nmax = 50
+  )
+
+# === get coordinates ===#
+xy <-
+  st_coordinates(st_centroid(grids_il)) %>%
+  data.table()
+
+gen_data <- function(seed) {
+  set.seed(seed)
+
+  # === generate error ===#
+  error <-
+    predict(g_temp, newdata = xy, nsim = 1, debug.level = 0) %>%
+    data.table() %>%
+    # === normalize ===#
+    .[, sim1 := (sim1 - mean(sim1)) / sd(sim1)]
+
+  # === generate x ===#
+  var <-
+    predict(g_temp, newdata = xy, nsim = 1, debug.level = 0) %>%
+    data.table() %>%
+    # === normalize ===#
+    .[, sim1 := pnorm(sim1, mean = mean(sim1), sd = sd(sim1))]
+
+  # === assign the generated values to the data ===#
+  data <-
+    grids_il %>%
+    mutate(
+      e = error[, sim1] * 30, # N(0, 400)
+      x = var[, sim1] * 10, # ranges from 0 to 10
+      y_det = 10 + 48 * x - 4 * x^2,
+      y = y_det + e
+    )
+
+  return(data)
+}
+
+(
+  train_data <- gen_data(seed = 47823)
+)
+
+set.seed(382943)
+(
+  skcv_folds <-
+    spatial_clustering_cv(train_data, v = 6) %>%
+    # spatial_block_cv(train_data, v = 6, method = "continuous") %>%
+    mutate(type := "SKCV")
+)
+
+plot_kcv_data <-
+  skcv_folds %>%
+  rowwise() %>%
+  mutate(folds = list(
+    rbind(
+      analysis(splits) %>% mutate(type = "training"),
+      assessment(splits) %>% mutate(type = "test")
+    )
+  )) %>%
+  dplyr::select(id, folds) %>%
+  unnest() %>%
+  st_as_sf()
+
+ggplot(plot_kcv_data) +
+  geom_sf(aes(fill = type), color = NA) +
+  facet_wrap(id ~ .) +
+  theme_void()
+```
+
+```{r}
+
+library(mlr3spatiotempcv)
+
+# create 'sf' object
+data_sf <- sf::st_as_sf(ecuador, coords = c("x", "y"), crs = 32717)
+
+# create `TaskClassifST` from `sf` object
+task <- as_task_classif_st(data_sf, id = "ecuador_task", target = "slides", positive = "TRUE")
+
+task <- tsk("ecuador")
+
+learner <- lrn("classif.rpart", maxdepth = 3, predict_type = "prob")
+resampling_sp <- rsmp("repeated_spcv_coords", folds = 6, repeats = 2)
+rr_sp <- resample(
+  task = task, learner = learner,
+  resampling = resampling_sp
+)
+
+rr_sp$aggregate(measures = msr("classif.ce"))
+
+autoplot(resampling_sp, task, fold_id = c(1:6), size = 0.7, repeats_id = 2) *
+  ggplot2::scale_y_continuous(breaks = seq(-3.97, -4, -0.01)) *
+  ggplot2::scale_x_continuous(breaks = seq(-79.06, -79.08, -0.02))
+```

@@ -25,7 +25,7 @@ list.files(here::here("GitControlled/Codes/functions/"), full.names = TRUE) %>%
 ## Data
 
 ```{r}
-all_data_files <- list.files(here::here("Shared/Data/SimData"), full.names = TRUE)
+data_files <- list.files(here::here("Shared/Data/SimData"), full.names = TRUE)
 ```
 
 ## Set up simulations (global variables)
@@ -43,7 +43,7 @@ pN <- 1 / 0.453592 # $/kg
 ```
 
 # VRA for the whole field by method
-```{r}
+```{r, eval = FALSE}
 models <- c("brf", "rf", "lm", "se", "cf")
 
 pbmclapply(
@@ -62,39 +62,45 @@ pbmclapply(
 
 # Run model-selection simulations
 
+## 7 folds, 10 repetas
+
 ```{r}
-num_repeats <- 5
-num_folds <- 5
+model_selection_sim(
+  data_files = data_files,
+  # models = c("lm", "se", "rf", "brf", "cf", "gam"),
+  models = "gam",
+  num_repeats = 10,
+  num_folds = 7,
+  num_cores = 5
+)
 
-#--- create a directory to store the results ---#
-results_dir <- paste0("Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds)
-dir.create(results_dir)
+model_selection_sim(
+  data_files = data_files,
+  models = c("lm", "se"),
+  # models = c("lm", "se", "rf", "brf", "cf"),
+  num_repeats = 10,
+  num_folds = 7,
+  num_cores = 10
+)
 
-#--- create seed for spatial cross-validation ---#
-data_seed <-
-  data.table(
-    file = all_data_files
-  ) %>%
-  .[, resampling_seed := rnorm(1), by = file]
-
-saveRDS(data_seed, here::here(results_dir, "data_seed.rds"))
-
-data_seed <- readRDS(here::here(results_dir, "data_seed.rds"))
-
-  pbmclapply(
-    1:length(all_data_files),
-    function(x) {
-      model_selection_sim_single_field(
-        file_path = data_seed[x, file],
-        models = c("lm", "se"),
-        results_dir = results_dir,
-        resampling_seed = data_seed[x, resampling_seed],
-        num_repeats,
-        num_folds
-      )
-    },
-    mc.cores = 10
+model_selection_sim(
+  data_files = data_files,
+  models = c("rf", "brf", "cf"),
+  num_repeats = 10,
+  num_folds = 7,
+  num_cores = 10
+)
 ```
 
+## 5 folds, 1 repetas
 
+```{r}
+model_selection_sim(
+  data_files = data_files,
+  models = c("lm", "se", "rf", "brf", "cf", "gam"),
+  num_repeats = 1,
+  num_folds = 5,
+  num_cores = 10
+)
+```
 

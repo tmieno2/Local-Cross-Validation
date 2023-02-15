@@ -1,0 +1,125 @@
+---
+title: "Run Simulations"
+author: "Mona Mousavi"
+date: "2023-02-07"
+output: html_document
+---
+
+# Objective 
+
++ To see if the cross validation method based on local EONR can select the right model (the best in predicting EONR)
+  - local EONR (GAM) vs EONR estaimtes from ML-based methods
++ How do we check whether our method is working or not (comparing with true EONR) 
++ How does the number of folds and repetas affect the usefulness of our cross-validation approach?
+
+# Preparation
+
+```{r}
+library(tidyverse)
+list.files(here::here("GitControlled/Codes/functions/"), full.names = TRUE) %>%
+  lapply(., source)
+```
+
+# Simulation setup
+
+## Data
+
+```{r}
+data_files <- list.files(here::here("Shared/Data/SimData"), full.names = TRUE)
+```
+
+## Set up simulations (global variables)
+
+```{r}
+x_vars <-
+  c(
+    "theta_b2_2", "theta_b1_2",
+    "Nk_2_1", "Nk_2_2", "Nk_1_1", "Nk_1_2",
+    "plateau_2_1", "plateau_2_2", "plateau_1_1", "plateau_1_2"
+  )
+
+pCorn <- 6.25 / 25.4 # $/kg
+pN <- 1 / 0.453592 # $/kg
+```
+
+# Run model-selection simulations
+
+## Repeat = 3, folds = 8
+
+```{r}
+model_selection_sim(
+  data_files = data_files[1:200],
+  models = "gam",
+  num_repeats = 3,
+  num_folds = 8,
+  num_cores = 10
+)
+```
+
+```{r}
+gam_results <-
+  list.files(
+    "Shared/Results/sim_results_num_repeats_10_num_folds_7",
+    full.names = TRUE
+  ) %>%
+  .[str_detect(., "gam")] %>%
+  purrr::map(readRDS) %>%
+  rbindlist(fill = TRUE)
+
+sum_results <-
+  gam_results %>%
+  #--- average opt_N by fold ---#
+  # opt_N_gam is the same for all the observations
+  # within a fold
+  .[, .(opt_N_gam = mean(opt_N_gam), opt_N = mean(opt_N)), by = .(sim, split_id)] %>%
+  .[, opt_N_dif := opt_N - opt_N_gam] %>%
+  .[, rmse_local_eonr := sqrt(mean(opt_N_dif^2)), by = sim]
+
+# sum_results$rmse_local_eonr %>% hist
+
+ggplot(sum_results[sim == 10, ]) +
+  geom_point(aes(y = opt_N, x = opt_N_gam)) +
+  geom_abline(slope = 1, color = "red") +
+  ylim(80, NA) +
+  xlim(80, NA) +
+  coord_equal()
+```
+
+## Repeat = 5, folds = 6
+
+```{r}
+model_selection_sim(
+  data_files = data_files[1:200],
+  models = "gam",
+  num_repeats = 5,
+  num_folds = 6,
+  num_cores = 10
+)
+```
+
+```{r}
+gam_results <-
+  list.files(
+    "Shared/Results/sim_results_num_repeats_5_num_folds_6",
+    full.names = TRUE
+  ) %>%
+  .[str_detect(., "gam")] %>%
+  purrr::map(readRDS) %>%
+  rbindlist(fill = TRUE)
+
+sum_results_56 <-
+  gam_results %>%
+  .[, .(opt_N_gam = mean(opt_N_gam), opt_N = mean(opt_N)), by = .(sim, repeats, folds)]
+
+ggplot(sum_results_56[sim == 279, ]) +
+  geom_point(aes(y = opt_N, x = opt_N_gam)) +
+  geom_abline(slope = 1, color = "red") +
+  ylim(80, NA) +
+  xlim(80, NA) +
+  coord_equal()
+```
+
+
+
+
+

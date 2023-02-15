@@ -1,0 +1,185 @@
+---
+title: "Summarize Results"
+date: "2023-02-07"
+output: html_document
+---
+
+# Objective 
+
++ Summarize the results
+
+# Preparation
+
+```{r}
+library(tidyverse)
+list.files(here::here("GitControlled/Codes/functions/"), full.names = TRUE) %>%
+  lapply(., source)
+```
+
+# Whole-field analysis
+
+```{r}
+results <-
+  list.files(
+    here::here("Shared/Results/WholeField"),
+    full.names = TRUE
+  ) %>%
+  purrr::map(readRDS) %>%
+  rbindlist()
+
+sum_results_whole <-
+  results %>%
+  .[, N_dif := opt_N_hat - opt_N] %>%
+  .[, .(rmse_eonr = sqrt(mean(N_dif^2))), by = .(sim, method)]
+
+ggplot(sum_results_whole) +
+  geom_histogram(aes(x = rmse_eonr)) +
+  facet_grid(method ~ .)
+```
+```{r}
+true_ranking_eonr <-
+  sum_results_whole %>%
+  .[order(sim, rmse_eonr), ] %>%
+  .[, eonr_rank_true := seq(.N), by = sim] %>%
+  .[, eonr_selected_true := ifelse(eonr_rank_true == 1, 1, 0)]
+
+true_ranking_eonr[, .(num_selected = sum(eonr_selected_true)), by = method] %>%
+  ggplot(.) +
+  geom_bar(aes(y = num_selected, x = method), stat = "identity")
+```
+
+# Post-simulation analysis
+
+## Prepare
+
+```{r}
+num_folds <- 7
+num_repeats <- 10
+
+results_dir <- paste0("Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds)
+```
+
+## Main models
+
+Read all the simulation results for the main models (except GAM) and combine them together.
+
+```{r}
+main_results <-
+  list.files(
+    results_dir,
+    full.names = TRUE
+  ) %>%
+  .[!str_detect(., "train_test|gam")] %>%
+  purrr::map(readRDS) %>%
+  rbindlist(fill = TRUE)
+```
+
+Calculate rmse of EONR and Yield by method. RMSE of EONR here is against true EONR, which is not used for selection in our approach as true EONR is not observed. 
+
+```{r}
+main_sum_results <-
+  main_results %>%
+  .[, N_dif := opt_N_hat - opt_N] %>%
+  .[, yield_dif := yield_hat - yield] %>%
+  .[, .(
+    #--- rmse by fold ---#
+    rmse_eonr_true = sqrt(mean(N_dif^2)),
+    rmse_yield = sqrt(mean(yield_dif^2)),
+    #--- average estimated EONR ---#
+    opt_N_hat = mean(opt_N_hat)
+  ),
+  by = .(sim, method, split_id)
+  ] %>%
+  .[order(sim), ]
+```
+
+## GAM
+
+```{r}
+gam_results <-
+  list.files(
+    results_dir,
+    full.names = TRUE
+  ) %>%
+  .[str_detect(., "gam")] %>%
+  purrr::map(readRDS) %>%
+  rbindlist(fill = TRUE)
+
+sum_results_gam <-
+  gam_results %>%
+  #--- average opt_N by fold ---#
+  # opt_N_gam is the same for all the observations
+  # within a fold
+  .[, .(opt_N_gam = mean(opt_N_gam), opt_N = mean(opt_N)), by = .(sim, split_id)] %>%
+  .[, opt_N_dif := opt_N - opt_N_gam] %>%
+  .[, rmse_local_eonr := sqrt(mean(opt_N_dif^2)), by = sim]
+```
+
+## Combine the main and gam results
+
+Combines the gam results and main results, which lets us calculate RMSE of eonr prediction against GAM-estimated local eonr prediction.
+
+```{r}
+combined_results <-
+  sum_results_gam[main_sum_results, on = c("sim", "split_id")] %>%
+  .[, opt_N_dif_select := opt_N_hat - opt_N_gam] %>%
+  .[, .(
+    rmse_eonr_gam = sqrt(mean(opt_N_dif_select^2)),
+    rmse_yield = mean(rmse_yield)
+  ), by = .(sim, method)]
+```
+
+For each simnulation round, find the ranking of models by RMSE of EONR (against GAM) and yield. The model ranked first is the one selected.
+
+```{r}
+selection_ranks <-
+  combined_results %>%
+  .[order(sim, rmse_eonr_gam), ] %>%
+  #--- within-sim rank based on local EONR prediction ---#
+  .[, eonr_rank := seq(.N), by = sim] %>%
+  .[, eonr_selected_gam := ifelse(eonr_rank == 1, 1, 0)] %>%
+  .[order(sim, rmse_yield), ] %>%
+  #--- within-sim rank based on yield prediction ---#
+  .[, yield_rank := seq(.N), by = sim] %>%
+  .[, yield_selected := ifelse(yield_rank == 1, 1, 0)]
+```
+
+Figure of the counts of being selected based on local EONR prediction.
+
+```{r}
+g_eonr_selection <-
+  selection_ranks[, .(num_selected = sum(eonr_selected_gam)), by = method] %>%
+  ggplot(.) +
+  geom_bar(
+    aes(y = num_selected, x = method),
+    stat = "identity"
+  )
+```
+
+
+```{r}
+comp_ranks_data <-
+  selection_ranks[true_ranking_eonr, on = c("sim", "method")]
+```
+
+The number of true EONR ranking by local-eonr-based and yield-based selections.
+
+```{r}
+selection_perf_rank_LE <-
+  comp_ranks_data[eonr_selected_gam == 1, .N, by = eonr_rank_true] %>%
+  .[order(eonr_rank_true), ] %>%
+  .[, select_method := "Local EONR prediction"]
+
+selection_perf_rank_Y <-
+  comp_ranks_data[yield_selected == 1, .N, by = eonr_rank_true] %>%
+  .[order(eonr_rank_true), ] %>%
+  .[, select_method := "Yield prediction"]
+
+(
+  selection_perf <-
+    rbind(selection_perf_rank_LE, selection_perf_rank_Y) %>%
+    dcast(eonr_rank_true ~ select_method, value.var = "N")
+)
+```
+
+
