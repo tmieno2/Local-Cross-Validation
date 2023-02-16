@@ -111,10 +111,8 @@ sum_results_gam <-
 
 # Model selection simulation results
 
-## Prepare
 
 ```{r}
-comp_results$selection_perf
 
 comp_results <-
   #--- specify the combination of num_folds and num_repeats ---#
@@ -144,6 +142,8 @@ comp_results <-
     rbind(selection_perf_rank_LE, selection_perf_rank_Y) %>%
       dcast(eonr_rank_true ~ select_method, value.var = "N")
   ))
+
+comp_results$selection_perf
 ```
 
 

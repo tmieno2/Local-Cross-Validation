@@ -1,0 +1,140 @@
+---
+title: "Title here"
+output: 
+  bookdown::pdf_document2:
+    toc: no
+    keep_tex: true
+author: |
+  | Mona Mousavi, Taro Mieno^[Corresponding author: tmieno2@unl.edu], David S. Bullock
+  | $^1$University of Nebraska Lincoln,  $^2$University of Nebraska Lincoln, $^3$University of Illinois
+abstract: |
+  Your abstract goes here...
+bibliography: PA.bib
+csl: american-journal-of-agricultural-economics.csl
+fontsize: 12pt
+header-includes: 
+  \usepackage{float} \floatplacement{figure}{H} 
+  \newcommand{\beginsupplement}{\setcounter{table}{0}  \renewcommand{\thetable}{S\arabic{table}} \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}}}
+  \usepackage{setspace}\doublespacing
+  \usepackage{lineno}
+  \linenumbers
+---
+
+```{r echo = F, cache = F, include = F}
+library(knitr)
+library(here)
+
+here::i_am("GitControlled/Writing/manuscript_ajae.rmd")
+
+opts_chunk$set(
+  fig.align = "center",
+  fig.retina = 5,
+  warning = F,
+  message = F,
+  cache = T,
+  echo = F,
+  error = T,
+  fig.cap = T
+)
+```
+
+```{r cache = F, include = F}
+#--- packages ---#
+library(data.table)
+library(tidyverse)
+library(officedown)
+library(officer)
+library(flextable)
+library(stringr)
+library(sf)
+library(lfe)
+library(modelsummary)
+library(patchwork)
+library(gridExtra)
+```
+
+```{r figure_setup, cache = F}
+#* +++++++++++++++++++++++++++++++++++
+#* Default figure setting
+#* +++++++++++++++++++++++++++++++++++
+theme_update(
+  axis.title.x =
+    element_text(
+      size = 12, angle = 0, hjust = .5, vjust = -0.3, face = "plain"
+    ),
+  axis.title.y =
+    element_text(
+      size = 12, angle = 90, hjust = .5, vjust = .9, face = "plain"
+    ),
+  axis.text.x =
+    element_text(
+      size = 10, angle = 0, hjust = .5, vjust = 1.5, face = "plain"
+    ),
+  axis.text.y =
+    element_text(
+      size = 10, angle = 0, hjust = 1, vjust = 0, face = "plain"
+    ),
+  axis.ticks =
+    element_line(
+      size = 0.3, linetype = "solid"
+    ),
+  axis.ticks.length = unit(.15, "cm"),
+  #--- legend ---#
+  legend.text =
+    element_text(
+      size = 10, angle = 0, hjust = 0, vjust = 0, face = "plain"
+    ),
+  legend.title =
+    element_text(
+      size = 10, angle = 0, hjust = 0, vjust = 0, face = "plain"
+    ),
+  legend.key.size = unit(0.5, "cm"),
+  #--- strip (for faceting) ---#
+  strip.text = element_text(size = 10),
+  #--- plot title ---#
+  plot.title = element_text(family = "Times", face = "bold", size = 12),
+  #--- margin ---#
+  # plot.margin = margin(0, 0, 0, 0, "cm"),
+  #--- panel ---#
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  panel.background = element_blank(),
+  panel.border = element_rect(fill = NA)
+)
+```
+
+ 
+**Keywords**: 
+
+**Acknowledgement**: This research was supported by ....
+
+# Introduction
+
+
+# Methods: Monte Carlo Simulation
+
+In our Monte Carlo simulations, .... All the the codes that implement the MC simulation analysis to reproduce the results presented in this study are publicly accessible at <span style = "color: blue;"> Github account</span>.
+
+# Results and Discussions
+
+# Conclusions
+
+<!--
+# /*===========================================================
+#' # References
+# /*===========================================================
+-->
+
+# References
+
+<div id="refs"></div>
+
+\newpage
+
+# Figures {-}
+
+# Appendix {-}
+
+```{r, child = "appendix.rmd"}
+```
+

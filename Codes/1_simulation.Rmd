@@ -123,9 +123,11 @@ model_selection_sim(
   data_files = data_files,
   field_sf = field_au_sf,
   models = c("lm", "se", "rf", "brf", "cf", "gam"),
-  num_repeats = 1,
+  num_repeats = 5,
   num_folds = 7,
   num_cores = 10
 )
 ```
+
+
 
