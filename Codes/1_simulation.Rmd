@@ -26,6 +26,10 @@ list.files(here::here("GitControlled/Codes/functions/"), full.names = TRUE) %>%
 
 ```{r}
 data_files <- list.files(here::here("Shared/Data/SimData"), full.names = TRUE)
+
+field_au_sf <-
+  readRDS(here::here("Shared/Data/field_au_sf.rds")) %>%
+  st_as_sf()
 ```
 
 ## Set up simulations (global variables)
@@ -47,11 +51,11 @@ pN <- 1 / 0.453592 # $/kg
 models <- c("brf", "rf", "lm", "se", "cf")
 
 pbmclapply(
-  1:length(all_data_files),
+  1:length(data_files),
   #--- loop over fields (sim) ---#
   function(x) {
     find_vra_single_whole_field(
-      file_path = all_data_files[x],
+      file_path = data_files[x],
       x_vars = x_vars,
       models = models
     )
@@ -67,6 +71,7 @@ pbmclapply(
 ```{r}
 model_selection_sim(
   data_files = data_files,
+  field_sf = field_au_sf,
   # models = c("lm", "se", "rf", "brf", "cf", "gam"),
   models = "gam",
   num_repeats = 10,
@@ -76,6 +81,7 @@ model_selection_sim(
 
 model_selection_sim(
   data_files = data_files,
+  field_sf = field_au_sf,
   models = c("lm", "se"),
   # models = c("lm", "se", "rf", "brf", "cf"),
   num_repeats = 10,
@@ -85,6 +91,7 @@ model_selection_sim(
 
 model_selection_sim(
   data_files = data_files,
+  field_sf = field_au_sf,
   models = c("rf", "brf", "cf"),
   num_repeats = 10,
   num_folds = 7,
@@ -95,11 +102,29 @@ model_selection_sim(
 ## 5 folds, 1 repetas
 
 ```{r}
+set.seed(974345)
+
 model_selection_sim(
   data_files = data_files,
+  field_sf = field_au_sf,
   models = c("lm", "se", "rf", "brf", "cf", "gam"),
   num_repeats = 1,
   num_folds = 5,
+  num_cores = 10
+)
+```
+
+## 7 folds, 1 repetas
+
+```{r}
+set.seed(974345)
+
+model_selection_sim(
+  data_files = data_files,
+  field_sf = field_au_sf,
+  models = c("lm", "se", "rf", "brf", "cf", "gam"),
+  num_repeats = 1,
+  num_folds = 7,
   num_cores = 10
 )
 ```

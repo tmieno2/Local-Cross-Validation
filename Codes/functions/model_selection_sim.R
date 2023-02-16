@@ -1,4 +1,4 @@
-model_selection_sim <- function(data_files, models, num_repeats, num_folds, num_cores) {
+model_selection_sim <- function(data_files, field_sf, models, num_repeats, num_folds, num_cores) {
 
   #--- create a directory to store the results ---#
   print("Creating a directory to store the results.")
@@ -10,7 +10,7 @@ model_selection_sim <- function(data_files, models, num_repeats, num_folds, num_
   train_test_split_file <- here::here(results_dir, "train_test_split.rds")
 
   if (!file.exists(train_test_split_file)) {
-    train_test_split <- spatial_resampling(num_folds, num_repeats)
+    train_test_split <- spatial_resampling(field_sf, num_folds, num_repeats)
     saveRDS(train_test_split, here::here(results_dir, "train_test_split.rds"))
   } else {
     train_test_split <- readRDS(here::here(results_dir, "train_test_split.rds"))

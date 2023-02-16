@@ -73,6 +73,8 @@ sim_data <-
 
 saveRDS(sim_data$weight_matrix[[1]], here::here("Shared/Data/weight_matrix.rds"))
 
+saveRDS(sim_data$field_au_sf[[1]], here::here("Shared/Data/field_au_sf.rds"))
+
 reg_data_all <- sim_data$reg_data[[1]]
 
 lapply(

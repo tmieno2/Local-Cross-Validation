@@ -1,4 +1,4 @@
-spatial_resampling <- function(num_folds, num_repeats = 10, overlap_threshold = 0.8) {
+spatial_resampling <- function(data_sf, num_folds, num_repeats = 10, overlap_threshold = 0.8) {
 
   #* +++++++++++++++++++++++++++++++++++
   #* Spatial resampling (train-test)
@@ -6,7 +6,7 @@ spatial_resampling <- function(num_folds, num_repeats = 10, overlap_threshold = 
   #* very similar test-train datasets are created in this process
   spatial_folds <-
     spatial_clustering_cv(
-      field_au_sf,
+      data_sf,
       v = num_folds,
       repeats = num_repeats
     ) %>%
@@ -61,10 +61,17 @@ spatial_resampling <- function(num_folds, num_repeats = 10, overlap_threshold = 
     unlist() %>%
     unique()
 
-  return_data <-
-    spatial_folds[-drop_ids, ] %>%
-    .[, .(training_ids, test_ids)] %>%
-    .[, split_id := 1:.N]
+  if (is.null(drop_ids)) {
+    return_data <-
+      spatial_folds %>%
+      .[, .(training_ids, test_ids)] %>%
+      .[, split_id := 1:.N]
+  } else {
+    return_data <-
+      spatial_folds[-drop_ids, ] %>%
+      .[, .(training_ids, test_ids)] %>%
+      .[, split_id := 1:.N]
+  }
 
   # data.table(id = return_data$test_ids %>% reduce(c)) %>%
   #   .[, .N, by = id] %>%

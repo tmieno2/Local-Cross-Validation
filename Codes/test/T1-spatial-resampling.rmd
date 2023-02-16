@@ -16,7 +16,8 @@ num_repeats <- 10
 
 spatial_folds <-
   spatial_clustering_cv(
-    field_au_sf,
+    # field_au_sf,
+    data_sf,
     v = num_folds,
     repeats = num_repeats
   ) %>%
@@ -62,6 +63,8 @@ drop_ids <-
   lapply(., function(x) x[-1]) %>%
   unlist() %>%
   unique()
+
+spatial_folds[-drop_ids, ]
 
 spatial_folds[, .(test_data, repeats, folds)] %>%
   unnest(test_data) %>%
