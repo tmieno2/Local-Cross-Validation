@@ -111,9 +111,207 @@ theme_update(
 # Introduction
 
 
-# Methods: Monte Carlo Simulation
+# Materials and Methods: Monte Carlo Simulation
+
+Materials and methods: 
+
+ 
+
++ explain our proposed model selection method in general (no specific model needs to be mentioned) 
+
+ 
+
++ Monte Carlo simulation 
+
++ overview of the simulation results 
+
++ data generation 
+
++ model selection  
+
+	- local eonr-based (spatial cross-validation, local eonr estimated by GAM) 
+
+	- yield-based 
+
++ model selection evaluation 
+
+	- train all the models using the entire dataset of a single field 
+
+	- find out their economic performance 
+
+	- check how the model selected by the two methods actually performed when applied the entire dataset 
+
 
 In our Monte Carlo simulations, .... All the the codes that implement the MC simulation analysis to reproduce the results presented in this study are publicly accessible at <span style = "color: blue;"> Github account</span>.
+
+In order to determine the optimal nitrogen rates for corn production, estimates of site-specific economic optimum nitrogen rates (EONRs) were obtained using Monte Carlo simulations. These simulations were conducted based on nitrogen fertilizer application experiments. By utilizing the Monte Carlo method, a probabilistic technique that involves running numerous simulations with different input values, the site specific EONRs were calculated.
+
+To propose an accurate method for predicting the Optimal Nitrogen Rate (EONR), our study considered two crucial criteria: the yield prediction criterion and the local EONR criterion. To achieve this objective, we employed spatial folds to divide the data into training and testing datasets. For the yield prediction criterion, we estimated the yield on the validation dataset within each fold using various machine learning models, namely Random Forest (RF), Boosted Regression Forest (BRF), linear model, and spatial error model. The performance of these machine learning models was assessed by calculating the Root Mean Square Error (RMSE) of the predicted yield.
+In addition to the yield prediction criterion, we also focused on the local EONR criterion. Within each spatial fold, we estimated site-specific optimal nitrogen rates on the validation dataset using machine learning models such as the causal forest (CF), Random Forest (RF), Boosted Regression Forest (BRF), linear, and spatial error model. To evaluate the performance of the local EONR criterion, we compared the RMSE of the predicted EONR against the EONR values obtained from a trained local Generalized Additive Model (GAM).
+To perform EONR-based model selection, we utilized local regression, a non-parametric method that predicts the dependent variable at a specific value of the explanatory variable by considering observations from neighboring data points. This approach allows for a more localized and context-specific estimation of the dependent variable, enhancing the accuracy and precision of the model selection process. 
+The general form of local regression can be expressed as follows:
+
+where:
+y represents the dependent variable,
+x represents the independent variable(s),
+f(x) represents the estimated regression function,
+ε represents the random error term.
+f ̂(x=x_0) represents the estimated value of the regression function f at a specific input point x_0.
+∑_(i=1)^N▒w_i (x_0) represents the sum of the weights assigned to the neighboring observations in the local neighborhood around a specific point x_0.
+In local regression, the estimated regression function f ̂(x) is typically estimated by fitting a regression model within a local neighborhood around each specific point.
+The specific form of f(x) depends on the method or technique used for local regression. 
+Local regression using a machine learning model involves iterating over the dataset and for each observation, generating a sequence of x values. Subsequently, the selected machine learning model is employed to predict the corresponding y values for each x value in the sequence. The resulting sequence of predicted y values can then be considered as an estimation of the regression function f(x) within the local neighborhood of that observation.
+In the subsequent section, we will provide a detailed description of the process involved in implementing this method and analyzing the results.
+Following the simulation of 500 fields using the Monte Carlo method, we proceed to determine the site-specific EONR for each field as an integral part of the simulation. This calculated value serves as the actual EONR, which will be used for later comparison with the estimated EONR. 
+In the next analysis, the entire dataset serves as the training dataset for yield and local EONR prediction. To estimate the local optimum variable nitrogen rate for the complete dataset, we employ two distinct approaches: the R-learner approach, utilizing a causal forest model, and the S-learner approach, employing multiple machine learning models such as BRF, RF, linear, and spatial error. By training these machine learning models on the entire dataset, we obtain a predicted EONR, which we consider as the true EONR for comparison purposes within the model selection methodology. It is important to note that the estimation process for the S-learner remains consistent across all the employed machine learning models. To further estimate the treatment effect, we apply the R-learner method, utilizing a causal forest model. In what follows a brief explanation of both the S-learner and R-learner methods which are methods that estimate heterogeneous treatment effects is provided. 
+Estimating heterogeneous treatment effects involves examining how the impact of a treatment varies based on observed attributes of the subjects, which is also referred to as conditional average treatment effect (CATE).
+
+The general form of the model of interest can be represented as follows:
+
+Y_i=θ(X_i ) T_i+g(X_i )+ε_i
+
+T_i=f(X_i)+η_i
+
+The dependent variable, treatment variable, and features are denoted as Y, T, and X, respectively. ε_i and η_i are the error terms.
+A set of assumptions accompanies the model, including E[ε|T,X]=0, E[η|X]=0
+and E[η.ε│T,X]=0.
+The S-learner is a method used in machine learning for estimating treatment effects in causal inference. It is part of the single model approach, which aims to estimate the average treatment effect (ATE) by fitting a single model to the entire dataset, considering both treated and control observations.
+In the S-learner approach, a machine learning model is trained to predict the outcome variable (response) based on both the treatment assignment and other covariates. The treatment effect is then estimated by comparing the predicted outcomes for the treated and control groups.
+The S-learner is called so because it assumes that the treatment effect is the same for all individuals, regardless of their covariates. It does not model any interaction between the treatment and covariates. This approach simplifies the estimation process by considering a single model for treatment effect estimation.
+By estimating the treatment effect using the S-learner, it is possible to gain insights into the causal impact of a specific treatment or intervention in observational studies.
+The S-learner approach estimates CATE by conducting a regression of the dependent variable Y on the treatment variable T and the covariates X, aiming to estimate E[Y|T,X]. In this approach, T is treated as a covariate alongside other variables X, without receiving any special treatment.
+Under the imposed assumptions, 
+
+E[Y|X]=θ(X).E[T|X]+g(X)
+
+Then,
+Y_i- E[Y|X]=θ(X_i)(T_i-f(X_i))+ε_i
+
+The R-learner is a machine learning technique used in causal inference to estimate treatment effects. It is a part of the two-model approach, which aims to estimate the average treatment effect by building separate models for the treated and control groups.
+In the context of the R-learner, two distinct machine learning models are trained. One model is trained to predict potential outcomes for the treated group, while another model is trained to predict potential outcomes for the control group. These potential outcomes represent the hypothetical outcomes that would have been observed under different treatment conditions. By comparing the predicted potential outcomes between the two models, the treatment effect can be estimated.
+R-learner minimizes the following objective function to estimate the treatment effect in a robust and unbiased manner,
+
+〖Min〗_(θ(X)) ∑_(i=1)^N▒〖([Y_i-E[Y|X]]-[θ(X_i)(T_i-f(X_i))])〗^2 
+
+In this objective function, Y_i represents the observed outcome, E[Y|X] is the expected outcome given covariates X and θ(X) is the treatment effect estimate.
+
+	Variable rate nitrogen optimization and yield prediction through entire dataset training
+
+Our research employed the S-learner approach in combination with various machine learning models, such as RF, BRF, linear regression, and a spatial error model, to determine the optimal variable rate nitrogen for each simulated field. This optimized variable rate nitrogen, which we refer to as the true EONR (Economic Optimal Nitrogen Rate), was derived by training our models on the entire dataset. This comprehensive training approach allowed us to establish a reliable benchmark that can be used for subsequent model selection and performance comparison.
+To further enhance our analysis, we also utilized the R-learner method to train a smooth causal forest model, enabling us to predict treatment effects. Additionally, we performed yield prediction using RF, BRF, linear regression, and spatial error models, all of which were trained on the complete dataset. 
+
+	Training and estimation of site-specific local EONRs using S-Learner approach with RF, BRF, Linear, and SE model
+
+To estimate the true site-specific local EONRs, a consistent approach was followed for RF, BRF, linear, and SE models. The procedure involved training the machine learning (ML) model using the entire dataset. Subsequently, for each site, a series of nitrogen levels (N) was created based on the range of nitrogen values present in the evaluation data (the complete dataset in this case). These nitrogen levels were utilized to estimate the corresponding crop yields. Next, the predicted profits were calculated, and the nitrogen level that maximized the profit was determined for each specific site.
+Suppose we have a set of variables, denoted as Ω_i ,which represents specific characteristics of the field. Each variable within Ω_i corresponds to an explanatory feature for a particular location or observation. Let g ̂_im (N_j,Ω) represent a yield response function estimated by one of the models, namely m (where m can be RF, BRF, linear or SE) with j representing the sequence of N. The estimated yield response function for a specific variable Ω_i and nitrogen level  N_j within model m can be denoted as g ̂_im (N_j,Ω_i). To determine the site-specific local EONRs for each observation and model, we aim to solve the following problem for all variables Ω_i and nitrogen level N_j within each model:
+
+N ̂_i^opt=argmax┬(N_j )⁡〖(p.g ̂_im (N_j,Ω_i)-w.N_j)〗
+
+where p and w represent the prices of corn and N respectively. This expression represents the profit maximization problem, where the goal is to find the local optimal nitrogen rate N ̂_i^opt  that maximizes the profit, taking into account the estimated yield response function, the price of corn, and the cost of nitrogen application.
+By following these conceptual steps, we were able to obtain accurate estimations of the true site-specific local EONRs. This methodology provided a standardized approach across RF, BRF, linear, and SE models, enabling comparisons among the different models.
+To enable subsequent yield-based model selection, we additionally predict crop yield (g ̂_im (N,Ω)) using various machine learning models on validation data. This step allows us to evaluate and compare the performance of different models in predicting yield accurately.
+
+	Training and estimation of site-specific local EONRs using R-Learner approach with smooth CF model
+
+The Multi-Arm Causal Forest in R was employed to train the entire dataset and predict treatment effects in our research. In order to accomplish this, nitrogen was treated as a factor variable. Within a given field, nitrogen application was considered at five levels denoted as (N_α  ,α ∈{1,2,3,4,5}). The objective of our analysis was to estimate the changes in yield (Y) resulting from changes in nitrogen rates, specifically from the lowest level (N_1) to the remaining four levels 〖(N〗_α), using validation data (the entire dataset in this context).
+To derive these estimates, we obtained four distinct values representing the changes in yield caused by varying the nitrogen rate for each observation (〖∆Y〗_(N_1→N_α )). These changes in yield were then treated as the dependent variable, while the nitrogen levels served as the explanatory variables. Subsequently, a gam model was trained for each observation, forming the foundation for implementing a smooth causal forest.
+To determine the site-specific local EONR for each observation, the minimum and maximum nitrogen rate values were considered, and a sequence of nitrogen levels was generated. The yield was estimated at each nitrogen level within this sequence. The optimal nitrogen rate was obtained through the solution of an optimization problem, seeking to identify the nitrogen level that maximized the desired objective.
+
+N ̂_i^opt=argmax┬(N_j )⁡〖(p.g ̂_im (N_j,Ω_i)-w.N_j)〗
+
+
+	Local EONRs based on spatial folds
+
+To enable the model selection process, we employed a spatial clustering algorithm with cross-validation to create various spatial folds with different repetitions. This allowed us to effectively train and evaluate the performance of our machine learning models. The spatial clustering algorithm aims to group spatial data points into clusters based on their spatial proximity or similarity.
+Implemented within the R programming language, the "spatial_clustering_cv" function accepts spatial data as input and performs clustering by considering the spatial relationships between the data points. By evaluating the optimal number of clusters, the algorithm assigns each data point to a specific cluster based on its proximity to other points.
+To ensure the reliability and consistency of the clustering results, we incorporated cross-validation. This technique enables us to assess the robustness and stability of the obtained clusters. By partitioning the data into multiple folds and iteratively validating the clustering outcomes, we gain insights into the generalizability of the algorithm's performance.
+By employing the spatial clustering algorithm with cross-validation, we establish a solid foundation for our model selection method. This approach enables us to effectively train our machine learning models while considering the spatial characteristics of the data. The integration of cross-validation ensures the validity and reliability of our clustering results, enhancing the overall quality of our model selection process.
+To conduct the model selection simulation, we generated spatial folds with repetitions. We then performed an analysis to identify and exclude folds and repetitions that exhibited significant similarities. For instance, if we consider 5 folds and 5 repetitions, we initially have 25 splits. However, through our analysis, we identified and removed splits that were too similar to ensure the reliability of our analysis. As a result, we ended up with fewer than 25 splits.
+After creating robust splits with unique training and test identifiers, we proceeded to examine each split individually to determine the site-specific local EONRs using various machine learning models. For models such as RF, BRF, linear, spatial error, and smooth causal forest, we trained each model using the training data within each fold and repetition combination. Subsequently, we created a sequence of nitrogen rates and predicted the corresponding yield. Finally, we solved an optimization problem for each observation within each fold and repetition combination to obtain the site-specific local EONRs.
+
+Let g ̂_iφm (N_j,Ω) represent the yield response function estimated by model m for the sequence of nitrogen rates N_j at fold and repetition combination φ. The estimated yield response function for a specific variable Ω_i and nitrogen level N_j within the split φ and model m can be denoted as g ̂_iφm (N_j,Ω_i). To determine the site-specific local EONRs for each observation, split, and model, we solve the following problem for all variables Ω_i, split φ, and nitrogen level N_j within each model m:
+
+N ̂_iφ^opt=argmax┬(N_j )⁡〖(p.g ̂_iφm (N_j,Ω_i)-w.N_j)〗
+
+Furthermore, the prediction of crop yield was conducted on each split to assess the predictive performance of various ML models, with the exception of the smooth causal forest model.
+
+	Training and estimation of site-specific local EONRs using a gam model
+
+A slightly different approach was utilized to obtain site-specific local EONRs by employing the gam model. For each split of fold repeats combination, a gam model was trained using the validation data. This gam model served to predict the crop yield across a sequence of nitrogen rates.
+Subsequently, the same optimization problem employed in other machine learning models was applied to determine the site-specific local EONR values. This optimization process aimed to identify the nitrogen rate that maximized profit based on the yield predictions generated by the gam model.
+The gam estimated local EONRs provide a reference point against which the performance of different ML models can be assessed during the subsequent model selection process. By considering the gam estimated local EONRs as a comparison benchmark, we can assess the effectiveness and accuracy of other models in predicting site-specific optimal nitrogen rates. This analysis contributes to an informed decision-making process when selecting the most suitable model for practical implementation.
+
+	Performance evaluation of the local EONR model selection
+
+	Identification of the true optimal ML model for accurate local EONR Prediction through training on the entire dataset
+
+ The first step to determine the most accurate ML model for estimating local EONRs, is to compare the local EONRs estimated by different ML models trained on the entire dataset with the actual EONRs. This comparison is crucial as it allows us to identify the model that performs the best in estimating local EONRs. 
+Furthermore, this comparison serves as a critical reference point during our model selection process on the folds. By evaluating the ML models on the same dataset used for training, we ensure consistency and reliability in assessing their effectiveness in estimating local EONRs. The model selected based on this evaluation is considered the "true best model" as it demonstrates its proficiency in estimating local EONRs on the dataset used for both training and validation.
+Each ML model in our study has been trained on the complete dataset, but there are variations in profit outcomes when calculating local EONRs using each model. To determine the profit deficits associated with each model, we establish reference points based on the actual optimal yield and actual optimal nitrogen levels. These reference values are derived through simulation and serve as benchmarks for comparison.
+By contrasting the model-predicted profits with the reference points, we can quantitatively assess the disparities and evaluate the accuracy of the ML models in estimating site-specific local EONRs. This analysis enables us to identify the models that exhibit higher or lower profit deficits, providing insights into their performance and reliability in optimizing yield and nitrogen levels.
+The profit deficit (∆π) can be calculated as follows:
+
+∆π_i=π ̂_im-π_i
+
+π ̂_im=p.g ̂_im (N_j,Ω_i)-w.N ̂_im^opt
+
+π_i=P.Y_i^opt  -W.N_i^opt
+
+Where π ̂_im  represents the estimated profit obtained from the ML model (m) for each observation (i), π_i represents the actual profit, g ̂_im (N_j,Ω_i) represents the estimated yield response function for a specific nitrogen level (N_j) and other variables (Ω_i) within the ML model (m), The term w.N ̂_im^opt represents the cost of nitrogen application, where w signifies the cost per unit of nitrogen, and N ̂_im^opt denotes the estimated optimal nitrogen level within the ML (m). 
+In the actual profit calculation formula, Y_i^opt  represents the actual yield and N_i^opt represents the actual variable rate optimal nitrogen. 
+By comparing the estimated profit (π ̂_im) with the actual profit (π_i), we can evaluate the profit deficit associated with each ML model. Consequently, it assists in the selection and identification of the most suitable ML model for optimizing profit within the framework of site-specific local EONRs. In simulation level we then average profit deficit for each model (m):
+
+(∆π) ̅_m=1/1440 ∑_(i=1)^1440▒〖∆π_i 〗
+
+To identify the most reliable machine learning model (m) for predicting variable-rate optimal nitrogen, a comparison is made between the estimated EONRs and the actual EONR. The evaluation of model performance is carried out using the Root Mean Square Error (RMSE) as a metric. The RMSE of the true local EONR for each model (m) within each simulation is computed using the formula:
+
+RMSE of true local EONR=√(2&1/1440 ∑_(i=1)^1440▒〖(〖N ̂_im^opt-N_i^opt)〗^2 〗)
+
+In this equation, N ̂_im^opt  represents the estimated optimal nitrogen level obtained from the machine learning model (m), while N_i^opt represents the actual optimal nitrogen level. By calculating the squared differences between the estimated and actual optimal nitrogen levels for each observation, summing them up, and taking the square root of the average, the RMSE of the true local EONR is derived.
+This evaluation metric provides a quantitative measure of the deviation between the estimated EONR and the actual EONR. It serves as an essential indicator of the accuracy and reliability of the machine learning models in predicting site-specific local optimal nitrogen rates. The lower the RMSE value, the closer the estimated EONRs are to the actual values, indicating better EONR predictive performance of the model.
+Once the profit deficits and RMSE of local EONRs have been calculated for each ML model across all 500 simulations, we proceed to rank the models based on these metrics. By evaluating the profit deficits and RMSE of local EONRs in comparison to the actual EONRs, we can identify the model that demonstrates superior performance in accurately predicting local EONRs. This ranking process allows us to determine the model that truly excels in estimating local EONRs.
+
+	Model selection via spatial fold-based analysis: determining the optimal ML model to predict site specific EONRs
+
+	Utilizing gam model estimated local EONRs as proxies for actual EONRs
+
+In this section, our focus is on the model selection process. Since the actual EONRs are not available at the time of decision-making, we utilize the estimated EONRs obtained from the gam model as a proxy for the actual values. To assess the accuracy of the gam model's estimated optimal nitrogen rates, we calculate the RMSE of the local EONRs estimated by the gam model compared to the actual EONRs. Let the gam estimated site specific EONRs for each observation (i) in each split (φ) be denoted by N ̂_iφgam^opt. We then calculate the average gam estimated EONRs (N ̂_φgam^opt) and the average actual EONRs 〖(N〗_φ^opt) for each split as follows: 
+
+N ̂_φgam^opt=1/n ∑_(i=1)^n▒N ̂_iφgam^opt 
+
+N_φ^opt=1/n ∑_(i=1)^n▒N_iφ^opt 
+
+
+Here, 𝑛 represents the number of observations in each split (φ).
+Subsequently, we compute the RMSE between the gam estimated local EONRs and the actual EONRs for each split (φ) within each simulated field:
+
+〖RMSE of local EONR〗_(gam vs actual)=√(2&1/φ ∑_(i=1)^φ▒〖(〖N ̂_(i,GAM)^opt-N_i^opt)〗^2 〗)
+
+Here, φ represents the total number of splits.
+By evaluating the RMSE of the local gam EONRs compared to the actual EONRs, we can assess the proximity of the gam model's estimated EONRs to the actual values. This evaluation is crucial as we rely on the gam estimated local EONRs as a substitute for the actual EONRs, given that the actual values are unknown during the decision-making process.
+
+	Comparative analysis of local EONRs estimated by various ML models and gam estimated local EONRs
+
+Using the same conceptual framework as applied to the gam-estimated local EONRs, we also calculate the average local EONRs estimated by different machine learning models (RF, BRF, linear, SE, and CF) within each split (φ) for each field. This is denoted as N ̂_φm^opt, where 𝑛 represents the number of observations in each split:
+N ̂_φm^opt=1/n ∑_(i=1)^n▒N ̂_iφm^opt 
+
+Subsequently, to assess the performance of different ML models (m), we compare the model's estimated local optimal nitrogen rates with the gam estimated local EONRs within each field. This evaluation is done using the RMSE metric:
+
+〖RMSE of local EONR〗_(model (m) vs gam)=√(2&1/φ ∑_(i=1)^φ▒〖(〖N ̂_(i,m)^opt-N_i^opt)〗^2 〗)
+
+Here, φ represents the total number of splits. The RMSE metric provides a measure of the dissimilarity between the local EONRs estimated by the ML model (m) and the gam estimated local EONRs.
+We proceed to rank the ML models based on their respective RMSE values of the local EONRs in comparison to the gam estimated EONRs. A lower RMSE indicates a better alignment between the model's estimates and the gam estimates. Thus, we prioritize the ML models that exhibit lower RMSE values as they demonstrate higher accuracy in predicting the local EONRs.
+
+
+	Performance evaluation of model selection for yield prediction capability
+
+To assess the capability of different machine learning models (m) in predicting yield, we employ a prediction process within each simulated field and split (φ). Using all ML models except for the causal forest model, which focuses on treatment effect rather than yield prediction, we estimate the yield denoted as( Y) ̂_iφm. Subsequently, we calculate the RMSE between the estimated yield with each ML model and the actual yield as follows:
+
+〖RMSE of yield〗_(model (m) vs actual)=√(2&1/φ ∑_(i=1)^φ▒〖(〖Y ̂_(i,m)^opt-Y_i)〗^2 〗)
+
+
+Where Y_i  represents the actual yield. We then rank the ML models based on their RMSE of yield, where a lower RMSE indicates a better prediction performance.
+
 
 # Results and Discussions
 

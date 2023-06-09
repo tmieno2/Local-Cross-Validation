@@ -18,6 +18,12 @@ list.files(here::here("GitControlled/Codes/functions/"), full.names = TRUE) %>%
   lapply(., source)
 ```
 
+## Parameters
+```{r}
+pCorn <- 6.25 / 25.4 # $/kg
+pN <- 1 / 0.453592 # $/kg
+```
+
 ## Data
 ```{r}
 raw_data <- readRDS(here::here("Shared/Data/raw_sim_data.rds"))
@@ -87,40 +93,22 @@ sum_results_whole <-
 )
 ```
 
-# GAM analysis of local EONR
-
-```{r}
-gam_results <-
-  list.files(
-    results_dir,
-    full.names = TRUE
-  ) %>%
-  .[str_detect(., "gam")] %>%
-  purrr::map(readRDS) %>%
-  rbindlist(fill = TRUE)
-
-sum_results_gam <-
-  gam_results %>%
-  #--- average opt_N by fold ---#
-  # opt_N_gam is the same for all the observations
-  # within a fold
-  .[, .(opt_N_gam = mean(opt_N_gam), opt_N = mean(opt_N)), by = .(sim, split_id)] %>%
-  .[, opt_N_dif := opt_N - opt_N_gam] %>%
-  .[, rmse_local_eonr := sqrt(mean(opt_N_dif^2)), by = sim]
-```
-
 # Model selection simulation results
 
-
 ```{r}
-
 comp_results <-
   #--- specify the combination of num_folds and num_repeats ---#
   dplyr::tribble(
     ~num_folds, ~num_repeats,
-    7, 10,
+    5, 1,
     7, 1,
-    5, 1
+    10, 1,
+    5, 5,
+    7, 5,
+    10, 5,
+    5, 10,
+    7, 10,
+    10, 10
   ) %>%
   rowwise() %>%
   mutate(comp_summary = list(
@@ -141,9 +129,13 @@ comp_results <-
   mutate(selection_perf = list(
     rbind(selection_perf_rank_LE, selection_perf_rank_Y) %>%
       dcast(eonr_rank_true ~ select_method, value.var = "N")
+  )) %>%
+  mutate(loss_data = list(
+    find_loss_from_selection(comp_summary)
   ))
 
-comp_results$selection_perf
+saveRDS(comp_results, here::here("Shared/Results/comp_results.rds"))
 ```
+
 
 
