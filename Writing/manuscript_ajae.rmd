@@ -381,7 +381,7 @@ To evaluate the performance of local EONR model selection in estimating EONRs, f
 trained on the entire dataset
 
 
-In a manner similar to evaluating the performance of local EONR model selection, we also assess the performance of yield-based model selection in estimating EONRs. This evaluation involves comparing the ranking of models based on the yield selection method with the ranking of models trained on the entire dataset. Through this comparison, we can ascertain how often the yield-based model selection correctly identifies the appropriate model. Furthermore, we compare the performance of local EONR model selection to that of yield-based model selection in estimating EONRs.
+In a manner similar to evaluating the performance of local EONR model selection, we also assess the performance of yield-based model selection in estimating EONRs. This evaluation involves comparing the ranking of models based on the yield selection method with the ranking of models trained on the entire dataset. Through this comparison, we can ascertain how often the yield-based model selection correctly identifies the appropriate model. Furthermore, we compare the performance of local EONR model selection to that of yield-based model selection in estimating EONR.
 
 
 
