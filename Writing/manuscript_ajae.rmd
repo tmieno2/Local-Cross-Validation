@@ -384,6 +384,21 @@ trained on the entire dataset
 In a manner similar to evaluating the performance of local EONR model selection, we also assess the performance of yield-based model selection in estimating EONRs. This evaluation involves comparing the ranking of models based on the yield selection method with the ranking of models trained on the entire dataset. Through this comparison, we can ascertain how often the yield-based model selection correctly identifies the appropriate model. Furthermore, we compare the performance of local EONR model selection to that of yield-based model selection in estimating EONR.
 
 
+Outline of the results 
+
+1.	Performance Ranking of Candidate ML Models
+1.1.	Ranking of Candidate ML Models Trained on the entire dataset
+1.2.	Profit deficit 
+2.	candidate ML models ranked based on their performance in local EONR prediction
+2.1.	Gam estimated local EONR against true EONR 
+2.2.	Candidate ML models Ranked based on RMSE against GAM-estimated local EONR
+3.	Candidate ML Models ranked by Yield RMSE
+4.	Comparison between Yield-Based Model Selection and Local EONR Model Selection
+4.1.	Comparison of Local EONR Model Selection and Entire Dataset Model Ranking
+4.2.	Comparison of Yield-Based Model Selection and Entire Dataset Model Ranking 
+       
+
+
 
 
 
