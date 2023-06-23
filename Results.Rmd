@@ -1,0 +1,262 @@
+---
+title: "Results"
+author: "Mona Mousavi"
+output: html_document
+---
+
+```{r}
+raw_data <- readRDS("/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Validation-EONR-OFE/Shared/Data/raw_sim_data.rds")
+```
+
+
+```{r}
+all_reg_data <-
+  raw_data$reg_data[[1]] %>%
+  unnest(data) %>%
+  data.table() %>%
+  .[, .(sim, aunit_id, b0, b1, b2, Nk)]
+```
+
+
+# Whole-field analysis
+
+## Combine the results and calcualte profit deficit
+
+
+```{r}
+results_whole <-
+  list.files(
+    "/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Validation-EONR-OFE/Shared/Results/WholeField",
+    full.names = TRUE
+  ) %>%
+  purrr::map(readRDS) %>%
+  rbindlist() %>%
+  all_reg_data[., on = c("aunit_id", "sim")] %>%
+  .[, yield_opt := gen_yield_QP(b0, b1, b2, Nk, opt_N)] %>%
+  .[, yield_opt_hat := gen_yield_QP(b0, b1, b2, Nk, opt_N_hat)] %>%
+  .[, pi_opt := pCorn * yield_opt - pN * opt_N] %>%
+  .[, pi_opt_hat := pCorn * yield_opt_hat - pN * opt_N_hat] %>%
+  .[, pi_deficit := pi_opt_hat - pi_opt] %>%
+  .[order(sim), ]
+```
+
+## Summarize the results by sim and method
+
+
+Find averate RMSE of EONR and $\pi_{deficit}$ and rank methods by sim based on RMSE of EONR.
+```{r}
+sum_results_whole <-
+  results_whole %>%
+  .[, N_dif := opt_N_hat - opt_N] %>%
+  .[, .(
+    rmse_eonr_true = sqrt(mean(N_dif^2)),
+    pi_deficit = mean(pi_deficit)
+  ), by = .(sim, method)] %>%
+  #--- ranking of rmse eonr ---#
+  .[order(sim, rmse_eonr_true), ] %>%
+  .[, eonr_rank_true := seq(.N), by = sim] %>%
+  .[, eonr_selected_true := ifelse(eonr_rank_true == 1, 1, 0)]
+```
+
+
+
+# Ranking of Candidate ML Models Trained on the entire dataset visualization
+
+```{r}
+(
+  g_true_rank_rmse_eonr <-
+    sum_results_whole[, .(num_selected = sum(eonr_selected_true)), by = method] %>%
+    ggplot(.) +
+    geom_bar(aes(y = num_selected, x = method), stat = "identity")
+)
+```
+
+```{r}
+deficit <- 
+sum_results_whole %>% 
+  .[order(sim, pi_deficit), ] %>%
+  .[, deficit_rank := seq(.N), by = sim] %>%
+  .[, deficit_selected := ifelse(deficit_rank == 5, 1, 0)]
+
+```
+# prifit deficit visualization
+
+```{r}
+(
+  deficit_visualization <-
+    deficit[, .(num_selected = sum(deficit_selected)), by = method] %>%
+    ggplot(.) +
+    geom_bar(aes(y = num_selected, x = method), stat = "identity")
+)
+
+```
+
+```{r}
+results_dir <- paste0("/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Validation-EONR-OFE/Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds)
+num_repeats=5
+num_folds=5
+
+gam_results <-
+  list.files(
+    results_dir,
+    full.names = TRUE
+  ) %>%
+  .[str_detect(., "gam")] %>%
+  purrr::map(readRDS) %>%
+  rbindlist(fill = TRUE)
+
+sum_results_gam <-
+  gam_results %>%
+  #--- average opt_N by fold ---#
+  # opt_N_gam is the same for all the observations
+  # within a fold
+  .[, .(opt_N_gam = mean(opt_N_gam), opt_N = mean(opt_N)), by = .(sim, split_id)] %>%
+  .[, opt_N_dif := opt_N - opt_N_gam] %>%
+  .[, rmse_local_eonr := sqrt(mean(opt_N_dif^2)), by = sim]
+
+```
+
+# gam and true visualization 
+
+```{r}
+(
+  gam_true_visualization <- ggplot(sum_results_gam, aes(x= opt_N, y= opt_N_gam))+
+  geom_point(colour= I("gray"))+
+  geom_abline(slope = 1, intercept = 0) +
+  xlim(50 , 300) +
+  ylim(50 , 300)
+)
+```
+
+# Yield based selection
+
+```{r}
+# main results
+main_results <-
+  list.files(
+    results_dir,
+    full.names = TRUE
+  ) %>%
+  .[!str_detect(., "train_test|gam")] %>%
+  purrr::map(readRDS) %>%
+  rbindlist(fill = TRUE)
+
+# main sum results
+main_sum_results <-
+  main_results %>%
+  .[, N_dif := opt_N_hat - opt_N] %>%
+  .[, yield_dif := yield_hat - yield] %>%
+  .[, .(
+    #--- rmse by fold ---#
+    rmse_eonr_true = sqrt(mean(N_dif^2)),
+    rmse_yield = sqrt(mean(yield_dif^2)),
+    #--- average estimated EONR ---#
+    opt_N_hat = mean(opt_N_hat)
+  ),
+  by = .(sim, method, split_id)
+  ] %>%
+  .[order(sim), ]
+
+# combined results 
+combined_results <-
+  sum_results_gam[main_sum_results, on = c("sim", "split_id")] %>%
+  .[, opt_N_dif_select := opt_N_hat - opt_N_gam] %>%
+  .[, .(
+    rmse_eonr_gam = sqrt(mean(opt_N_dif_select^2)),
+    rmse_yield = mean(rmse_yield)
+  ), by = .(sim, method)]
+
+# selection rank
+selection_ranks <-
+  combined_results %>%
+  .[order(sim, rmse_eonr_gam), ] %>%
+  #--- within-sim rank based on local EONR prediction ---#
+  .[, eonr_rank := seq(.N), by = sim] %>%
+  .[, eonr_selected_gam := ifelse(eonr_rank == 1, 1, 0)] %>%
+  .[order(sim, rmse_yield), ] %>%
+  #--- within-sim rank based on yield prediction ---#
+  .[, yield_rank := seq(.N), by = sim] %>%
+  .[, yield_selected := ifelse(yield_rank == 1, 1, 0)]
+```
+
+# yield based selection visualization
+
+```{r}
+(
+yield_based_visualization <- selection_ranks[, .(num_selected=sum(yield_selected)), by= method] %>%
+  ggplot(.) +
+  geom_bar(aes(y=num_selected, x= method), stat = "identity")
+)
+```
+
+# Local EONR selection visualization
+
+```{r}
+(
+Local_EONR_based_visualization <- selection_ranks[, .(num_selected=sum(eonr_selected_gam)), by= method] %>%
+  ggplot(.) +
+  geom_bar(aes(y=num_selected, x= method), stat = "identity")
+)
+```
+# yield-based and Local EONR vs True EONR 
+
+```{r}
+library(tidyr)
+
+comp_results_long <- comp_results[[6]][[4]] %>%
+  pivot_longer(cols = c(`Local EONR prediction`, `Yield prediction`), names_to = "Prediction", values_to = "Value")
+```
+
+```{r}
+(
+graph <- ggplot(comp_results_long, aes(x = eonr_rank_true, y= Value, fill= Prediction)) +
+  geom_bar(stat = "identity", position = "dodge", alpha= 0.5, width = 0.4)+
+  labs(x = "eonr_rank_true", y = "Value", fill="5_fold_5_repeats") + 
+  scale_fill_manual(values = c("Local EONR prediction" = "blue" , "Yield prediction" = "red")) +
+  theme_minimal()
+)
+```
+
+# The impact of the number of folds and repeats 
+
+```{r}
+generate_graph <- function(data, plot_title) {
+  comp_results_long <- data %>%
+    pivot_longer(cols = c(`Local EONR prediction`, `Yield prediction`), names_to = "Prediction", values_to = "Value")
+  
+  graph <- ggplot(comp_results_long, aes(x = eonr_rank_true, y = Value, fill = Prediction)) +
+    geom_bar(stat = "identity", position = "dodge", alpha = 0.5, width = 0.4) +
+    labs(x = "eonr_rank_true", y = "num_selected", fill = plot_title) +
+    scale_fill_manual(values = c("Local EONR prediction" = "blue", "Yield prediction" = "red")) +
+    theme_minimal() 
+
+  return(graph)
+}
+
+library(gridExtra)
+
+# Generate the graphs
+graph1 <- generate_graph(comp_results[[6]][[1]], "5_folds_1_repeats")
+graph2 <- generate_graph(comp_results[[6]][[2]], "7_folds_1_repeats")
+graph3 <- generate_graph(comp_results[[6]][[3]], "10_folds_1_repeats")
+graph4 <- generate_graph(comp_results[[6]][[4]], "5_folds_5_repeats")
+graph5 <- generate_graph(comp_results[[6]][[5]], "7_folds_5_repeats")
+graph6 <- generate_graph(comp_results[[6]][[6]], "10_folds_5_repeats")
+graph7 <- generate_graph(comp_results[[6]][[7]], "5_folds_10_repeats")
+graph8 <- generate_graph(comp_results[[6]][[8]], "7_folds_10_repeats")
+graph9 <- generate_graph(comp_results[[6]][[9]], "10_folds_10_repeats")
+```
+
+# Different folds and repeats visualization 
+
+```{r}
+# Arrange the plots in a grid
+grid.arrange(graph1, graph2, graph3, graph4, graph5, graph6)
+grid.arrange(graph7, graph8, graph9)
+
+```
+
+
+
+
+
