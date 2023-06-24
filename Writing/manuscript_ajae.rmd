@@ -177,39 +177,16 @@ The dataset consisting of OFPE data from 500 fields was utilized to estimate the
 
 To estimate the true site-specific EONRs for each field, our research employed two distinct approaches for training the machine learning (ML) models: the S-learner approach and the R-learner approach.
 
-In the following sections, a concise explanation of both the S-learner and R-learner methods will be provided. These methods are designed to accurately estimate heterogeneous treatment effects.
+
 
  
-3.1. Site-Specific EONRs Using S-Learner Approach with candidate ML model 
-
-Estimating heterogeneous treatment effects involves examining how the impact of a treatment varies based on observed attributes of the subjects, which is also referred to as conditional average treatment effect (CATE).
-The general form of the model of interest can be represented as follows:
 
 
-$$
-\begin{gathered}
-Y_i=\theta\left(X_i\right) T_i+g\left(X_i\right)+\varepsilon_i \\
-T_i=f\left(X_i\right)+\eta_i
-\end{gathered}
-$$
 
-The dependent variable, treatment variable, and features are denoted as Y, T, and X, respectively. $\varepsilon_i$ and $\eta_i$ are the error terms.
-A set of assumptions accompanies the model, including $E[\varepsilon|T,\ X]=0$, $E[\eta|X]=0$
-and $E\left[\eta.\varepsilon\middle| T,X\right]=0$.
+
 The S-learner is a method used in machine learning for estimating treatment effects in causal inference. It is part of the single model approach, which aims to estimate the average treatment effect (ATE) by fitting a single model to the entire dataset, considering both treated and control observations.
 In the S-learner approach, a machine learning model is trained to predict the outcome variable (response) based on both the treatment assignment and other covariates. The treatment effect is then estimated by comparing the predicted outcomes for the treated and control groups.
-The S-learner is called so because it assumes that the treatment effect is the same for all individuals, regardless of their covariates. It does not model any interaction between the treatment and covariates. This approach simplifies the estimation process by considering a single model for treatment effect estimation.
-By estimating the treatment effect using the S-learner, it is possible to gain insights into the causal impact of a specific treatment or intervention in observational studies.
-The S-learner approach estimates CATE by conducting a regression of the dependent variable Y on the treatment variable T and the covariates X, aiming to estimate $E[Y|T,\ X]$. In this approach, T is treated as a covariate alongside other variables X, without receiving any special treatment.
-Under the imposed assumptions, 
 
-$$
-E[Y \mid X]=\theta(X) \cdot E[T \mid X]+g(X)
-$$
-Then,
-$$
-Y_i-E[Y \mid X]=\theta\left(X_i\right)\left(T_i-f\left(X_i\right)\right)+\varepsilon_i
-$$
 
 A consistent approach was adopted for our candidate ML models namely Random Forest (RF), Boosted Regression Forest (BRF), linear, and Spatial Error (SE) models. This involved training the ML models using the complete dataset. The subsequent step entailed estimating the associated yield response function. Following that, profits $({\hat{\pi}}_{im})$ were calculated for each model, and the nitrogen level that maximized profit was determined for each specific site within the test dataset, which, in this case, encompassed the entire dataset.
 
@@ -222,23 +199,15 @@ $$
 where p and w represent the prices of corn and N respectively. This expression represents the profit maximization problem, where the goal is to find the optimal nitrogen rate ${\hat{N}}_i^{opt}$ that maximizes the profit, taking into account the estimated yield response function, the price of corn, and the cost of nitrogen application.
 By following these conceptual steps, we were able to obtain accurate estimations of the true site-specific EONRs. This methodology provided a standardized approach across RF, BRF, linear, and SE models, enabling comparisons among the candidate models.
 
-3.2. Site-Specific EONRs Using R-Learner Approach with Smooth CF Model
 
-The R-learner is a machine learning technique used in causal inference to estimate treatment effects. It is a part of the two-model approach, which aims to estimate the average treatment effect by building separate models for the treated and control groups.
+The R-learner is a machine learning technique used in causal inference to estimate treatment effects. 
 In the context of the R-learner, two distinct machine learning models are trained. One model is trained to predict potential outcomes for the treated group, while another model is trained to predict potential outcomes for the control group. These potential outcomes represent the hypothetical outcomes that would have been observed under different treatment conditions. By comparing the predicted potential outcomes between the two models, the treatment effect can be estimated.
-R-learner minimizes the following objective function to estimate the treatment effect in a robust and unbiased manner,
-
-$$
-\operatorname{Min}_{\theta(X)} \sum_{i=1}^N\left(\left[Y_i-E[Y \mid X]\right]-\left[\theta\left(X_i\right)\left(T_i-f\left(X_i\right)\right)\right]\right)^2
-$$
-
-In this objective function, $Y_i$ represents the observed outcome, $E[Y|X]$ is the expected outcome given covariates X and $\theta(X)$ is the treatment effect estimate.
 
 The Multi-Arm Causal Forest in R was employed to train the entire dataset and predict treatment effects in our research. In order to accomplish this, nitrogen was treated as a factor variable. Within a given field, nitrogen application was considered at $\alpha$ levels denoted as $(N_\alpha\ ,\ \alpha\ \in{1,\ 2,\ 3,...,l})$. The objective of our analysis was to estimate the changes in yield $(Y)$ resulting from changes in nitrogen rates, specifically from the lowest level $(N_1)$ to the remaining $l-1$ levels ${(N}_\alpha)$, using validation data (the entire dataset in this context).
 To derive these estimates, we obtained $l-1$ distinct values representing the changes in yield caused by varying the nitrogen rate for each observation $\left(\Delta Y_{N_1 \rightarrow N_\alpha}\right)$. These changes in yield were then treated as the dependent variable, while the nitrogen levels served as the explanatory variables. Subsequently, a gam model was trained for each observation, forming the foundation for implementing a smooth causal forest.
 The site-specific optimal nitrogen rates were determined by solving the same optimization problem as in the S-learner approach, aiming to identify the nitrogen level that maximized the desired objective.
 
-Each ML model in our study has been trained on the complete dataset, but there are variations in profit outcomes when calculating local EONRs using each model. To determine the profit deficits associated with each model, we establish reference points based on the actual optimal yield and actual optimal nitrogen levels. These reference values are derived through simulation and serve as benchmarks for comparison.
+There are variations in profit outcomes when calculating local EONRs using candidate ML models. To determine the profit deficits associated with each model, we establish reference points based on the actual optimal yield and actual optimal nitrogen levels. These reference values are derived through simulation and serve as benchmarks for comparison.
 By contrasting the model-predicted profits with the reference points, we can quantitatively assess the disparities and evaluate the accuracy of the ML models in estimating site-specific local EONRs. This analysis enables us to identify the models that exhibit higher or lower profit deficits, providing insights into their performance and reliability in optimizing yield and nitrogen levels. The profit deficit $(∆π)$ can be calculated as follows:
 
 $$
@@ -258,14 +227,14 @@ $$
 3.3. Ranking the ML models by their RMSE between estimated EONRs and true EONRs
 
 In order to determine the most accurate ML model for estimating site-specific EONRs, we compare the site-specific EONRs estimated by candidate ML models trained on the entire dataset with the actual EONRs. This comparison is crucial as it allows us to identify the model that performs the best in estimating site-specific EONRs. 
-Furthermore, this comparison serves as a critical reference point during our model selection process on the folds. By evaluating the ML models on the same dataset used for training, we ensure consistency and reliability in assessing their effectiveness in estimating site-specific EONRs. The model selected based on this evaluation is considered the "true best model" as it demonstrates its proficiency in estimating site-specific EONRs on the dataset used for both training and validation.
+Furthermore, this comparison serves as a critical reference point during our model selection process on the folds. The model selected based on this evaluation is considered the "true best model" as it demonstrates its proficiency in estimating site-specific EONRs on the dataset used for both training and validation.
 The evaluation of model performance is carried out using the Root Mean Square Error (RMSE) as a metric. The RMSE of the true variable-rate optimal nitrogen for each model (m) within each field is computed using the formula:
 $$
 R M S E \text { of true EONR }=\sqrt[2]{\frac{1}{1440} \sum_{i=1}^{1440}\left(\widehat{N}_{\text {im }}^{\text {opt }}-N_i^{\text {opt }}\right)^2}
 $$
 In this equation, ${\hat{N}}_{im}^{opt}$ represents the estimated site-specific optimal nitrogen level obtained from the machine learning model (m), while $N_i^{opt}$ represents the actual optimal nitrogen level. By calculating the squared differences between the estimated and actual optimal nitrogen levels for each observation, summing them up, and taking the square root of the average, the RMSE of the true site-specific EONR is derived.
 This evaluation metric provides a quantitative measure of the deviation between the estimated EONR and the actual EONR. It serves as an essential indicator of the accuracy and reliability of the machine learning models in predicting site-specific local optimal nitrogen rates. The lower the RMSE value, the closer the estimated EONRs are to the actual values, indicating better EONR predictive performance of the model.
-After calculating the root mean square error (RMSE) of the true site-specific EONRs for each ML model across the entire set of 500 fields, the next step involves ranking these models based on these evaluation metrics. By comparing the profit deficits and RMSE of the estimated site-specific EONRs with the actual EONRs, we can identify the model that exhibits superior performance in accurately predicting site-specific EONRs. A lower RMSE signifies a closer match between the model-predicted site-specific EONRs and the actual EONRs, indicating a higher level of precision in capturing the field-specific nitrogen requirements. This ranking procedure enables us to pinpoint the ML model that excels in accurately predicting the site-specific EONRs with the least amount of deviation. 
+After calculating the root mean square error (RMSE) of the true site-specific EONRs for candidate ML model across the entire set of 500 fields, the next step involves ranking these models based on these evaluation metrics. By comparing the profit deficits and RMSE of the estimated site-specific EONRs with the actual EONRs, we can identify the model that exhibits superior performance in accurately predicting site-specific EONRs. A lower RMSE signifies a closer match between the model-predicted site-specific EONRs and the actual EONRs. 
 
 
 
@@ -388,7 +357,14 @@ Outline of the results
 
 1.	Performance Ranking of Candidate ML Models
 1.1.	Ranking of Candidate ML Models Trained on the entire dataset
+
+
+
+
+
 1.2.	Profit deficit 
+
+
 2.	candidate ML models ranked based on their performance in local EONR prediction
 2.1.	Gam estimated local EONR against true EONR 
 2.2.	Candidate ML models Ranked based on RMSE against GAM-estimated local EONR
