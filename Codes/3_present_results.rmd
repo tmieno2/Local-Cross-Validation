@@ -1,0 +1,97 @@
+
+---
+title: "Make figures and tables"
+date: "2023-02-07"
+output: html_document
+---
+
+# Preparation
+
+## Packages and functions 
+```{r}
+library(tidyverse)
+library(pasim)
+list.files(here::here("GitControlled/Codes/functions/"), full.names = TRUE) %>%
+  lapply(., source)
+```
+```{r}
+comp_results <-
+  readRDS(here::here("Shared/Results/comp_results.rds")) %>%
+  data.table()
+```
+
+# The actual performance ranking of the model selected by our LEONR-based approach
+
+```{r}
+perf_ranking_e <-
+  comp_results[, .(num_folds, num_repeats, selection_perf_rank_LE)] %>%
+  unnest(selection_perf_rank_LE) %>%
+  data.table()
+
+ggplot(perf_ranking_e) +
+  geom_bar(aes(y = N, x = eonr_rank_true), stat = "identity") +
+  facet_grid(num_folds ~ num_repeats)
+```
+
+# The actual performance ranking of the model selected by yield-based selection approach 
+
+```{r}
+perf_ranking_y <-
+  comp_results[, .(num_folds, num_repeats, selection_perf_rank_Y)] %>%
+  unnest(selection_perf_rank_Y) %>%
+  data.table()
+
+ggplot(perf_ranking_y) +
+  geom_bar(aes(y = N, x = eonr_rank_true), stat = "identity") +
+  facet_grid(num_folds ~ num_repeats)
+```
+
+# Performance loss  
+
+```{r}
+perf_loss_data <-
+  comp_results[, .(num_folds, num_repeats, loss_data)] %>%
+  unnest(loss_data) %>%
+  data.table()
+```
+
+## RMSE of EONR (selected versus true best) 
+
+How much difference in rmse of site-speicific EONR prediction between the model selected based on LEONR or Yield and the model that is truly the best in predicting site-speicific EONR.
+
+```{r}
+perf_loss_data_eonr <-
+  perf_loss_data[, .(sim, num_folds, num_repeats, e_rmse_eonr_loss, y_rmse_eonr_loss)] %>%
+  melt(id.var = c("sim", "num_folds", "num_repeats")) %>%
+  .[, selection := case_when(
+    variable == "e_rmse_eonr_loss" ~ "LEONR-based Selection",
+    variable == "y_rmse_eonr_loss" ~ "Yield-based Selection"
+  )]
+
+(
+  ggplot(perf_loss_data_eonr[num_folds == 7 & num_repeats == 10, ]) +
+    geom_histogram(aes(x = value)) +
+    facet_grid(selection ~ .) +
+    theme_bw()
+)
+```
+
+##
+
+```{r}
+perf_loss_data_pi <-
+  perf_loss_data[, .(sim, num_folds, num_repeats, e_pi_loss, y_pi_loss)] %>%
+  melt(id.var = c("sim", "num_folds", "num_repeats")) %>%
+  .[, selection := case_when(
+    variable == "e_pi_loss" ~ "LEONR-based Selection",
+    variable == "y_pi_loss" ~ "Yield-based Selection"
+  )]
+
+(
+  ggplot(perf_loss_data_pi[num_folds == 7 & num_repeats == 10, ]) +
+    geom_histogram(aes(x = value)) +
+    facet_grid(selection ~ .) +
+    theme_bw()
+)
+```
+

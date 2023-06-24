@@ -5,3 +5,5 @@ Codes_sample/*
 *.DS_Store
 .Rhistory
 *.html
+*.docx
+*.pdf
