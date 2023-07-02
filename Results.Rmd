@@ -1,8 +1,21 @@
 ---
 title: "Results"
 author: "Mona Mousavi"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
+
+## Packages and functions 
+```{r}
+library(dplyr)
+library(data.table)
+library(tidyverse)
+library(pasim)
+```
+
+
+
 
 ```{r}
 raw_data <- readRDS("/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Validation-EONR-OFE/Shared/Data/raw_sim_data.rds")
@@ -70,6 +83,25 @@ sum_results_whole <-
     geom_bar(aes(y = num_selected, x = method), stat = "identity")
 )
 ```
+# percent (true EONR)
+
+```{r}
+percent <-
+  sum_results_whole[, .(num_selected = sum(eonr_selected_true)), by = method]
+
+```
+# Visualization of distribution of RMSE of estimated true EONR 
+
+```{r}
+# Filter the data for the five methods
+filtered_data <- sum_results_whole[sum_results_whole$method %in% c("S-learner (SE)", "R-learner (CF)", "S-learner (BRF)", "S-learner (Linear)", "S-learner (RF)"), ]
+
+# Create a plot with the distributions of the five methods
+ggplot(filtered_data, aes(x = rmse_eonr_true, fill = method)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "rmse_eonr_true", y = "Density", title = "Distribution of Methods based on RMSE") +
+  scale_fill_discrete(name = "Method")
+```
 
 ```{r}
 deficit <- 
@@ -89,6 +121,36 @@ sum_results_whole %>%
     geom_bar(aes(y = num_selected, x = method), stat = "identity")
 )
 
+```
+# percent (profit loss)
+
+```{r}
+percent_profit_loss <-
+  deficit[, .(num_selected = sum(deficit_selected)), by = method]
+
+```
+
+# profit loss distribution (visualization) 
+
+```{r}
+# Filter the data for the five methods
+filtered_data_profit_loss <- sum_results_whole[sum_results_whole$method %in% c("S-learner (SE)", "R-learner (CF)", "S-learner (BRF)", "S-learner (Linear)", "S-learner (RF)"), ]
+
+# Create a plot with the distributions of the five methods
+ggplot(filtered_data_profit_loss, aes(x = pi_deficit, fill = method)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "profit_Loss", y = "Density", title = "Distribution of Methods based on profit loss") +
+  scale_fill_discrete(name = "Method")
+
+```
+# mean RMSE by method over all simulations
+
+```{r}
+# Summarize the data by method and calculate the mean of RMSE of true EONR
+summary_table <- sum_results_whole %>%
+  group_by(method) %>%
+  summarise(Mean_RMSE = mean(rmse_eonr_true),
+            Mean_Profit = mean(pi_deficit))
 ```
 
 ```{r}
@@ -188,7 +250,29 @@ yield_based_visualization <- selection_ranks[, .(num_selected=sum(yield_selected
   geom_bar(aes(y=num_selected, x= method), stat = "identity")
 )
 ```
+# distribution of RMSE of yield 
+```{r}
+# Filter the data for the five methods
+filtered_data_rmse_of_yield <- selection_ranks[selection_ranks$method %in% c("S-learner (SE)", "R-learner (CF)", "S-learner (BRF)", "S-learner (Linear)", "S-learner (RF)"), ]
 
+# Create a plot with the distributions of the five methods
+ggplot(filtered_data_rmse_of_yield, aes(x = rmse_yield, fill = method)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "rmse_yield", y = "Density", title = "Distribution of Methods based on RMSE of yield") +
+  scale_fill_discrete(name = "Method")
+
+```
+# check percent of yield selection
+```{r}
+percent_yield <- selection_ranks[, .(num_selected=sum(yield_selected)), by= method]
+```
+
+# averaged rmse of yield by method 
+```{r}
+mean_rmse_of_yield <- selection_ranks %>%
+  group_by(method) %>%
+  summarize(avg_rmse_of_yield = mean(rmse_yield))
+```
 # Local EONR selection visualization
 
 ```{r}
@@ -198,6 +282,58 @@ Local_EONR_based_visualization <- selection_ranks[, .(num_selected=sum(eonr_sele
   geom_bar(aes(y=num_selected, x= method), stat = "identity")
 )
 ```
+```{r}
+# Filter the data for the five methods
+filtered_data_local_EONR <- selection_ranks[selection_ranks$method %in% c("S-learner (SE)", "R-learner (CF)", "S-learner (BRF)", "S-learner (Linear)", "S-learner (RF)"), ]
+
+# Create a plot with the distributions of the five methods
+ggplot(filtered_data_local_EONR, aes(x = rmse_eonr_gam, fill = method)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "rmse_eonr_gam", y = "Density", title = "Distribution of Methods based on RMSE of local EONR: 5 fold, 5 repeats") +
+  scale_fill_discrete(name = "Method")
+
+
+```
+# check percent of local eonr 
+```{r}
+percent_local_eonr <- selection_ranks[, .(num_selected=sum(eonr_selected_gam)), by= method]
+```
+
+
+# Profit loss based on our model selection
+
+```{r}
+test <-
+  list.files(
+    "/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Validation-EONR-OFE/Shared/Results/sim_results_num_repeats_5_num_folds_5",
+    full.names = TRUE
+  ) %>%
+  purrr::map(readRDS) %>%
+  rbindlist(fill = TRUE) %>%
+  all_reg_data[., on = c("aunit_id", "sim")] %>%
+  .[, yield_opt := gen_yield_QP(b0, b1, b2, Nk, opt_N)] %>%
+  .[, yield_opt_hat := gen_yield_QP(b0, b1, b2, Nk, opt_N_hat)] %>%
+  .[, pi_opt := pCorn * yield_opt - pN * opt_N] %>%
+  .[, pi_opt_hat := pCorn * yield_opt_hat - pN * opt_N_hat] %>%
+  .[, pi_deficit := pi_opt_hat - pi_opt] %>%
+  .[order(sim), ]
+```
+
+
+```{r}
+
+summary_data_pi_deficit <- test %>%
+  group_by(method) %>%
+  summarize(avg_pi_deficit = mean(pi_deficit))
+
+```
+# Averaged RMSE of Local EONR by method
+```{r}
+mean_rmse_of_local_EONRs <- selection_ranks %>%
+  group_by(method) %>%
+  summarize(avg_local_EONRs = mean(rmse_eonr_gam))
+```
+
 # yield-based and Local EONR vs True EONR 
 
 ```{r}
@@ -257,6 +393,151 @@ grid.arrange(graph7, graph8, graph9)
 ```
 
 
+#local EONR vs true
 
+```{r}
+generate_graph <- function(data, plot_title) {
+  comp_results_long <- data %>%
+    pivot_longer(cols = c(`Local EONR prediction`, `Yield prediction`), names_to = "Prediction", values_to = "Value")%>%
+    filter(Prediction != "Yield prediction") 
+  
+  graph <- ggplot(comp_results_long, aes(x = eonr_rank_true, y = Value, fill = Prediction)) +
+    geom_bar(stat = "identity", position = "dodge", alpha = 0.5, width = 0.4) +
+    labs(x = "eonr_rank_true", y = "num_selected", fill = plot_title) +
+    scale_fill_manual(values = c("Local EONR prediction" = "blue")) +
+    theme_minimal() 
+  return(graph)
+}
+
+library(gridExtra)
+
+# Generate the graphs
+graph1 <- generate_graph(comp_results[[6]][[1]], "5_folds_1_repeats")
+graph2 <- generate_graph(comp_results[[6]][[4]], "5_folds_5_repeats")
+graph3 <- generate_graph(comp_results[[6]][[5]], "7_folds_5_repeats")
+graph4 <- generate_graph(comp_results[[6]][[6]], "10_folds_5_repeats")
+graph5 <- generate_graph(comp_results[[6]][[7]], "5_folds_10_repeats")
+graph6 <- generate_graph(comp_results[[6]][[9]], "10_folds_10_repeats")
+```
+
+# Different folds and repeats visualization (local eonr vs true eonr)
+
+```{r}
+# Arrange the plots in a grid
+grid.arrange(graph1, graph2, graph3, graph4, graph5, graph6)
+
+```
+
+```{r}
+# Group the data by "sim" and "method" columns, and calculate the average of "opt_N_hat" and "opt_N"
+averaged_df <- main_results %>%
+  group_by(sim, method) %>%
+  summarize(avg_opt_N_hat = mean(opt_N_hat),
+            avg_opt_N = mean(opt_N))
+```
+
+```{r}
+# Create separate graphs by method using facet_wrap
+ggplot(averaged_df, aes(x = avg_opt_N, y = avg_opt_N_hat)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
+  scale_x_continuous(limits = c(100, 180)) +
+  scale_y_continuous(limits = c(100, 180)) +
+  labs(x = "avg_opt_N", y = "avg_opt_N_hat") +
+  ggtitle("Average opt_N vs. opt_N_hat (10 folds 10 repeats)") +
+  facet_wrap(~ method, ncol = 2)
+
+```
+# Visualize Local EONR vs gam EONR 
+
+```{r}
+# combined results other version 
+combined_results_other_v <-
+  sum_results_gam[main_sum_results, on = c("sim", "split_id")] %>%
+  .[, opt_N_dif_select := opt_N_hat - opt_N_gam]
+
+
+# Group the data by "sim" and "method" columns, and calculate the average of "opt_N_hat" and "opt_N"
+averaged_df <- combined_results_other_v %>%
+  group_by(sim, method) %>%
+  summarize(avg_opt_N_hat = mean(opt_N_hat),
+            avg_opt_N_gam = mean(opt_N_gam))
+
+
+
+# Create separate graphs by method using facet_wrap
+ggplot(averaged_df, aes(x = avg_opt_N_gam, y = avg_opt_N_hat)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
+  scale_x_continuous(limits = c(100, 180)) +
+  scale_y_continuous(limits = c(100, 180)) +
+  labs(x = "avg GAM EONR", y = "avg Local EONR") +
+  ggtitle("Average GAM EONR vs. Average Local EONR (10 folds 10 repeats)") +
+  facet_wrap(~ method, ncol = 2)
+```
+
+
+#Yield vs true
+
+
+```{r}
+generate_graph <- function(data, plot_title) {
+  comp_results_long <- data %>%
+    pivot_longer(cols = c(`Local EONR prediction`, `Yield prediction`), names_to = "Prediction", values_to = "Value")%>%
+    filter(Prediction != "Local EONR prediction") 
+  
+  graph <- ggplot(comp_results_long, aes(x = eonr_rank_true, y = Value, fill = Prediction)) +
+    geom_bar(stat = "identity", position = "dodge", alpha = 0.5, width = 0.4) +
+    labs(x = "eonr_rank_true", y = "num_selected", fill = plot_title) +
+    scale_fill_manual(values = c("Yield prediction" = "blue")) +
+    theme_minimal() 
+  return(graph)
+}
+
+library(gridExtra)
+
+# Generate the graphs
+graph1 <- generate_graph(comp_results[[6]][[1]], "5_folds_1_repeats")
+graph2 <- generate_graph(comp_results[[6]][[4]], "5_folds_5_repeats")
+graph3 <- generate_graph(comp_results[[6]][[5]], "7_folds_5_repeats")
+graph4 <- generate_graph(comp_results[[6]][[6]], "10_folds_5_repeats")
+graph5 <- generate_graph(comp_results[[6]][[7]], "5_folds_10_repeats")
+graph6 <- generate_graph(comp_results[[6]][[9]], "10_folds_10_repeats")
+```
+
+# Different folds and repeats visualization (local eonr vs true eonr)
+
+```{r}
+# Arrange the plots in a grid
+grid.arrange(graph1, graph2, graph3, graph4, graph5, graph6)
+
+```
+
+
+
+# RMSE of Yield vs RMSE of True EONR 
+
+```{r}
+# Group the data by "sim" and "method" columns, and calculate the average of "rmse of yield" and "rmse of yield"
+averaged_df <- main_sum_results %>%
+  group_by(sim, method) %>%
+  summarize(avg_rmse_eonr_true = mean(rmse_eonr_true),
+            avg_rmse_yield = mean(rmse_yield))
+
+```
+
+```{r}
+
+# Create separate graphs by method using facet_wrap
+ggplot(averaged_df, aes(x = avg_rmse_yield, y = avg_rmse_eonr_true)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
+  #scale_x_continuous(limits = c(100, 180)) +
+  #scale_y_continuous(limits = c(100, 180)) +
+  labs(x = "RMSE of Yield", y = "RMSE of true EONR") +
+  ggtitle(" RMSE of Yield vs. RMSE of True EONR (10 folds 10 repeats)") +
+  facet_wrap(~ method, ncol = 2)
+
+```
 
 
