@@ -303,24 +303,100 @@ In addition, we calculated the profit loss associated with selecting the best mo
 Outline of the results 
 
 1.	Performance Ranking of Candidate ML Models
-1.1.	Ranking of Candidate ML Models Trained on the entire dataset
+
+1.1. Ranking of candidate ML models based on estimation of site-specific EONRs
+
+![figure_1](/Users/mmousavi2/Dropbox/f1.jpg){width=50%}
+![figure_2](/Users/mmousavi2/Dropbox/f2.jpg){width=60%}
+
+Figure 1 presents the evaluation of candidate ML models in estimating site-specific EONRs through 500 simulations. The figure highlights the frequency of model selection based on their ability to minimize the RMSE compared to the true EONR.
+
+The figure shows that the SE model was selected in 78% of the simulations, indicating its consistent performance in achieving the lowest RMSE when estimating site-specific EONR. The BRF model was chosen in 14% of cases, followed by the linear model at 7.6%. The CF model had a selection rate of 0.4%, while the RF model was not selected at all.
+
+Based on the distribution of the RMSE for estimated site-specific EONRs, it can be observed that the SE model consistently exhibits the lowest RMSE compared to the other methods. 
+
+
 1.2.	Profit deficit 
+![figure_3](/Users/mmousavi2/Dropbox/f3.jpg){width=60%}
+The distribution analysis of profit loss within the simulation demonstrates that the SE model exhibits the lowest profit loss, with a selection frequency of 77.4% across the simulations. The BRF model follows with a selection frequency of 12.6%, while the Linear model is chosen in 9.4% of the simulations. The CF model has the lowest selection frequency at 0.6%. These findings emphasize the better performance of the SE model in minimizing profit loss, followed by the BRF and Linear models, while suggesting potential limitations of the CF model in this regard.
+
+![table_1](/Users/mmousavi2/Dropbox/mean_of_true_rmse_and_profit.jpg){width=50%}
+Table 1 presents the average RMSE and corresponding profit loss associated with each model across all 500 simulations. The SE model exhibits the lowest RMSE and profit loss, followed by the Linear, CF, BRF, and RF models. Based on these findings, it can be concluded that the SE model emerges as the best choice, displaying the lowest RMSE and profit loss.
+
 2.	candidate ML models ranked based on their performance in local EONR prediction
 2.1.	Gam estimated local EONR against true EONR 
+![figure_4](/Users/mmousavi2/Dropbox/f6.jpg){width=60%}
+Figure 4 depicts the correlation between the true EONRs and the gam estimated local EONRs. The analysis considers multiple combinations of folds and repeats. Notably, a robust and consistent association is observed between the GAM-estimated local EONRs and the true EONRs, regardless of the specific number of folds and repeats utilized. This finding suggests that the estimated local EONRs derived from the GAM serve as a reliable proxy for the true EONRs.
+
+
+
 2.2.	Candidate ML models Ranked based on RMSE against GAM-estimated local EONR
+![figure_5](/Users/mmousavi2/Dropbox/f7.jpg){width=50%}
+![figure_6](/Users/mmousavi2/Dropbox/f8.jpg){width=60%}
+Figures 5 and 6 provide an overview of the distribution of RMSE values for Local EONRs when compared to the EONRs estimated by the GAM in the scenario involving 5 folds and 5 repeats.
+
+Among the models, the SE model exhibited the lowest RMSE value when compared to the true EONR in approximately 70.2 percent of the simulations. This indicates that the SE model achieved the highest level of accuracy in estimating the local EONRs. Following the SE model, the linear model performed comparatively well, with around 17 percent of the simulations showing the lowest RMSE value with respect to the true EONR.
+
+The CF model ranked next, as it had the lowest RMSE value for the true EONR in approximately 10.8 percent of the simulations. Lastly, the BRF model displayed the lowest RMSE value for the true EONR in only 2 percent of the simulations, indicating its relatively weaker performance compared to the other models.
+
+
+
+
+![table_2](/Users/mmousavi2/Dropbox/t3.jpg){width=80%}
+Table 2 provides the average RMSE values of Local EONRs estimated by candidate ML models, along with the corresponding average profit loss compared to the true EONRs. The SE model consistently had the lowest RMSE and profit loss, followed by the linear model. The RF model showed the highest profit loss and RMSE in all cases. Additionally, using 5 folds and 10 repeats resulted in the lowest RMSE values for all models.
+
+
+
+
 3.	Candidate ML Models ranked by Yield RMSE
+
+![figure_7](/Users/mmousavi2/Dropbox/f9.jpg){width=60%}
+![figure_8](/Users/mmousavi2/Dropbox/f10.jpg){width=60%}
+
+Figures 7 and 8 present the outcomes of model selection for yield prediction in the scenario involving 5 folds and 5 repeats. According to the results, the BRF model consistently exhibited the lowest RMSE in comparison to the true yield in approximately 99.2 percent of the simulations. Following the BRF model, the linear model had the lowest RMSE in a very small proportion of simulations, with around 0.8 percent of the simulations when compared to the true yield.
+
+These findings indicate that, when considering model selection based on yield prediction, the BRF model outperformed the other models. 
+
+
+![table_3](/Users/mmousavi2/Dropbox/t4.jpg){width=80%}
+
+Table 3 presents the average RMSE values for yield across all simulations, taking into account different combinations of folds and repetitions. As previously mentioned, the BRF model consistently achieved the lowest RMSE for yield. Additionally, considering the number of folds and repetitions, the configuration of 10 folds and 5 repeats yielded the lowest RMSE values for all candidate models, indicating a higher level of accuracy in yield prediction.
+
 4.	Comparison between Yield-Based Model Selection and Local EONR Model Selection
-4.1.	Comparison of Local EONR Model Selection and Entire Dataset Model Ranking
+
+4.1.	Comparison of Local EONR Model Selection and Estimated True EONRs
+
+![figure_9](/Users/mmousavi2/Dropbox/f12.jpg){width=70%}
+
+Figure 9 illustrates the performance of local EONR model selection compared to the true EONRs estimated by candidate ML models. The x-axis represents the true ranking of the ML models in estimating EONRs, while the y-axis represents the frequency of correct model selection by the local EONR criterion, where the correct model is ranked first on the x-axis.
+
+For the scenario involving 5 folds and 1 repeat, the local EONR criterion selected the right model in approximately 57.2 percent of the simulations. In the case of 5 folds and 5 repeats, the correct model was chosen in 58.4 percent of the simulations. With 7 folds and 5 repeats, the local EONR criterion achieved a higher accuracy, selecting the right model in approximately 62.4 percent of the simulations. Increasing the number of folds to 10 while keeping 5 repeats resulted in a further improvement, with the correct model chosen 65.8 percent of the time. Similarly, for the scenario of 5 folds and 10 repeats, the local EONR criterion achieved a success rate of 59.4 percent, and for 10 folds and 10 repeats, it achieved a success rate of 65.2 percent.
+
+These findings demonstrate that increasing the number of folds and repeats generally improved the accuracy of the local EONR model selection, resulting in a higher percentage of correct model choices.
+
+
+![figure_10](/Users/mmousavi2/Dropbox/f16.jpg){width=70%}
+Figure 10 depicts the relationship between the average GAM estimated local EONRs and the average local EONRs estimated by candidate ML models, considering 10 folds and 10 repeats for all simulations. It is evident from the plot that both the RF and BRF models consistently underestimate the gam EONRs.
+
 4.2.	Comparison of Yield-Based Model Selection and Entire Dataset Model Ranking 
        
+![figure_10](/Users/mmousavi2/Dropbox/f13.jpg){width=70%}
+
+Figure 10 presents the performance of model selection based on yield prediction across different combinations of folds and repeats. The x-axis represents the ranking of the true EONR, where rank 1 indicates the ML model that truly performs the best in estimating EONRs.
+
+From the figure, it is evident that the yield-based model selection had a low success rate in identifying the correct model across all combinations. In the case of 5 folds and 1 repeat, and 5 folds and 10 repeats, the yield-based model selection correctly identified the best model in only 14.2 percent of the simulations. Similarly, for the combinations of 5 folds and 5 repeats, 7 folds and 5 repeats, 10 folds and 5 repeats, and 10 folds and 10 repeats, the success rate remained consistently low at 14.4 percent.
+
+These results indicate that the yield-based model selection method had limited effectiveness in accurately identifying the best model for EONR estimation across the various combinations of folds and repeats considered in the analysis.
+
+The impact of different combinations of folds and repeats on the model selection results for yield prediction in this case can be observed from the success rates of the yield-based model selection. The yield-based model selection method had a success rate of around 14.2-14.4 percent regardless of the number of folds and repeats employed.
+
+These results suggest that varying the number of folds and repeats did not have a significant impact on the performance of the yield-based model selection method in accurately identifying the best model for EONR estimation. 
 
 
+![figure_11](/Users/mmousavi2/Dropbox/f15.jpg){width=70%}
+Figure 11 illustrates the relationship between the RMSE values of yield and the RMSE values of true EONRs across all simulations and candidate ML models. The figure emphasizes that there are instances where the RMSE of the true EONR is the lowest, while the RMSE of yield prediction is the highest, and vice versa.
 
-
-
- 
-
-
+This finding highlights the potential occurrence of cases where the accuracy of EONR estimation and yield prediction may not align. In some situations, even if the RMSE of the true EONR is minimized, the RMSE of yield prediction may be relatively higher. Similarly, there are cases where the RMSE of yield prediction is minimized while the RMSE of the true EONR may not be at its lowest. These results indicate a decoupling between the accuracy of EONR estimation and yield prediction in certain instances.
  
 
 + Monte Carlo simulation 
