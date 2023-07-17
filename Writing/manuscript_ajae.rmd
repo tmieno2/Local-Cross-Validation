@@ -188,7 +188,7 @@ We obtained $l-1$ distinct values representing the yield changes caused by varyi
 
 
 There are variations in profit outcomes when estimating true site-specific EONRs using candidate ML models. To determine the profit deficits associated with each model, we establish reference points based on the true optimal yield and true optimal nitrogen levels. These reference values are derived through simulation and serve as benchmarks for comparison.
-By contrasting the model-predicted profits with the reference points, we can quantitatively assess the disparities and evaluate the accuracy of the ML models in estimating EONRs. The profit deficit $(∆π)$ can be calculated as follows:
+By contrasting the model-predicted profits with the reference points, we can quantitatively assess the disparities and evaluate the accuracy of the ML models in estimating EONRs. The profit deficit $(\Delta \pi)$ can be calculated as follows:
 
 $$
 \begin{gathered}
@@ -355,7 +355,7 @@ Table 2 provides the average RMSE values of Local EONRs estimated by candidate M
 
 Figures 7 and 8 present the outcomes of model selection for yield prediction in the scenario involving 5 folds and 5 repeats. According to the results, the BRF model consistently exhibited the lowest RMSE in comparison to the true yield in approximately 99.2 percent of the simulations. Following the BRF model, the linear model had the lowest RMSE in a very small proportion of simulations, with around 0.8 percent of the simulations when compared to the true yield.
 
-These findings indicate that, when considering model selection based on yield prediction, the BRF model outperformed the other models. 
+These findings indicate that, when considering model selection based on yield prediction, the BRF model outperformed the other models.
 
 
 ![table_3](/Users/mmousavi2/Dropbox/t4.jpg){width=80%}
