@@ -264,7 +264,7 @@ The whole data are divided into multiple folds in a spatially clustered manner. 
 pCorn <- 6.25 / 25.4 # $/kg
 pN <- 1 / 0.453592 # $/kg
 
-sim_data_1 <- readRDS("/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Validation-EONR-OFE/Shared/Data/SimData/sim_data_1.rds")
+sim_data_1 <- readRDS(here::here("Shared/Data/field_au_sf.rds"))
 
 whole_data <-
   sim_data_1[[2]][[1]] %>%
@@ -273,7 +273,8 @@ whole_data <-
   .[, opt_N := pmin(Nk, opt_N)] %>%
   .[, opt_N := pmax(0, opt_N)]
 
-train_test_split <- readRDS("/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Validation-EONR-OFE/Shared/Results/sim_results_num_repeats_5_num_folds_5/train_test_split.rds")
+train_test_split <- readRDS(here::here("Shared/Results/sim_results_num_repeats_5_num_folds_5/train_test_split.rds"))
+
 
 data_sf <- st_as_sf(whole_data, coords = c("X", "Y"))
 
@@ -426,7 +427,10 @@ In addition, we calculated the profit loss associated with selecting the best mo
  
 
 ```{r fig.id = "fig-3", fig.cap = "Ranking of estimated true EONRs", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
-sum_results_whole <- readRDS("/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Validation-EONR-OFE/Shared/Results/Mona_results/sum_results_whole.rds")
+
+sum_results_whole <- readRDS(here::here("Shared/Results/Mona_results/sum_results_whole.rds"))
+
+
  g_true_rank_rmse_eonr <-
     sum_results_whole[, .(num_selected = sum(eonr_selected_true)), by = method] %>%
     ggplot(.) +
@@ -441,7 +445,6 @@ sum_results_whole <- readRDS("/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Va
 
  # Filter the data for the five methods
 filtered_data <- sum_results_whole[sum_results_whole$method %in% c("S-learner (SE)", "R-learner (CF)", "S-learner (BRF)", "S-learner (Linear)", "S-learner (RF)"), ]
-
 # Create a plot with the distributions of the five methods
 ggplot(filtered_data, aes(x = rmse_eonr_true, fill = method)) +
   geom_density(alpha = 0.5) +
@@ -536,7 +539,9 @@ Table \@ref(tab:table_1) presents the average RMSE and corresponding profit loss
 
 ```{r fig.id = "fig-7", fig.cap = "GAM vs TRUE EONRs for 5 fold 5 repeats", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
 
-gam_results_dif_combination <- readRDS("/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Validation-EONR-OFE/Shared/Results/Mona_results/gam_results_dif_combination.rds")
+gam_results_dif_combination <- readRDS(here::here("Shared/Results/Mona_results/gam_results_dif_combination.rds"))
+
+
 # Create a list to store the plots
 plots <- list()
 
@@ -577,7 +582,8 @@ Figure \@ref(fig:fig-7) depicts the correlation between the true EONRs and the g
 
 ```{r fig.id = "fig-8", fig.cap = "Ranking of candidate ML vs GAM for 5 fold 5 repeats", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
 
-selection_ranks <- readRDS("/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Validation-EONR-OFE/Shared/Results/Mona_results/selection_ranks.rds")
+selection_ranks <- readRDS(here::here("Shared/Results/Mona_results/selection_ranks.rds"))
+
 
 (
 Local_EONR_based_visualization <- selection_ranks[, .(num_selected=sum(eonr_selected_gam)), by= method] %>%
@@ -678,7 +684,8 @@ Table 3 presents the average RMSE values for yield across all simulations, takin
 
 ```{r fig.id = "fig-12", fig.cap = "Local EONR vs Yield selection for 5 fold 5 repeats", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
 
-deficit_cal <- readRDS("/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Validation-EONR-OFE/Shared/Results/Mona_results/deficit_cal.rds")
+deficit_cal <- readRDS(here::here("Shared/Results/Mona_results/deficit_cal.rds"))
+
 
  yield_based_visualization <- selection_ranks[, .(num_selected=sum(yield_selected)), by= method] %>%
   ggplot(.) +
@@ -723,7 +730,9 @@ Figure \@ref(fig:fig-12) also presents the average RMSE values for yield across 
 
 ```{r fig.id = "fig-13", fig.cap = "Ranking of candidate ML vs GAM for 5 fold 5 repeats", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
 
-comp_results <- readRDS("/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Validation-EONR-OFE/Shared/Results/comp_results.rds")
+comp_results <- readRDS(here::here("Shared/Results/comp_results.rds"))
+
+
 
 generate_graph <- function(data, plot_title) {
   comp_results_long <- data %>%
@@ -763,8 +772,10 @@ These findings demonstrate that increasing the number of folds and repeats gener
 
 ```{r fig.id = "fig-14", fig.cap = "GAM EONR vs Local EONRs 5 Folds 5 repeats ", fig.width = 5, fig.width = 7, dpi = 400, cache=FALSE}
 
-sum_results_gam <- readRDS("/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Validation-EONR-OFE/Shared/Results/Mona_results/sum_results_gam.rds")
-main_sum_results <- readRDS("/Users/mmousavi2/Dropbox/ResearchProjects/Cross-Validation-EONR-OFE/Shared/Results/Mona_results/main_sum_results.rds")
+sum_results_gam<- readRDS(here::here("Shared/Results/Mona_results/sum_results_gam.rds"))
+
+main_sum_results <- readRDS(here::here("Shared/Results/Mona_results/main_sum_results.rds"))
+
 
 # combined results other version 
 combined_results_other_v <-
