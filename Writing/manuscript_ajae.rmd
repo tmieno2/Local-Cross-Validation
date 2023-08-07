@@ -11,7 +11,7 @@ author: |
   | Mona Mousavi, Taro Mieno^[Corresponding author: tmieno2@unl.edu], David S. Bullock
 abstract: |
   Your abstract goes here...
-#bibliography: PA.bib
+bibliography: my_references.bib
 #csl: american-journal-of-agricultural-economics.csl
 fontsize: 12pt
 header-includes: 
@@ -28,9 +28,6 @@ library(here)
 
 library(tinytex)
 
-#here::i_am("GitControlled/Writing/manuscript_ajae.rmd")
-#here::i_am("Users/mmousavi2/Dropbox/Local-Cross-Validation/Writing/manuscript_ajae.rmd")
-#here::i_am("Local-Cross-Validation/Writing/manuscript_ajae.rmd")
 
 opts_chunk$set(
   fig.align = "center",
@@ -133,21 +130,30 @@ library(tidyverse)
 **Acknowledgement**: This research was supported by ....
 
 # Introduction
- The presence of nitrogen is crucial for corn yield productivity (Bullock and Bollock, 1994), yet the dynamic nature and spatial variability of soil physical properties impose a major challenge to optimal nitrogen management. The difficulty mainly stems from the intricate biophysical interactions that affect soil nitrogen mineralization, crop absorption, and nitrogen loss; On top of this, the mechanisms of nitrogen transformation can vary significantly not just within fields, but also between fields, which further complicates the task (Ransom et al., 2020). To cope with this complexity, farmers often apply excess nitrogen fertilizer, which reduces profitability and lead to environmental destruction by increasing the risk of nitrogen loss (Ransom et al., 2020; Wen et al., 2022). However, by avoiding both over and under-application of nitrogen fertilizer, farmers can reduce their cost and mitigate the environmental consequences associated with nitrogen loss (Wen et al., 2022). The consideration of optimal N input is crucial when formulating N recommendations, as it holds the potential to significantly enhance N use efficiency and crop yield, while concurrently mitigating adverse environmental impacts. When nitrogen is applied at rates higher than optimal for crop use, the losses through leaching increase rapidly.By applying nutrients based on the specific needs of plants, there is a possibility of enhancing the profitability for producers. However, the difficulty lies in interpreting the spatial variation in fields to determine the optimal application rates that maximize profitability without excessive fertilization (Puntel et al., 2016; Malzer., 1996). In conventional agriculture, the natural spatial variations within a field are disregarded, and the entire area is managed uniformly. Nevertheless, implementing uniformly spatial nitrogen management can result in economic and environmental inefficiencies (Fassa et al., 2022). Due to the spatial dependence of field characteristics, there is a variation in how crop yields respond to managed inputs across a field (Trevisan et al., 2021). Site specific management is a useful method for optimizing crop production by adjusting inputs based on the specific site characteristics with the aim of determining the appropriate N rate for each part of the field (Fassa et al., 2022). As an example, Malzer (1996) indicated that economic benefits of using N fertilizers differ significantly depending on the landscape. The possible financial gains from employing N management practices tailored to specific sites can range anywhere from $4 to $37 per acre. In this regard, on-farm precision experiments (OFPE) conducted on a large-scale can provide insight into how to effectively adjust input application rates based on spatial variability, ultimately leading to optimized outcomes (Trevisan et al., 2021).
-Taking into account that the EONR for a specific field and year remains unknown at the point of nitrogen application, it is important to use nitrogen fertilizer recommendation tools that accurately align with the optimal nitrogen rate. Yet determining the EONR for a specific field and year is not a straightforward process and requires a complex methodology including conducting on-farm research trials with candidate nitrogen rates and monitoring the corresponding yield responses. (Ransom et al., 2019). To estimate the site-specific economic optimum nitrogen rates that align with the actual EONRs for a particular field, a diverse range of tools and methodologies have been developed. These include yield goal-based N recommendations (Stanford, 1973), where nitrogen requirements are determined based on yield goals. Other approaches to estimate EONR are remote sensing (Calvo et al., 2015; Scharf et al., 2012), which assesses crop health and nitrogen status using technology like satellite imagery; soil testing and nutrient analysis (Bundy and Andraski, 1995), which identifies soil nutrient levels for tailored nitrogen application; and economic maximum return to N (Ransom et al., 2019), optimizing nitrogen rates for maximum economic profitability.
-Current nitrogen (N) management practices in agriculture have limitations, with traditional tools being time-consuming and overlooking differences in landscape attributes, including soil texture and organic matter content. Precision agriculture technologies offer potential improvements by matching N requirements within field zones, but predicting optimal N rates remains challenging due to variability (Puntel et al., 2016).
-Other approaches to estimate EONR are crop simulation models (Miao et al., 2006). These models use data on crop growth, nitrogen uptake, and environmental conditions integrating soil, weather, and management factors into mathematical equations to simulate crop responses to different nitrogen rates. By running various scenarios, the model can estimate the economic optimum nitrogen rate that maximizes net returns (Qin et al., 2018). 
-A different approach for calculating crop nitrogen (N) fertilizer recommendations involves using machine learning models, a subset of artificial intelligence in computer science. These models make the most of advanced computational capabilities to learn patterns directly from data, without relying on explicit programming. By autonomously extracting insights from the provided information, they excel at discerning complex relationships.
-Distinguishing machine learning from traditional statistical methods can be challenging due to subtle distinctions. One crucial difference lies in the number of input variables used by machine learning, which often exceeds the variables employed in conventional statistical approaches. Although some of these features may not have a direct correlation with the target variable, their combined impact is utilized to enhance predictive accuracy.
-Nonetheless, a potential concern in machine learning is overfitting, wherein the model becomes excessively tailored to the training data. Consequently, its performance on new, unseen data may suffer. To address this issue, machine learning employs regularization techniques and cross-validation procedures. These methods are designed to control the model's complexity and improve its ability to handle new data effectively (Qin et al., 2018; Correndo et al., 2021).
-Several studies (Wang et al., 2021; Du et al., 2022) have investigated the integration of soil and weather properties into machine learning techniques for predicting crop yield. The underlying premise is that incorporating diverse data sources, such as soil and weather information, can enhance the accuracy of yield prediction and subsequently improve the recommended nitrogen (N) rate. The authors of these studies often select the machine learning method based on its performance in predicting yield rather than its ability to estimate the economically optimal nitrogen rate. Other studies, such as the work by Correndo et al. (2021), centered on examining the impact of variable uncertainties in the algorithm; yet none of these studies have employed a methodology to identify the optimal model based on its performance for estimating the economic optimum nitrogen rate.
+
+Introduction outline
+
+I)	The importance of EONR estimation. (Citation-difficulties)
+II)	The role of OFPE in EONR estimation.
+III)	Yield based model selection. 
+a.	Conceptional framework 
+b.	Limitations
+IV)	Objective: new proposed model selection
+
+ The presence of nitrogen is crucial for corn yield productivity [@bullock1994quadratic], yet the dynamic nature and spatial variability of soil physical properties impose a major challenge to optimal nitrogen management. This complexity arises from the intricate spatio-temporal interactions that regulate both plant growth patterns and the cycling of nutrients within the soil. The difficulty mainly stems from the intricate biophysical interactions that affect soil nitrogen mineralization, crop absorption, and nitrogen loss; On top of this, the mechanisms of nitrogen transformation can vary significantly not just within fields, but also between fields, which further complicates the task [@ransom2020corn; @correndo2021assessing]. To cope with this complexity, farmers often apply excess nitrogen fertilizer, which reduces profitability and lead to environmental destruction by increasing the risk of nitrogen loss [@ransom2020corn; @wen2022optimizing]. However, by avoiding both over and under-application of nitrogen fertilizer, farmers can reduce their cost and mitigate the environmental consequences associated with nitrogen loss [@wen2022optimizing]. The economic optimal nitrogen (N) rate signifies a point at which further increments in nitrogen application do not substantially enhance crop yield, thus discouraging excessive nitrogen usage. Employing the appropriate nitrogen quantity leads to cost savings while concurrently yielding a favorable profit and optimizing nitrogen utilization or nitrogen use efficiency (NUE). NUE is a measure of how effectively plants utilize the nitrogen available to them from various sources, such as fertilizers, organic matter in the soil, and atmospheric deposition. [@puntel2016modeling; @wortmann2011nitrogen].
+The consideration of optimal N input is crucial when formulating N recommendations, as it holds the potential to significantly enhance N use efficiency and crop yield, while concurrently mitigating adverse environmental impacts. When nitrogen is applied at rates higher than optimal for crop use, the losses through leaching increase rapidly.By applying nutrients based on the specific needs of plants, there is a possibility of enhancing the profitability for producers. However, the difficulty lies in interpreting the spatial variation in fields to determine the optimal application rates that maximize profitability without excessive fertilization [@puntel2016modeling; @malzer1996corn]. In conventional agriculture, the natural spatial variations within a field are disregarded, and the entire area is managed uniformly. Nevertheless, implementing uniformly spatial nitrogen management can result in economic and environmental inefficiencies [@fassa2022site]. Due to the spatial dependence of field characteristics, there is a variation in how crop yields respond to managed inputs across a field [@trevisan2021spatial]. Site specific management is a useful method for optimizing crop production by adjusting inputs based on the specific site characteristics with the aim of determining the appropriate N rate for each part of the field [@fassa2022site]. As an example, @malzer1996corn indicated that economic benefits of using N fertilizers differ significantly depending on the landscape. The possible financial gains from employing N management practices tailored to specific sites can range anywhere from $4 to $37 per acre. In this regard, on-farm precision experiments (OFPE) conducted on a large-scale can provide insight into how to effectively adjust input application rates based on spatial variability, ultimately leading to optimized outcomes [@trevisan2021spatial].
+Taking into account that the EONR for a specific field and year remains unknown at the point of nitrogen application, it is important to use nitrogen fertilizer recommendation tools that accurately align with the optimal nitrogen rate. Yet determining the EONR for a specific field and year is not a straightforward process and requires a complex methodology including conducting on-farm research trials with candidate nitrogen rates and monitoring the corresponding yield responses. [@ransom2019statistical]. To estimate the site-specific economic optimum nitrogen rates that align with the actual EONRs for a particular field, a diverse range of tools and methodologies have been developed. These include yield goal-based N recommendations [@stanford1973rationale], where nitrogen requirements are determined based on yield goals. Other approaches to estimate EONR are remote sensing [@reussi2015using; @oliveira2013calibrating], which assesses crop health and nitrogen status using technology like satellite imagery; soil testing and nutrient analysis [@bundy1995soil], which identifies soil nutrient levels for tailored nitrogen application; and economic maximum return to N [@ransom2019statistical], optimizing nitrogen rates for maximum economic profitability.
+Current nitrogen (N) management practices in agriculture have limitations, with traditional tools being time-consuming and overlooking differences in landscape attributes, including soil texture and organic matter content. Precision agriculture technologies offer potential improvements by matching N requirements within field zones, but predicting optimal N rates remains challenging due to variability [@puntel2016modeling].
+Other approaches to estimate EONR are crop simulation models [@miao2006evaluating]. These models use data on crop growth, nitrogen uptake, and environmental conditions integrating soil, weather, and management factors into mathematical equations to simulate crop responses to different nitrogen rates. By running various scenarios, the model can estimate the economic optimum nitrogen rate that maximizes net returns [@qin2018application]. 
+A different approach for calculating crop nitrogen (N) fertilizer recommendations involves using machine learning models, a subset of artificial intelligence in computer science. These models make the most of advanced computational capabilities to learn patterns directly from data, without relying on explicit programming. By autonomously extracting insights from the provided information, they excel at discerning complex relationships.Distinguishing machine learning from traditional statistical methods can be challenging due to subtle distinctions. One crucial difference lies in the number of input variables used by machine learning, which often exceeds the variables employed in conventional statistical approaches. Although some of these features may not have a direct correlation with the target variable, their combined impact is utilized to enhance predictive accuracy.Nonetheless, a potential concern in machine learning is overfitting, wherein the model becomes excessively tailored to the training data. Consequently, its performance on new, unseen data may suffer. To address this issue, machine learning employs regularization techniques and cross-validation procedures. These methods are designed to control the model's complexity and improve its ability to handle new data effectively [@qin2018application; @correndo2021assessing].
+Several studies [@wang2021machine; @du2022corn] have investigated the integration of soil and weather properties into machine learning techniques for predicting crop yield. The underlying premise is that incorporating diverse data sources, such as soil and weather information, can enhance the accuracy of yield prediction and subsequently improve the recommended nitrogen (N) rate. The authors of these studies often select the machine learning method based on its performance in predicting yield rather than its ability to estimate the economically optimal nitrogen rate. Other studies, such as the work by @correndo2021assessing, centered on examining the impact of variable uncertainties in the algorithm; yet none of these studies have employed a methodology to identify the optimal model based on its performance for estimating the economic optimum nitrogen rate.
 The selection of a model based solely on its yield prediction performance poses a significant challenge. 
 Model selection is an essential element in the decision-making process and holds significant importance in machine learning and statistical modeling. Its primary purpose is to identify the most appropriate model that accurately represents a given dataset. When considering the estimation of economic optimal nitrogen rates, model selection continues to be a critical aspect of decision-making. The objective is to carefully choose the model that best enables the determination of the optimal nitrogen application rate for crop production. By engaging in model selection, researchers can assess and compare various models, each representing a distinct approach to estimating economic optimal nitrogen rates. The aim is to identify the model that most effectively captures the intricate relationships between nitrogen inputs and crop yield while considering economic factors. 
-The correlation between EONR and the corresponding yield at EONR is found to be inconclusive and of low magnitude. (Morris et al., 2018; Sawyer et al., 2006; Vanotti and Bundy, 1994). 
+The correlation between EONR and the corresponding yield at EONR is found to be inconclusive and of low magnitude  [@morris2018strengths; @sawyer2006concepts; @vanotti1994alternative]. 
 The precise estimation of EONR is intricately linked to the underlying nitrogen response in relation to crop yield, rather than relying solely on the accuracy of yield prediction. Stated differently, the accurate determination of EONR is contingent upon a comprehensive understanding of the causal impact of the treatment variable on crop yield, which provides the necessary information for precise EONR estimation. Building on the previous point, it is important to note that a model's effectiveness in predicting the yield level does not necessarily imply its suitability for estimating EONR. As a result, a model that exhibits high accuracy in yield level prediction may not necessarily be the most appropriate model for EONR estimation. 
 
 Fertilizer recommendations have been primarily derived from field trials that assess how crops respond to different levels of fertilizer application. By collecting data from fertilizer studies, it becomes possible to fit the results to a variety of statistical models, then the most suitable model for a given cropping scenario will be chosen based on a thorough evaluation and selection process. As machine learning models are being increasingly utilized for model selection in the determination of the EONR, it is crucial that the selection process accurately mirrors the underlying method used to obtain EONR. Statistical inference and machine learning involve learning from data by fitting models to it. These models can be either parametric or nonparametric. However, if the model or method is not chosen appropriately, it can lead to inaccurate or misleading results. Therefore, selecting the right model or approach is crucial in obtaining reliable conclusions from the data which in turn leads us to an accurate EONR estimation. 
-The primary aim of this study is to introduce a novel approach for model selection that is underpinned by causal relationships, in order to accurately estimate the economically optimal nitrogen rate via simulation. The proposed method hinges upon the use of local cross-validation on EONR to determine the ideal nitrogen level for a given site. This process aims to enhance    the accuracy and reliability of EONR estimates, which are crucial for optimizing agricultural yields and minimizing economic costs.
+The primary aim of this study is to introduce a novel approach for model selection that is underpinned by causal relationships, in order to accurately estimate the economically optimal nitrogen rate via simulation. The proposed method hinges upon the use of local cross-validation on EONR to determine the ideal nitrogen level for a given site. This process aims to enhance the accuracy and reliability of EONR estimates, which are crucial for optimizing agricultural yields and minimizing economic costs.
 
 
 
@@ -167,7 +173,11 @@ The primary aim of this study is to introduce a novel approach for model selecti
 
 
 ```{r, fig.id = "Diagram", fig.cap = "Diagram of simulation", fig.width = 7.5, dpi = 1500}
-knitr::include_graphics("D_updated.jpg")
+#knitr::include_graphics("D_updated.jpg")
+knitr::include_graphics(here( "D_updated.jpg"))
+
+
+
 ```
 
 
@@ -260,11 +270,11 @@ We propose a methodology for model selection based on the estimation of local EO
 The whole data are divided into multiple folds in a spatially clustered manner. Autocorrelated data raises concerns about overfitting. Random sampling for train-test splits or cross-validation violates the assumption of independent and identically distributed (IID) samples. If nearby samples with similar features are included in different sets, the model can make more accurate predictions for those samples.To prevent this, grouping the data by area restricts the model from accessing information it should not have seen. Spatial cross-validation is exemplified as follows:
 
 
-```{r fig.id = "fig-1", fig.cap = "spatial_illustration", fig.width = 5, fig.width = 4, dpi = 400}
+```{r fig.id = "fig-2", fig.cap = "spatial_illustration", fig.width = 5, fig.width = 4, dpi = 400}
 pCorn <- 6.25 / 25.4 # $/kg
 pN <- 1 / 0.453592 # $/kg
 
-sim_data_1 <- readRDS(here::here("Shared/Data/field_au_sf.rds"))
+sim_data_1 <- readRDS(here::here("Shared/Data/SimData/sim_data_1.rds"))
 
 whole_data <-
   sim_data_1[[2]][[1]] %>%
@@ -521,7 +531,8 @@ plot
 
 
 ```{r, tab.id = "table_1", tab.cap = "True Average RMSE and Profit Loss"}
-knitr::include_graphics("mean_of_true_rmse_and_profit.jpg")
+knitr::include_graphics(here( "mean_of_true_rmse_and_profit.jpg"))
+
 ```
 
 
@@ -625,7 +636,8 @@ The CF model ranked next, as it had the lowest RMSE value for the true EONR in a
 
 ```{r, tab.id = "table_2", tab.cap = "RMSE of Local EONR and Corresponding Profit Loss"}
 
-knitr::include_graphics("t2.jpg")
+knitr::include_graphics(here( "t2.jpg"))
+
 ```
 
 
@@ -673,7 +685,8 @@ These findings indicate that, when considering model selection based on yield pr
 
 ```{r, tab.id = "table_3", tab.cap = "RMSE of Yield for Different Fold and Repeats Combinations"}
 
-knitr::include_graphics("t3.jpg")
+knitr::include_graphics(here( "t3.jpg"))
+
 ```
 
 
@@ -802,7 +815,7 @@ ggplot(averaged_df, aes(x = avg_opt_N_gam, y = avg_opt_N_hat)) +
   facet_wrap(~ method, ncol = 2)
 
 ```
-Figure \@ref(fig:fig-14) depicts the relationship between the average GAM estimated local EONRs and the average local EONRs estimated by candidate ML models, considering 10 folds and 10 repeats for all simulations. It is evident from the plot that both the RF and BRF models consistently underestimate the gam EONRs.
+Figure \@ref(fig:fig-14) depicts the relationship between the average GAM estimated local EONRs and the average local EONRs estimated by candidate ML models, considering 5 folds and 5 repeats for all simulations. It is evident from the plot that both the RF and BRF models consistently underestimate the gam EONRs.
 
 ###	Comparison the ranking of Yield-Based Model Selection and Estimated true EONR 
 
@@ -908,51 +921,6 @@ In our Monte Carlo simulations, .... All the the codes that implement the MC sim
 
 # References
 
-Bullock, D.G. and Bullock, D.S., 1994. Quadratic and quadratic‐plus‐plateau models for predicting optimal nitrogen rate of corn: A comparison. Agronomy Journal, 86(1), pp.191-195.
-
-Wen, G., Ma, B.L., Vanasse, A., Caldwell, C.D. and Smith, D.L., 2022. Optimizing machine learning-based site-specific nitrogen application recommendations for canola production. Field Crops Research, 288, p.108707.
-
-Ransom, C.J., Kitchen, N.R., Camberato, J.J., Carter, P.R., Ferguson, R.B., Fernández, F.G., Franzen, D.W., Laboski, C.A., Nafziger, E.D., Sawyer, J.E. and Scharf, P.C., 2020. Corn nitrogen rate recommendation tools’ performance across eight US midwest corn belt states. Agronomy Journal, 112(1), pp.470-492.
-
-Malzer, G.L., 1996. Corn yield response variability and potential profitability of site-specific nitrogen management. Better Crops with Plant Food, 80(3), pp.6-8.
-
-Fassa, V., Pricca, N., Cabassi, G., Bechini, L. and Corti, M., 2022. Site-specific nitrogen recommendations’ empirical algorithm for maize crop based on the fusion of soil and vegetation maps. Computers and Electronics in Agriculture, 203, p.107479.
-
-Trevisan, R.G., Bullock, D.S. and Martin, N.F., 2021. Spatial variability of crop responses to agronomic inputs in on-farm precision experimentation. Precision Agriculture, 22, pp.342-363.
-
-Ransom, C.J., Kitchen, N.R., Camberato, J.J., Carter, P.R., Ferguson, R.B., Fernández, F.G., Franzen, D.W., Laboski, C.A., Myers, D.B., Nafziger, E.D. and Sawyer, J.E., 2019. Statistical and machine learning methods evaluated for incorporating soil and weather into corn nitrogen recommendations. Computers and Electronics in Agriculture, 164, p.104872.
-
-Wang, X., Miao, Y., Dong, R., Zha, H., Xia, T., Chen, Z., Kusnierek, K., Mi, G., Sun, H. and Li, M., 2021. Machine learning-based in-season nitrogen status diagnosis and side-dress nitrogen recommendation for corn. European Journal of Agronomy, 123, p.126193.
-
-Du, Z., Yang, L., Zhang, D., Cui, T., He, X., Xiao, T., Xie, C. and Li, H., 2022. Corn variable-rate seeding decision based on gradient boosting decision tree model. Computers and Electronics in Agriculture, 198, p.107025.
-
-Correndo, A.A., Rotundo, J.L., Tremblay, N., Archontoulis, S., Coulter, J.A., Ruiz-Diaz, D., Franzen, D., Franzluebbers, A.J., Nafziger, E., Schwalbert, R. and Steinke, K., 2021. Assessing the uncertainty of maize yield without nitrogen fertilization. Field Crops Research, 260, p.107985.
-
-Sawyer, J., Nafziger, E., Randall, G., Bundy, L., Rehm, G. and Joern, B., 2006. Concepts and rationale for regional nitrogen rate guidelines for corn.
-
-Vanotti, M.B. and Bundy, L.G., 1994. An alternative rationale for corn nitrogen fertilizer recommendations. Journal of Production agriculture, 7(2), pp.243-249.
-
-Morris, T.F., Murrell, T.S., Beegle, D.B., Camberato, J.J., Ferguson, R.B., Grove, J., Ketterings, Q., Kyveryga, P.M., Laboski, C.A., McGrath, J.M. and Meisinger, J.J., 2018. Strengths and limitations of nitrogen rate recommendations for corn and opportunities for improvement. Agronomy Journal, 110(1), pp.1-37.
-
-Puntel, L.A., Sawyer, J.E., Barker, D.W., Dietzel, R., Poffenbarger, H., Castellano, M.J., Moore, K.J., Thorburn, P. and Archontoulis, S.V., 2016. Modeling long-term corn yield response to nitrogen rate and crop rotation. Frontiers in plant science, 7, p.1630.
-
-Stanford, G., 1973. Rationale for optimum nitrogen fertilization in corn production. Journal of Environmental Quality, 2(2), pp.159-166.
-
-Reussi Calvo, N.I., Rozas, H.S., Echeverría, H. and Diovisalvi, N., 2015. Using canopy indices to quantify the economic optimum nitrogen rate in spring wheat. Agronomy Journal, 107(2), pp.459-465.
-
-Oliveira, L.F., Scharf, P.C., Vories, E.D., Drummond, S.T., Dunn, D., Stevens, W.G., Bronson, K.F., Benson, N.R., Hubbard, V.C. and Jones, A.S., 2013. Calibrating canopy reflectance sensors to predict optimal mid‐season nitrogen rate for cotton. Soil Science Society of America Journal, 77(1), pp.173-183.
-
-Bundy, L.G. and Andraski, T.W., 1995. Soil yield potential effects on performance of soil nitrate tests. Journal of production agriculture, 8(4), pp.561-568.
-
-Ransom, C.J., Kitchen, N.R., Camberato, J.J., Carter, P.R., Ferguson, R.B., Fernández, F.G., Franzen, D.W., Laboski, C.A., Nafziger, E.D., Sawyer, J.E. and Scharf, P.C., 2020. Corn nitrogen rate recommendation tools’ performance across eight US midwest corn belt states. Agronomy Journal, 112(1), pp.470-492.
-
-Puntel, L.A., Sawyer, J.E., Barker, D.W., Dietzel, R., Poffenbarger, H., Castellano, M.J., Moore, K.J., Thorburn, P. and Archontoulis, S.V., 2016. Modeling long-term corn yield response to nitrogen rate and crop rotation. Frontiers in plant science, 7, p.1630.
-
-Miao, Y., Mulla, D.J., Batchelor, W.D., Paz, J.O., Robert, P.C. and Wiebers, M., 2006. Evaluating management zone optimal nitrogen rates with a crop growth model. Agronomy journal, 98(3), pp.545-553.
-
-Qin, Z., Myers, D.B., Ransom, C.J., Kitchen, N.R., Liang, S.Z., Camberato, J.J., Carter, P.R., Ferguson, R.B., Fernandez, F.G., Franzen, D.W. and Laboski, C.A., 2018. Application of machine learning methodologies for predicting corn economic optimal nitrogen rate. Agronomy Journal, 110(6), pp.2596-2607.
-
-Correndo, A.A., Tremblay, N., Coulter, J.A., Ruiz-Diaz, D., Franzen, D., Nafziger, E., Prasad, V., Rosso, L.H.M., Steinke, K., Du, J. and Messina, C.D., 2021. Unraveling uncertainty drivers of the maize yield response to nitrogen: A Bayesian and machine learning approach. Agricultural and Forest Meteorology, 311, p.108668.
 
 
 <div id="refs"></div>
