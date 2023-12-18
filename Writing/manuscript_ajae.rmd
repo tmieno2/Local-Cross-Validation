@@ -1,5 +1,5 @@
 ---
-title: "Title here"
+title: "Selection Criteria for EONR Prediction Models"
 output:
   officedown::rdocx_document:
     toc: false
@@ -7,11 +7,11 @@ output:
     toc: no
     keep_tex: true
 author: |
-  | Mona Mousavi, Taro Mieno^[Corresponding author: tmieno2@unl.edu], David S. Bullock
   | $^1$University of Nebraska Lincoln,  $^2$University of Nebraska Lincoln, $^3$University of Illinois
+  | Mona Mousavi, Taro Mieno^[Corresponding author: tmieno2@unl.edu], David S. Bullock
 abstract: |
   Your abstract goes here...
-#bibliography: PA.bib
+bibliography: my_references.bib
 #csl: american-journal-of-agricultural-economics.csl
 fontsize: 12pt
 header-includes: 
@@ -26,19 +26,23 @@ header-includes:
 library(knitr)
 library(here)
 
-here::i_am("GitControlled/Writing/manuscript_ajae.rmd")
+library(tinytex)
+
 
 opts_chunk$set(
   fig.align = "center",
   fig.retina = 5,
   warning = F,
   message = F,
-  cache = T,
+  cache = FALSE,
   echo = F,
   error = T,
   fig.cap = T
 )
 ```
+
+
+
 
 ```{r cache = F, include = F}
 #--- packages ---#
@@ -53,9 +57,16 @@ library(lfe)
 library(modelsummary)
 library(patchwork)
 library(gridExtra)
+library(patchwork)
+library(flextable)
+library(officer)
+library(modelsummary)
+library(tidyverse)
 ```
 
-```{r figure_setup, cache = F}
+
+
+```{r figure_setup, cache = F, include=FALSE}
 #* +++++++++++++++++++++++++++++++++++
 #* Default figure setting
 #* +++++++++++++++++++++++++++++++++++
@@ -105,164 +116,275 @@ theme_update(
 )
 ```
 
+```{r packages}
+library(patchwork)
+library(flextable)
+library(officer)
+library(modelsummary)
+library(tidyverse)
+```
+
  
 **Keywords**: 
 
 **Acknowledgement**: This research was supported by ....
 
+ Introduction outline:
+
++ The importance of N management 
++ The difficulties related to N management 
++ How these difficulties have been managed (site-specific EONR) 
++ Discussing OFPE as a potential solution 
++ Application of ML on OFPE data and reasons for its incorrect adoption
++ What we do in this study and what are our findings 
+
+
+
+
+`r run_pagebreak()`
+
+
 # Introduction
-The presence of nitrogen is crucial for corn yield productivity (Bullock and Bollock, 1994), yet the dynamic nature and spatial variability of soil physical properties impose a major challenge to optimal nitrogen management. The difficulty mainly stems from the intricate biophysical interactions that affect soil nitrogen mineralization, crop absorption, and nitrogen loss; On top of this, the mechanisms of nitrogen transformation can vary significantly not just within fields, but also between fields, which further complicates the task (Ransom et al., 2020). To cope with this complexity, farmers often apply excess nitrogen fertilizer, which reduces profitability and lead to environmental destruction by increasing the risk of nitrogen loss (Ransom et al., 2020; Wen et al., 2022). However, by avoiding both over and under-application of nitrogen fertilizer, farmers can reduce their cost and mitigate the environmental consequences associated with nitrogen loss (Wen et al., 2022). By applying nutrients based on the specific needs of plants, there is a possibility of enhancing the profitability for producers. However, the difficulty lies in interpreting the spatial variation in fields to determine the optimal application rates that maximize profitability without excessive fertilization (Malzer., 1996). In conventional agriculture, the natural spatial variations within a field are disregarded, and the entire area is managed uniformly. Nevertheless, implementing uniformly spatial nitrogen management can result in economic and environmental inefficiencies (Fassa et al., 2022). Due to the spatial dependence of field characteristics, there is a variation in how crop yields respond to managed inputs across a field (Trevisan et al., 2021). Site specific management is a useful method for optimizing crop production by adjusting inputs based on the specific site characteristics with the aim of determining the appropriate N rate for each part of the field (Fassa et al., 2022). As an example, Malzer (1996) indicated that economic benefits of using N fertilizers differ significantly depending on the landscape. The possible financial gains from employing N management practices tailored to specific sites can range anywhere from $4 to $37 per acre. In this regard, on-farm precision experiments (OFPE) conducted on a large-scale can provide insight into how to effectively adjust input application rates based on spatial variability, ultimately leading to optimized outcomes (Trevisan et al., 2021).
-Taking into account that the EONR for a specific field and year remains unknown at the point of nitrogen application, it is important to use nitrogen fertilizer recommendation tools that accurately align with the optimal nitrogen rate. Yet determining the EONR for a specific field and year is not a straightforward process and requires a complex methodology including conducting on-farm research trials with candidate nitrogen rates and monitoring the corresponding yield responses. (Ransom et al., 2019). To estimate the site-specific economic optimum nitrogen rates that align with the actual EONRs for a particular field, a diverse range of tools and methodologies have been developed, among which we concentrate on the employment of machine learning techniques. Several studies (Wang et al., 2021; Du et al., 2022) have investigated the integration of soil and weather properties into machine learning techniques for predicting crop yield. The underlying premise is that incorporating diverse data sources, such as soil and weather information, can enhance the accuracy of yield prediction and subsequently improve the recommended nitrogen (N) rate. The authors of these studies often select the machine learning method based on its performance in predicting yield rather than its ability to estimate the economically optimal nitrogen rate. Other studies, such as the work by Correndo et al. (2021), centered on examining the impact of variable uncertainties in the algorithm; yet none of these studies have employed a methodology to identify the optimal model based on its performance for estimating the economic optimum nitrogen rate.
-The selection of a model based solely on its yield prediction performance poses a significant challenge. The correlation between EONR and the corresponding yield at EONR is found to be inconclusive and of low magnitude. (Morris et al., 2018; Sawyer et al., 2006; Vanotti and Bundy, 1994). 
-The precise estimation of EONR is intricately linked to the underlying nitrogen response in relation to crop yield, rather than relying solely on the accuracy of yield prediction. Stated differently, the accurate determination of EONR is contingent upon a comprehensive understanding of the causal impact of the treatment variable on crop yield, which provides the necessary information for precise EONR estimation. Building on the previous point, it is important to note that a model's effectiveness in predicting the yield level does not necessarily imply its suitability for estimating EONR. As a result, a model that exhibits high accuracy in yield level prediction may not necessarily be the most appropriate model for EONR estimation. 
 
-Fertilizer recommendations have been primarily derived from field trials that assess how crops respond to different levels of fertilizer application. By collecting data from fertilizer studies, it becomes possible to fit the results to a variety of statistical models, then the most suitable model for a given cropping scenario will be chosen based on a thorough evaluation and selection process. As machine learning models are being increasingly utilized for model selection in the determination of the EONR, it is crucial that the selection process accurately mirrors the underlying method used to obtain EONR. Statistical inference and machine learning involve learning from data by fitting models to it. These models can be either parametric or nonparametric. However, if the model or method is not chosen appropriately, it can lead to inaccurate or misleading results. Therefore, selecting the right model or approach is crucial in obtaining reliable conclusions from the data which in turn leads us to an accurate EONR estimation. 
-The primary aim of this study is to introduce a novel approach for model selection that is underpinned by causal relationships, in order to accurately estimate the economically optimal nitrogen rate via simulation. The proposed method hinges upon the use of local cross-validation on EONR to determine the ideal nitrogen level for a given site. This process aims to enhance the accuracy and reliability of EONR estimates, which are crucial for optimizing agricultural yields and minimizing economic costs.
+In conventional agriculture, the natural spatial variations within a field are disregarded, and the entire area is managed uniformly. However, implementing uniformly spatial nitrogen management can result in economic and environmental inefficiencies [@fassa2022site]. One potential solution to address this issue involves implementing site-specific (variable rate) nitrogen application techniques that can recognize spatially heterogeneous crop nitrogen demand [@fassa2022site; @malzer1996corn]. Such  management practices can improve the profits of production while reducing its environmental impacts [@bullock1994quadratic; @puntel2016modeling; @wortmann2011nitrogen; @lobell2007cost; @malzer1996corn; @termin2023dynamic; @wen2022optimizing]. 
 
+A variety of methods have been developed to provide site-specific nitrogen recommendations. These methods include yield goal-based N recommendations, the Maximum Return to N (MRTN) [@ransom2019statistical] and the use of remote sensing techniques [@reussi2015using; @oliveira2013calibrating]. Other approaches to estimate EONR are crop simulation models [@miao2006evaluating]. Adapt-N [@melkonian2008adapt] and Maize-N [@setiyono2011maize] use computer simulation models for nitrogen recommendations. soil testing and nutrient analysis [@bundy1995soil] are also among other N recommendation approaches.
 
+One of the emerging and promising approaches for providing site-specific N management is through on-farm precision experiments (OFPE). OFPE employs technologies like GPS and variable rate input applicators to conduct experimental designs and nitrogen trials within the field [@paccioretti2021statistical]. Subsequent to data collection and collation, including variables like yield, as-applied nitrogen, soil characteristics, and weather conditions, statistical analysis is performed to estimate site-specific yield response function, which then can be used to identify site-specific EONR [@de2023predicting; @morales2022generation; @li2023economic]. 
 
+Machine learning (ML) is a statistical tool for analyzing experimental data and providing site-specific EONR recommendations based on modeled yield responses to different inputs. When utilizing ML techniques to estimate site-specific EONRs from experimental data, it is important to recognize that the purpose of conducting experimental designs is to capture the variability of crop responses to input applications [@paccioretti2021statistical], forming the basis for EONR estimation. However, using ML to estimate EONRs requires caution. Several emerging studies [@barbosa2020risk; @barbosa2020modeling; @krause2020random; @gardner2021economic]  have employed ML techniques to predict site-specific EONRs using data from OFPE. However, they consistently select ML methods based on their ability to accurately predict yield. This raises a significant question, especially when the primary goal is to provide reliable site-specific EONR recommendations. A strong counterpoint to this practice is presented by @kakimoto2022causal. Through simulations, the study showed that achieving high accuracy in yield prediction does not necessarily imply accurate EONR prediction. This underscores the importance of understanding the causal relationship between treatment variables and crop yield. Empirical evidence further supports this idea, as studies have found that the correlation between EONR and the corresponding yield at EONR is weak [@morris2018strengths; @sawyer2006concepts; @vanotti1994alternative]. 
 
-
+In this study, we use simulated data and apply ML techniques to propose a new approach for model selection to predict EONR. This approach is based on the spatial cross-validation and involves deriving yield responses to input variables in order to estimate local EONRs. Our inspiration for this method draws from the work of @de2023predicting. The approach uses spatial clustering to divide data into folds for training and testing. Within each fold, our candidate ML models estimate local EONR values. The performance of these estimates is evaluated by comparing them against a benchmark model using Root Mean Squared Error (RMSE). We further train the models on the complete dataset and rank them based on their RMSE in relation to the true EONR values. By comparing the rankings of locally estimated EONR values with the true values, we assess the performance of our local EONR model selection. Additionally, we evaluate the performance of a yield-based model selection approach. We found that the local EONR model selection approach consistently outperforms the yield-based model selection method when it comes to choosing a model for effectively predicting site-specific EONR.
 
 
 
 
+`r run_pagebreak()`
 
-# Materials and Methods: Monte Carlo Simulation
+# Materials and Methods: 
 
-Materials and methods: 
+![](/Users/mmousavi2/Dropbox/Local-Cross-Validation/1.jpg){width=70%}
+<br>
 
-![gam_vs_true](/Users/mmousavi2/Dropbox/D_updated.jpg){width=80%}
+![](/Users/mmousavi2/Dropbox/Local-Cross-Validation/2.jpg){width=60%}
+<br>
 
-
-+ outline:
-
-1. Overview of Data Simulation
-In this section, we provide an overview of the data simulation process. This involves generating synthetic data that resembles real-world data for the purpose of analysis.
-2. Data Generation
-We describe the process of generating the synthetic data used in our analysis. This includes specifying the parameters, distributions, and relationships that govern the data generation process.
-3. ML Model Performance in Site-Specific EONR Estimation with Complete Dataset (strem 1)
-3.1. Site-Specific EONRs Using S-Learner Approach with RF, BRF, Linear, and SE model
-3.2. Site-Specific EONRs Using R-Learner Approach with Smooth CF Model
-3.3. Ranking the ML models by their RMSE between estimated EONRs and true EONRs
-4. Model Selection based on Local EONRs (stream 2)
-4.1. GAM Estimated Local EONRs
-4.2. Local EONRs Estimated by candidate ML Models
-4.3. Ranking the ML models by their RMSE between estimated local EONRs and gam
-estimated local EONRs
-5. Model Selection based on yield prediction ability (stream 3)
-5.1. Yield prediction using spatial folds
-5.2. Ranking the ML models by their RMSE between predicted yield and true yield
-6. Comparing the performance of local EONR-based model selection with yield prediction-
-based model selection
-6.1. Contrasting the ranking of models based on local EONR selection with models
-trained on the entire dataset
-6.2. Comparing the ranking of models based on yield prediction ability with models
-trained on the entire dataset
+![](/Users/mmousavi2/Dropbox/Local-Cross-Validation/3.jpg){width=70%}
 
 
-+ explain our proposed model selection method in general (no specific model needs to be mentioned) 
 
-To propose a precise method for accurately predicting the optimal nitrogen rate, our study employed a local EONR model selection approach. To implement this method, we employed spatial clustering splits to partition the dataset into spatial folds consisting of training and testing datasets. Within each spatial fold, we utilized machine learning models to estimate uniform EONRs and subsequently derived local EONRs. We compared the root mean square error (RMSE) of the predicted local EONR values against the local EONR values obtained from a trained Generalized Additive Model (GAM), ranking the models based on their RMSE compared to the GAM model. Moreover, to obtain the true EONR values, we trained ML models on the entire dataset and ranked them based on their RMSE against the actual EONR values. By comparing the rankings of local EONR values and true EONR values, we evaluated the performance of the local EONR model selection. Additionally, to assess the performance of our proposed method against the yield prediction model selection approach, we also conducted model selection based on yield prediction within the spatial folds. The subsequent sections provide a detailed explanation of the steps and procedures involved. 
+
+<br>
+
+```{r, fig.id = "Diagram", fig.cap = "Diagram of simulation", fig.width = 7.5, dpi = 1500}
+#knitr::include_graphics("Stream_1.jpg")
+#knitr::include_graphics(here( "Stream_1.jpg"))
+
+```
+
+```{r, fig.id = "Diagram", fig.cap = "Diagram of simulation", fig.width = 7.5, dpi = 1500}
+#knitr::include_graphics("D_updated.jpg")
+#knitr::include_graphics(here( "D_updated.jpg"))
+
+```
+
+<br>
+
+`r run_pagebreak()`
+
+To propose a method for accurately predicting the optimal nitrogen rate, our study employed a local EONR model selection approach. To implement this method, we utilized spatial clustering splits to partition the dataset into spatial folds, each consisting of training and testing datasets (see Figure \@ref(fig:fig-1)). Within each spatial fold, we employed different machine learning models to estimate site-specific EONRs for the test data and subsequently derived local EONRs by averaging the site-specific EONRs. We compared the root mean square error (RMSE) of the predicted local EONR values against those obtained from a trained Generalized Additive Model (GAM). We then ranked the machine learning models based on their RMSE compared to the GAM.
+
+Furthermore, to estimate the true site-specific EONR values, we trained machine learning models on the entire dataset and ranked them based on their RMSE against the true (not estimated) EONR values which were generated in the simulated data. By comparing the rankings of local EONR values and estimated true EONR values, we evaluated the performance of the local EONR model selection. Additionally, to assess the performance of our proposed method against the yield prediction model selection approach, we also conducted model selection based on yield prediction within the spatial folds. Subsequent sections will provide a detailed explanation of the steps and procedures involved.
 
 
 ## ML Model Performance in Site-Specific EONR Estimation with Complete Dataset (stream 1)
 
-The dataset consisting of OFPE data from 500 fields was utilized to estimate the true site-specific EONR values. These values were considered as the estimated true values because the entire dataset was used for both training and testing in the prediction of site-specific EONRs. Later, these estimated values would be compared to the true EONRs, which were calculated as an integral part of the simulation process.
+A simulated dataset, consisting of OFPE data from 500 fields, with each field containing 1440 sites, was utilized to estimate the true site-specific EONR values. These values were considered as the estimated true values because the entire dataset was used for both training and testing in the prediction of site-specific EONRs using different ML models. Later, these estimated values would be compared to the true EONRs, which were generated as an integral part of the simulation process.
 
 To estimate the true site-specific EONRs, our research employed two distinct approaches for training the machine learning (ML) models: the S-learner approach and the R-learner approach.
 
 
-To estimate true EONRs using the S-learner, a consistent approach was employed for our candidate ML models, including Random Forest (RF), Boosted Regression Forest (BRF), linear, and Spatial Error (SE) models. This involved training the ML models using the complete dataset. Subsequently, the yield response function associated with each model was estimated using validation data, which encompassed the entire dataset in this context. Profits (${\hat{\pi}}_{im}$) were then computed for each model, and the nitrogen level that maximized profit was determined site specifically within the test dataset.
+To estimate true EONRs using the S-learner, a consistent approach was employed for our candidate ML models, including Random Forest (RF), Boosted Regression Forest (BRF), linear, and Spatial Error (SE) models. This involved training the ML models using the complete dataset. Subsequently, the yield response function associated with each model was estimated using validation data, which is the entire dataset in this context. Profits  were then computed for each model $m$, and the nitrogen level that maximized profit was determined site specifically within the dataset.
 
-Suppose we have a set of variables, denoted as $\Omega_i$ ,which represents specific characteristics of the field. Each variable within $\Omega_i$ corresponds to an explanatory feature for a particular location or observation. Let ${\hat{g}}_{im}(N_j,\ \Omega)$ represent a yield response function estimated by one of the candidate ML models, with j representing the  N rates. The estimated yield response function for a specific variable $\Omega_i$ and nitrogen rate  $N_j$ within model m can be denoted as ${\hat{g}}_{im}(N_j,\ \Omega_i)$. To determine the site-specific EONRs we solve the following problem for all variables $\Omega_i$ within each model:
+Suppose we have a vector of variables, denoted as $\Omega$. Each variable within $\Omega_i$ corresponds to a subplot-level explanatory feature (specific soil/field
+characteristics). Let ${{g}}_{m}(N,\ \Omega)$ represent a yield response function estimated by one of the candidate ML models $m$. The estimated yield response function at $i$ within model $m$ can be denoted as ${\hat{g}}_{m}(N,\ \Omega_i)$. To determine the site-specific EONRs we solve the following optimization problem for all $i$ within each model $m$:
 
 $$
-\widehat{N}_i^{o p t}=\underset{N_j}{\operatorname{argmax}}\left(p \cdot \hat{g}_{i m}\left(N_j, \Omega_i\right)-w \cdot N_j\right)
+\widehat{N}_i^{o p t}=\underset{N}{\operatorname{argmax}}\left(p \cdot \hat{g}_{ m}\left(N, \Omega_i\right)-w \cdot N\right)
 $$
 
-where p and w represent the prices of corn and N respectively. 
+where $p$ and $w$ represent the prices of corn and N respectively. 
 
 To estimate the true site-specific EONRs using the R-learner with a causal forest model, we utilized the entire dataset as the training dataset to predict treatment effects. Nitrogen was considered a factor variable and its application within a given field was categorized into $\alpha$ levels denoted as $(N_\alpha\ ,\ \alpha\ \in{1,\ 2,\ 3,...,l})$. The objective of our analysis was to estimate the changes in yield $(Y)$ resulting from changes in nitrogen rates, specifically from the lowest level $(N_1)$ to the remaining $l-1$ levels ${(N}_\alpha)$, using the validation data (the entire dataset in this context).
-We obtained $l-1$ distinct values representing the yield changes caused by varying the nitrogen rate for each observation $\left(\Delta Y_{N_1 \rightarrow N_\alpha}\right)$ in the validation dataset. These yield changes were then treated as the dependent variable, while the nitrogen levels served as the explanatory variables. Subsequently, a GAM was trained for each observation, and yield response function was estimated. The site-specific optimal nitrogen rates were determined by solving the same optimization problem as in the S-learner approach.
+We obtained $l-1$ distinct values representing the yield changes caused by varying the nitrogen rate for each observation $\left(\Delta Y_{N_1 \rightarrow N_\alpha}\right)$ in the validation dataset. Yield change was then treated as the dependent variable, while the nitrogen levels served as the explanatory variables. Subsequently, a GAM was trained for each observation, and yield response function was estimated. The site-specific optimal nitrogen rates were determined by solving the same optimization problem as in the S-learner approach.
 
 
-There are variations in profit outcomes when estimating true site-specific EONRs using candidate ML models. To determine the profit deficits associated with each model, we establish reference points based on the true optimal yield and true optimal nitrogen levels. These reference values are derived through simulation and serve as benchmarks for comparison.
-By contrasting the model-predicted profits with the reference points, we can quantitatively assess the disparities and evaluate the accuracy of the ML models in estimating EONRs. The profit deficit $(\Delta \pi)$ can be calculated as follows:
+There are variations in profit outcomes when estimating true site-specific EONRs using candidate ML models. To determine the profit deficits associated with each model, we establish reference points based on the true optimal yield and true optimal nitrogen levels. These reference values are generated through simulation and serve as benchmarks for comparison.
+By contrasting the model-predicted profits with the reference points, we can quantitatively assess the disparities and evaluate the accuracy of the ML models in estimating true site-specific EONRs. The profit deficit $\Delta \pi_i$ can be calculated as follows:
 
 $$
 \begin{gathered}
 \Delta \pi_i=\hat{\pi}_{i m}-\pi_i \\
-\hat{\pi}_{i m}=p \cdot \hat{g}_{i m}\left(N_j, \Omega_i\right)-w \cdot \widehat{N}_{i m}^{o p t} \\
-\pi_i=P \cdot Y_i^{o p t}-W \cdot N_i^{o p t}
+\hat{\pi}_{i m}=p \cdot {Y}_{i m}^{o p t}-w \cdot \widehat{N}_{i m}^{o p t} \\
+\pi_i=p \cdot Y_i^{o p t}-w \cdot N_i^{o p t}
 \end{gathered}
 $$
 
-Where ${\hat{\pi}}_{im}$ represents the estimated profit obtained from the ML model $(m)$ for each observation (i), $\pi_i$ represents the true profit, ${\hat{g}}_{im}(N_j,\ \Omega_i)$ represents the estimated yield response function for a specific nitrogen rate $(N_j)$ and other variables $(\Omega_i)$ within the ML model $(m)$, The term $w.{\hat{N}}_{im}^{opt}$ represents the cost of nitrogen application, where $w$ signifies the cost per unit of nitrogen, and ${\hat{N}}_{im}^{opt}$ denotes the estimated optimal nitrogen level within the ML $(m)$. 
+Where ${\hat{\pi}}_{im}$ represents the estimated profit obtained from the ML model $(m)$ for each observation (i), $\pi_i$ represents the true profit, ${Y}_{i m}^{o p t}$ represents the generated yield based on the optimal nitrogen rate $ \widehat{N}_{i m}^{o p t}$ within the ML model $(m)$, The term $w.{\hat{N}}_{im}^{opt}$ represents the cost of nitrogen application, where $w$ signifies the cost per unit of nitrogen, and ${\hat{N}}_{im}^{opt}$ denotes the estimated optimal nitrogen level within the ML $(m)$. 
 In the true profit calculation formula, $Y_i^{opt}$  represents the true optimal yield and $N_i^{opt}$ represents the true variable rate optimal nitrogen. 
 In each simulation round we then average profit deficit for each model $(m)$:
 $$
 \overline{\Delta \pi}_m=\frac{1}{1440} \sum_{i=1}^{1440} \Delta \pi_i
 $$
-### Ranking the candidate ML models by their RMSE between estimated EONRs and true EONRs
 
-In order to determine the most accurate ML model for estimating site-specific EONRs, we compare the site-specific EONRs estimated by candidate ML models with the true EONRs. 
-The evaluation of model performance is carried out using the Root Mean Square Error (RMSE) as a metric. Within each simulated round the RMSE of the estimated variable-rate optimal nitrogen for each model (m) is computed using the formula:
+
+### Ranking the candidate ML models by their RMSE between estimated site-specific EONRs and true EONRs
+
+In order to determine the most accurate ML model for estimating true site-specific EONRs, we compare the site-specific EONRs estimated by candidate ML models with the true EONRs. 
+The evaluation of model performance is carried out using RMSE as a metric. Within each simulated round the RMSE of the estimated variable-rate optimal nitrogen for each model $m$ is computed using the formula:
 $$
-R M S E \text { of estimated EONR }=\sqrt[2]{\frac{1}{1440} \sum_{i=1}^{1440}\left(\widehat{N}_{\text {im }}^{\text {opt }}-N_i^{\text {opt }}\right)^2}
+R M S E \text { of Estimated Site-Specific EONR }=\sqrt[2]{\frac{1}{1440} \sum_{i=1}^{1440}\left(\widehat{N}_{\text {im }}^{\text {opt }}-N_i^{\text {opt }}\right)^2}
 $$
-In this equation, ${\hat{N}}_{im}^{opt}$ represents the estimated site-specific optimal nitrogen level obtained from the machine learning model (m), while $N_i^{opt}$ represents the true optimal nitrogen level. 
+In this equation, ${\hat{N}}_{im}^{opt}$ represents the estimated site-specific optimal nitrogen level obtained from the machine learning model $m$, while $N_i^{opt}$ represents the true optimal nitrogen level. 
 This evaluation metric provides a quantitative measure of the deviation between the estimated EONR and the true EONR. The lower the RMSE value, the closer the estimated EONRs are to the true values, indicating better EONR predictive performance of the model.
-After calculating the RMSE of the estimated site-specific EONRs for candidate ML model, the next step involves ranking these models based on these evaluation metrics.
+After calculating the RMSE of the estimated site-specific EONRs for candidate ML model, we then rank these models based on the evaluation metrics.
 
 ## Model Selection based on Local EONRs (stream 2)
 
-We propose a methodology for model selection based on the estimation of local EONRs values, which involves spatial cross-validation of local EONRs. The rationale behind estimating local EONRs is the absence of observed true site-specific EONRs. Moreover, this approach enhances the accuracy of EONR estimation and improves the generalizability of our model.
+To estimate EONR values, we propose a model selection approach based on estimating local EONRs, which are defined as the averages of estimated site-specific EONRs for the subplots in the test data in each fold in Figure \@ref(fig:fig-1). 
 
-The whole data are divided into multiple folds in a spatially clustered manner. Autocorrelated data raises concerns about overfitting. Random sampling for train-test splits or cross-validation violates the assumption of independent and identically distributed (IID) samples. If nearby samples with similar features are included in different sets, the model can make more accurate predictions for those samples.To prevent this, grouping the data by area restricts the model from accessing information it should not have seen.Spatial cross-validation is exemplified as follows:
+The entire dataset is divided into multiple folds in a spatially clustered manner (Figure \@ref(fig:fig-1)). Autocorrelated data raises concerns about overfitting. Random sampling for train-test splits or cross-validation may violate the assumption of independent and identically distributed (IID) samples. If nearby samples with similar features are included in different sets, the model can make more accurate predictions for those samples. To prevent this, spatially clustering the data restricts the model from accessing information it should not have seen.
 
-![f](/Users/mmousavi2/Dropbox/11.jpg){width=80%}
-After splitting our dataset (repeatedly) into training and test sets we then performed an analysis to identify the number of overlapping observations and excluded folds and repetitions that exhibited significant similarities. For instance, if we consider 5 folds and 5 repetitions, we initially have 25 splits. However, through our analysis, we identified and removed splits that were too similar to ensure the reliability of our analysis. As a result, we ended up with fewer than 25 splits. This technique enables us to assess the robustness and stability of the obtained clusters.
-Within each fold, the test data was employed to train the GAM and estimate the yield response function. Subsequently, uniform EONRs were derived for that particular fold. These EONRs are referred to as the GAM-estimated local EONRs.
-For each fold, we trained candidate ML models using the train data. Following that, we estimated site-specific EONRs for the observations in the test data. The estimated local EONRs obtained from both the GAM and the ML models were then compared and ranked using the RMSE metric.
+
+```{r fig.id = "fig-1", fig.cap = "spatial_illustration", fig.width = 5, fig.width = 4, dpi = 400}
+pCorn <- 6.25 / 25.4 # $/kg
+pN <- 1 / 0.453592 # $/kg
+
+sim_data_1 <- readRDS(here::here("Shared/Data/SimData/sim_data_1.rds"))
+
+whole_data <-
+  sim_data_1[[2]][[1]] %>%
+  # find true EONR
+  .[, opt_N := (pN / pCorn - b1) / (2 * b2)] %>%
+  .[, opt_N := pmin(Nk, opt_N)] %>%
+  .[, opt_N := pmax(0, opt_N)]
+
+train_test_split_q <- readRDS(here::here("Shared/Results/sim_results_num_repeats_1_num_folds_5/train_test_split.rds"))
+
+
+data_sf <- st_as_sf(whole_data, coords = c("X", "Y"))
+
+spatial_folds_q <-
+  train_test_split_q %>%
+  rowwise() %>%
+  mutate(training_data = list(
+    whole_data[aunit_id %in% training_ids, ]
+  )) %>%
+  mutate(test_data = list(
+    whole_data[aunit_id %in% test_ids, ]
+  )) %>%
+  data.table() %>%
+  .[, .(split_id, training_data, test_data)]
+
+
+
+plot_combined_fold_q <- function(fold_number) {
+  # Convert the training data to an sf object and add a "Type" column indicating "Train"
+  sf_data_train <- st_as_sf(spatial_folds_q[[2]][[fold_number]])
+  sf_data_train$Type <- "Train"
+  
+  # Convert the test data to an sf object and add a "Type" column indicating "Test"
+  sf_data_test <- st_as_sf(spatial_folds_q[[3]][[fold_number]])
+  sf_data_test$Type <- "Test"
+  
+  # Combine both datasets
+  sf_data_combined <- rbind(sf_data_train, sf_data_test)
+  
+  # Create a plot with fold number as subtitle
+  g_combined <- ggplot(data = sf_data_combined) +
+    geom_sf(aes(fill = Type), color = "black") +
+    scale_fill_manual(values = c("Train" = "blue", "Test" = "red")) +
+    theme_void() +
+    theme(legend.position = "none") +  # Remove legend for individual plots
+    labs(subtitle = paste("Fold", fold_number), x = NULL, y = NULL)
+  
+  # Return the plot
+  return(g_combined)
+}
+
+# Create a list to store all the plots
+all_plots_q <- list()
+
+# Call the function for each fold and store the plots in the list
+for (fold in 1:5) {
+  all_plots_q[[fold]] <- plot_combined_fold_q(fold)
+}
+
+# Combine and arrange all the plots in a 2x5 grid layout
+final_plot_q <- wrap_plots(plotlist = all_plots_q, ncol = 2, nrow = 3)
+
+# Add the legend to the final graph
+
+legend_title_q <- "Data Type"
+final_plot_q <- final_plot_q + 
+  theme(legend.position = "bottom") +
+  guides(fill = guide_legend(title = legend_title_q,
+                             override.aes = list(shape = c(15, 15),
+                                                 linetype = c(0, 0),
+                                                 size = c(2, 2),
+                                                 color = c("blue", "red"))))
+
+# Print the final combined plot
+print(final_plot_q)
+
+```
+
+
+
+After repeatedly splitting our dataset into training and test sets, we conducted an analysis to identify overlapping observations and excluded folds and repetitions that exhibited significant similarities. For example, with 5 folds and 5 repetitions, we initially had 25 splits. However, our analysis led us to remove splits that were too similar to ensure the reliability of our analysis. Consequently, we ended up with fewer than 25 splits. This technique allows us to assess the robustness of the obtained clusters.
+
+Within each fold, we used the test data to train the GAM and estimate the yield response function. Subsequently, we derived local EONRs for the test data in that specific fold. These EONRs are referred to as the GAM-estimated local EONRs.
+
+We also trained candidate ML models using the training data. Afterward, we estimated site-specific EONRs for the observations in the test data and calculated their average to estimate the local EONR for the test dataset. The local EONRs obtained from both the GAM and candidate ML models were then compared and ranked using the RMSE metric.
 
 
 ### Estimate Local EONR Using GAM as a Proxy for True EONR
 
-In the absence of true EONRs, we utilize estimated local EONRs derived from GAM as an approximation for the true values. The gam estimated local EONRs provide a reference point against which the performance of candidate ML models can be assessed during the subsequent model selection process. To obtain the GAM local EONRs, we train GAM using the validation data within each clustered split. Subsequently, the yield response function and corresponding profits for a sequence of nitrogen rates are estimated. This allows us to estimate the uniform EONR for each spatial split.
 
-Let ${\hat{g}}_{j\varphi GAM}(N_j)$ represent the yield response function estimated by GAM for the sequence of nitrogen rates $N_j$ at split $\varphi$. In order to estimate gam local EONRs, we solve the following problem for every split $\varphi$:
+In the absence of true EONRs, we use estimated local EONRs derived from GAM as approximations. These GAM-estimated local EONRs serve as reference points for assessing the performance of candidate ML models during the subsequent model selection process. To obtain the GAM-estimated local EONRs, we train GAM using the validation data within each clustered split (Figure \@ref(fig:fig-1)). Subsequently, we estimate the yield response function and corresponding profits for the test data in each spatial split . This allows us to estimate the uniform EONR, referred to as GAM-estimated local EONRs.
+
+Let ${\hat{g}}_{ GAM}(N)$ represent the yield response function for the test data in (Figure \@ref(fig:fig-1)) estimated by GAM. In order to estimate GAM local EONRs, we solve the following problem for every fold:
 
 $$
-\widehat{N}_{\varphi\mathrm{GAM}}^{opt}=\underset{N_j}{\operatorname{argmax}}\left(p \cdot \hat{g}_{\mathrm{j} \varphi \mathrm{GAM}}\left(N_j\right)-w \cdot N_j\right)
+\widehat{N}_{\mathrm{GAM}}^{opt}=\underset{N}{\operatorname{argmax}}\left(p \cdot \hat{g}_{\  \mathrm{GAM}}\left(N\right)-w \cdot N\right)
 $$
 
 
 ### Estimate Local EONRs Using the Candidate ML Models
 
-Candidate ML models were trained using the train data specific to each split, denoted as $\varphi$. Following the estimation of yield response function and corresponding profit, the site-specific EONRs were estimated for each observation in the the test data within the split. 
+Candidate ML models were trained using the train data specific to each split. Following the estimation of yield response function and corresponding profit, the site-specific EONRs were estimated for the test data within the split (Figure \@ref(fig:fig-1)). Then to obtain local EONRs, site-specific EONRs were averaged for that particular split. 
  
-Let ${\hat{g}}_{i\varphi m}(N_j,\ \Omega)$ represent the yield response function estimated by model $m$ for the nitrogen rates $N_j$ at split $\varphi$. The estimated yield response function for a specific variable $\Omega_i$ and nitrogen level $N_j$ within the split $\varphi$ and model $m$ can be denoted as ${\hat{g}}_{i\varphi m}(N_j,\ \Omega_i)$. 
-
-We solve the following optimization problem to find site-specific EONRs for each test data and split $\varphi$, and model $m$: 
+We solve the following optimization problem to find site-specific EONRs for test data in each split using model $m$: 
 $$
-\widehat{N}_{i \varphi\mathrm{m}}^{o p t}=\underset{N_j}{\operatorname{argmax}}\left(p \cdot \hat{g}_{i \varphi m}\left(N_j, \Omega_i\right)-w \cdot N_j\right)
+\widehat{N}_{i }^{o p t}=\underset{N}{\operatorname{argmax}}\left(p \cdot \hat{g}_{ m}\left(N, \Omega_i\right)-w \cdot N\right)
 $$
 
-Then to obtain local EONRs, site-speicfic EONRs were averaged for each split:
+Then local EONRs ${\mathrm{Local\ N}}$ are obtained:
 
 $$
-\widehat{\mathrm{N}}_{\varphi \mathrm{m}}^{\mathrm{opt}}=\frac{1}{\mathrm{n}} \sum_{i=1}^{\mathrm{n}} \widehat{\mathrm{N}}_{\mathrm{i} \varphi \mathrm{m}}^{\mathrm{opt}}
+\widehat{\mathrm{Local\ N}}_{\mathrm{m}}^{\mathrm{opt}}=\frac{1}{\mathrm{n}} \sum_{i=1}^{\mathrm{n}} \widehat{\mathrm{N}}_{\mathrm{i} }^{\mathrm{opt}}
 $$
-which $n$ represents te number of observations and in each test data within each split.
+which $n$ represents the number of observations in the test data within each split.
 
 ### Ranking the ML models by their RMSE between estimated local EONRs and gam estimated local EONRs
 
 In order to assess the performance of candidate ML models $m$, the RMSE between GAM estimated and ML estimated Local EONRs were calculated for each round of simulation:
 
+
 $$
-\text { RMSE of Local EONR Estimated by ML Model vs Local GAM EONR }=\sqrt[2]{\frac{1}\phi \sum_{{\varphi}=1}^\phi\left(\widehat{N}_{\varphi m}^{o p t}-\widehat{\mathrm{N}}_{\varphi \mathrm{GAM}}^{o p t}\right)^2}
+\text{RMSE of Local EONR}=\sqrt[2]{\frac{1}{\text { Total number of folds }} \sum_{j=1}^{\text {Total number of folds }}\left(\widehat{Local\  N_{m, j}^{\text {opt }}}-\widehat{\mathrm{N}}_{\mathrm{GAM}, \mathrm{j}}^{\text {opt }}\right)^2}
 $$
+
 
 The above RMSE metric provides a measure of the dissimilarity between the local EONRs estimated by the ML model $m$ and the gam estimated local EONRs.
 
@@ -272,19 +394,22 @@ We then rank the ML models based on their respective RMSE values of the local EO
 
 The yield prediction capability is widely employed as a primary criterion for model selection by researchers. In our study, we also evaluate models based on their yield prediction capability and compare its performance with our model selection method in terms of accurately estimating EONRs.
 
-Within each split $(\varphi)$, we employed training data to train candidate ML models except for the causal forest model, which is specifically designed to analyze treatment effects rather than predict yields. Subsequently, we utilized the test data from each split to predict the yield ${\widehat{\ Y}}_{i\varphi m}$.
+Within each split, we employed training data to train candidate ML models $m$ except for the causal forest model, which is specifically designed to analyze treatment effects rather than predict yields. Subsequently, we utilized the test data from each split to predict the yield ${\widehat{\ Y}}_{i\ m}$ (see Figure \@ref(fig:fig-1)). 
 
 
-In each simulation round, candidate ML models were ranked according to their RMSE between the estimated yield, denoted as ${\widehat{\ Y}}_{\varphi m}$, and the true yield ${{\ Y}}_{\varphi }$. The RMSE of the yield was computed using the following formula:
+In each simulation round, candidate ML models were ranked according to their RMSE between the estimated yield, ${\widehat{\ Y}}_{ m}$, and the true yield ${{\ Y}}$. The RMSE of the yield was computed using the following formula:
+
+
 
 $$
-\text { RMSE of Yield predicted by ML Model vs Actual Yield }=\sqrt[2]{\frac{1}{\phi} \sum_{\varphi=1}^\phi\left(\hat{Y}_{\varphi m}^{}-Y_{\varphi}\right)^2}
+\text { RMSE of Yield}=\sqrt[2]{\frac{1}{\text { Total number of folds }} \sum_{j=1}^{\text {Total number of folds }}\left(\hat{Y}_{ m{j}}^{}-Y_{j}\right)^2}
 $$
 where  
+
 $$
 \begin{aligned}
-& \hat{Y}_{\varphi m}^{}=\frac{1}{\mathrm{n}} \sum_{\mathrm{i}=1}^{\mathrm{n}} \widehat{\mathrm{Y}}_{\mathrm{i} \varphi \mathrm{m}} \\
-& \mathrm{Y}_{\varphi}=\frac{1}{\mathrm{n}} \sum_{\mathrm{i}=1}^{\mathrm{n}} \mathrm{Y}_{\mathrm{i} \varphi \mathrm{m}}
+& \hat{Y}_{ m}^{}=\frac{1}{\mathrm{n}} \sum_{\mathrm{i}=1}^{\mathrm{n}} \widehat{\mathrm{Y}}_{\mathrm{i} \ \mathrm{m}} \\
+& \mathrm{Y}=\frac{1}{\mathrm{n}} \sum_{\mathrm{i}=1}^{\mathrm{n}} \mathrm{Y}_{\mathrm{i} \ }
 \end{aligned}
 $$
 
@@ -295,138 +420,407 @@ Comparing local EONR-based model selection with yield prediction-based model sel
 
 Our study evaluated the performance of two model selection methods, Local EONR and yield-based criteria, in estimating EONRs. We examined the consistency between the rankings of models selected using these criteria and the rankings based on estimated true EONR. This analysis was conducted for each simulation round, providing insights into the alignment between the model selection methods' rankings and the rankings derived from estimated true EONR across all simulations.
 
-In addition, we calculated the profit loss associated with selecting the best model suggested by our model selection method and the yield-based model selection, compared to the true profit. To determine this, we employed the same approach as discussed in stream 1 of our study.
+In addition, we calculated the profit loss associated with selecting the best model suggested by our model selection method and the yield-based model selection, compared to the true profit calculated as discussed in stream 1 of our study.
+
+`r run_pagebreak()`
 
 
 # Results and Discussions
++ Please note that all the presented results are derived from a combination of 5-fold cross-validation with 5 repetitions, unless explicitly stated otherwise.
 
-Outline of the results 
+## Ranking of candidate ML models based on estimation of site-specific EONRs
 
-1.	Performance Ranking of Candidate ML Models
+```{r fig.id = "fig-3", fig.cap = "Ranking of Models Based on Actual Performance in Predicting Site Specific EONR", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
 
-1.1. Ranking of candidate ML models based on estimation of site-specific EONRs
+sum_results_whole <- readRDS(here::here("Shared/Results/Mona_results/sum_results_whole.rds")) %>%
+  data.table()
 
-![figure_1](/Users/mmousavi2/Dropbox/f1.jpg){width=50%}
-![figure_2](/Users/mmousavi2/Dropbox/f2.jpg){width=60%}
 
-Figure 1 presents the evaluation of candidate ML models in estimating site-specific EONRs through 500 simulations. The figure highlights the frequency of model selection based on their ability to minimize the RMSE compared to the true EONR.
+# Create a visualization for RMSE rank of site-specific predictions
+rmse_rank_site_specific <- sum_results_whole[, .(N = sum(eonr_selected_true)), by = method] %>%
+  ggplot() +
+  geom_bar(aes(y = N, x = method), stat = "identity", fill = "#555555") +  # Custom color
+  labs(x = "Methods", y = "Count") +  # Axes labels and plot title
+  theme_minimal() + 
+  theme(
+      legend.position = "bottom",  
+      #plot.title = element_text(size = 10, face = "bold"),  # Title appearance
+      #plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 10),  # X-axis label appearance
+      axis.title.y = element_text(size = 10),  # Y-axis label appearance
+      legend.title = element_text(size = 11),  # Legend title appearance
+      legend.text = element_text(size = 10)  # Legend text appearance
+    )+
+  
+  theme(axis.title = element_text(size = 12, family = "Times") ) 
+ 
+
+print(rmse_rank_site_specific)
+```
+Figure \@ref(fig:fig-3) presents the evaluation of candidate ML models in estimating site-specific EONRs through 500 simulations. The figure highlights the frequency of model selection based on their ability to minimize the RMSE compared to the true EONR. In this scenario, ML models underwent training using the complete dataset. Following the estimation of EONR, a ranking of these models was conducted, considering their RMSE. The model achieving the closest RMSE value to the true EONR was assigned a rank of one, indicating its better performance in site-specific EONR prediction. 
+We utilize the given case as a foundational benchmark. The intention is to propose a model selection methodology that can attain outcomes similar to those achieved in this particular case. 
 
 The figure shows that the SE model was selected in 78% of the simulations, indicating its consistent performance in achieving the lowest RMSE when estimating site-specific EONR. The BRF model was chosen in 14% of cases, followed by the linear model at 7.6%. The CF model had a selection rate of 0.4%, while the RF model was not selected at all.
 
-Based on the distribution of the RMSE for estimated site-specific EONRs, it can be observed that the SE model consistently exhibits the lowest RMSE compared to the other methods. 
+## The performance ranking of the model selected by our local-EONR-based approach and yield-based selection approach 
+
+```{r fig.id = "fig-4", fig.cap = "Local EONR vs Yield Selection Approach", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
+
+selection_ranks <- readRDS(here::here("Shared/Results/Mona_results/selection_ranks.rds"))
+
+ # Calculate the sum of 'eonr_selected_gam' for each 'method' and create a data table
+  local_eonr_plot <- selection_ranks[, .(N = sum(eonr_selected_gam)), by = method]
+  
+  # Calculate the sum of 'yield_selected' for each 'method' and create a data table
+  yield_plot <- selection_ranks[, .(N = sum(yield_selected)), by = method]
+  
+  # Add a 'Selection_Type' column to each data table
+  local_eonr_plot$Selection_Type <- "Local EONR Selection"
+  yield_plot$Selection_Type <- "Yield Selection"
+  
+  # Combine the two data tables into one
+  ranking_combined <- rbind(local_eonr_plot, yield_plot)
+  
+  # Create a professional-looking bar plot using ggplot
+  ggplot(ranking_combined) +
+    geom_bar(aes(y = N, x = method, fill = Selection_Type), stat = "identity", position = "dodge") +
+    
+    # Customize the fill colors
+    scale_fill_manual(values = c("Local EONR Selection" = "#333333", "Yield Selection" = "#999999")) +
+    
+    # Add labels and titles
+    labs(x = "Methods", y = "Count", fill = "Selection Type")+ 
+         #title = "Comparison of Selection Types",
+         #subtitle = "Based on EONR and Yield") +
+    
+    # Add a professional theme
+    theme_minimal() +
+    theme(
+      legend.position = "bottom",  
+      #plot.title = element_text(size = 10, face = "bold"),  # Title appearance
+      #plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 10),  # X-axis label appearance
+      axis.title.y = element_text(size = 10),  # Y-axis label appearance
+      legend.title = element_text(size = 11),  # Legend title appearance
+      legend.text = element_text(size = 10)  # Legend text appearance
+    )+
+    theme(axis.title = element_text(size = 12, family = "Times") ) 
+  
+
+```
+Figure \@ref(fig:fig-4) presents an illustrative representation of two model selection processes, including both local EONR and yield prediction criteria. On the X-axis, we depict the candidate ML models. For the local EONR selection approach, the Y-axis displays the frequency of model selection in comparison to EONRs estimated by the GAM using the RMSE metric. In the context of yield selection, the Y-axis illustrates the frequency of model preference based on its accuracy in yield prediction, determined by the RMSE between the predicted yield by candidate ML models and the true yield.
+
+In the context of the local EONR model selection approach, the SE model consistently exhibits the lowest RMSE in approximately 70.2% of simulations compared to the true EONR, demonstrating accurate EONR estimation. The linear model closely follows, achieving the lowest RMSE in about 17% of simulations, while the CF model ranks next with the lowest RMSE in approximately 10.8% of simulations. Conversely, the BRF model consistently displays lower accuracy, indicated by the lowest RMSE in only 2% of simulations.
+
+These results highlight a consistent alignment between the ranking of estimated local EONRs and the ranking of estimated true site-specific EONRs, serving as the baseline. This reinforces the robustness of using local EONR estimation for ranking ML models, significantly enhancing the probability of selecting the optimal one.
+
+Shifting our focus to the yield selection method, the BRF model consistently exhibits the lowest RMSE in relation to the true yield in approximately 99.2% of simulations. Following the BRF model, the linear model demonstrates the lowest RMSE in a minority of simulations, accounting for around 0.8% compared to the true yield.
+
+These findings emphasize the predictive strength of the BRF model for yield estimation during model selection. However, it is important to acknowledge that when predicting EONR, the SE model is the most accurate. Notably, if yield were the sole criterion, the BRF model would be favored.
+
+These findings underscore the potential viability of employing local EONR model selection as a promising approach. As highlighted in the study by Kakimoto et al. (2022), this may be attributed to the disconnect between EONR prediction and yield prediction accuracy. Consequently, relying on yield prediction accuracy for model selection might not be as advantageous when the primary objective is to predict EONR.
 
 
-1.2.	Profit deficit 
-![figure_3](/Users/mmousavi2/Dropbox/f3.jpg){width=60%}
-The distribution analysis of profit loss within the simulation demonstrates that the SE model exhibits the lowest profit loss, with a selection frequency of 77.4% across the simulations. The BRF model follows with a selection frequency of 12.6%, while the Linear model is chosen in 9.4% of the simulations. The CF model has the lowest selection frequency at 0.6%. These findings emphasize the better performance of the SE model in minimizing profit loss, followed by the BRF and Linear models, while suggesting potential limitations of the CF model in this regard.
-
-![table_1](/Users/mmousavi2/Dropbox/mean_of_true_rmse_and_profit.jpg){width=50%}
-Table 1 presents the average RMSE and corresponding profit loss associated with each model across all 500 simulations. The SE model exhibits the lowest RMSE and profit loss, followed by the Linear, CF, BRF, and RF models. Based on these findings, it can be concluded that the SE model emerges as the best choice, displaying the lowest RMSE and profit loss.
-
-2.	candidate ML models ranked based on their performance in local EONR prediction
-2.1.	Gam estimated local EONR against true EONR 
-![figure_4](/Users/mmousavi2/Dropbox/f6.jpg){width=60%}
-Figure 4 depicts the correlation between the true EONRs and the gam estimated local EONRs. The analysis considers multiple combinations of folds and repeats. Notably, a robust and consistent association is observed between the GAM-estimated local EONRs and the true EONRs, regardless of the specific number of folds and repeats utilized. This finding suggests that the estimated local EONRs derived from the GAM serve as a reliable proxy for the true EONRs.
+## Diminished accuracy and economic performance 
 
 
+```{r fig.id = "fig-5", fig.cap = "Performance Loss Compared to the True Best Model", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
 
-2.2.	Candidate ML models Ranked based on RMSE against GAM-estimated local EONR
-![figure_5](/Users/mmousavi2/Dropbox/f7.jpg){width=50%}
-![figure_6](/Users/mmousavi2/Dropbox/f8.jpg){width=60%}
-Figures 5 and 6 provide an overview of the distribution of RMSE values for Local EONRs when compared to the EONRs estimated by the GAM in the scenario involving 5 folds and 5 repeats.
+comp_results <-
+  readRDS(here::here("Shared/Results/comp_results.rds")) %>%
+  data.table()
 
-Among the models, the SE model exhibited the lowest RMSE value when compared to the true EONR in approximately 70.2 percent of the simulations. This indicates that the SE model achieved the highest level of accuracy in estimating the local EONRs. Following the SE model, the linear model performed comparatively well, with around 17 percent of the simulations showing the lowest RMSE value with respect to the true EONR.
+perf_loss_data <-
+  comp_results[, .(num_folds, num_repeats, loss_data)] %>%
+  unnest(loss_data) %>%
+  data.table()
 
-The CF model ranked next, as it had the lowest RMSE value for the true EONR in approximately 10.8 percent of the simulations. Lastly, the BRF model displayed the lowest RMSE value for the true EONR in only 2 percent of the simulations, indicating its relatively weaker performance compared to the other models.
+perf_loss_data_eonr <-
+  perf_loss_data[, .(sim, num_folds, num_repeats, e_rmse_eonr_loss, y_rmse_eonr_loss)] %>%
+  melt(id.var = c("sim", "num_folds", "num_repeats")) %>%
+  .[, selection := case_when(
+    variable == "e_rmse_eonr_loss" ~ "LEONR-based Selection",
+    variable == "y_rmse_eonr_loss" ~ "Yield-based Selection"
+  )]
 
+(
+  ggplot(perf_loss_data_eonr[num_folds == 5 & num_repeats == 5, ]) +
+    geom_histogram(aes(x = value)) +
+    facet_grid(selection ~ .) +
+    theme_bw()+
+     theme(
+      axis.title = element_text()
+    )
+     
+)+
+  theme(axis.title = element_text(size = 12, family = "Times") ) 
+```
 
+```{r fig.id = "fig-6", fig.cap = "Profit Loss Compared to the True Best Model", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
+perf_loss_data_pi <-
+  perf_loss_data[, .(sim, num_folds, num_repeats, e_pi_loss, y_pi_loss)] %>%
+  melt(id.var = c("sim", "num_folds", "num_repeats")) %>%
+  .[, selection := case_when(
+    variable == "e_pi_loss" ~ "LEONR-based Selection",
+    variable == "y_pi_loss" ~ "Yield-based Selection"
+  )]
 
-
-![table_2](/Users/mmousavi2/Dropbox/t3.jpg){width=80%}
-Table 2 provides the average RMSE values of Local EONRs estimated by candidate ML models, along with the corresponding average profit loss compared to the true EONRs. The SE model consistently had the lowest RMSE and profit loss, followed by the linear model. The RF model showed the highest profit loss and RMSE in all cases. Additionally, using 5 folds and 10 repeats resulted in the lowest RMSE values for all models.
-
-
-
-
-3.	Candidate ML Models ranked by Yield RMSE
-
-![figure_7](/Users/mmousavi2/Dropbox/f9.jpg){width=60%}
-![figure_8](/Users/mmousavi2/Dropbox/f10.jpg){width=60%}
-
-Figures 7 and 8 present the outcomes of model selection for yield prediction in the scenario involving 5 folds and 5 repeats. According to the results, the BRF model consistently exhibited the lowest RMSE in comparison to the true yield in approximately 99.2 percent of the simulations. Following the BRF model, the linear model had the lowest RMSE in a very small proportion of simulations, with around 0.8 percent of the simulations when compared to the true yield.
-
-These findings indicate that, when considering model selection based on yield prediction, the BRF model outperformed the other models.
-
-
-![table_3](/Users/mmousavi2/Dropbox/t4.jpg){width=80%}
-
-Table 3 presents the average RMSE values for yield across all simulations, taking into account different combinations of folds and repetitions. As previously mentioned, the BRF model consistently achieved the lowest RMSE for yield. Additionally, considering the number of folds and repetitions, the configuration of 10 folds and 5 repeats yielded the lowest RMSE values for all candidate models, indicating a higher level of accuracy in yield prediction.
-
-4.	Comparison between Yield-Based Model Selection and Local EONR Model Selection
-
-4.1.	Comparison of Local EONR Model Selection and Estimated True EONRs
-
-![figure_9](/Users/mmousavi2/Dropbox/f12.jpg){width=70%}
-
-Figure 9 illustrates the performance of local EONR model selection compared to the true EONRs estimated by candidate ML models. The x-axis represents the true ranking of the ML models in estimating EONRs, while the y-axis represents the frequency of correct model selection by the local EONR criterion, where the correct model is ranked first on the x-axis.
-
-For the scenario involving 5 folds and 1 repeat, the local EONR criterion selected the right model in approximately 57.2 percent of the simulations. In the case of 5 folds and 5 repeats, the correct model was chosen in 58.4 percent of the simulations. With 7 folds and 5 repeats, the local EONR criterion achieved a higher accuracy, selecting the right model in approximately 62.4 percent of the simulations. Increasing the number of folds to 10 while keeping 5 repeats resulted in a further improvement, with the correct model chosen 65.8 percent of the time. Similarly, for the scenario of 5 folds and 10 repeats, the local EONR criterion achieved a success rate of 59.4 percent, and for 10 folds and 10 repeats, it achieved a success rate of 65.2 percent.
-
-These findings demonstrate that increasing the number of folds and repeats generally improved the accuracy of the local EONR model selection, resulting in a higher percentage of correct model choices.
-
-
-![figure_10](/Users/mmousavi2/Dropbox/f16.jpg){width=70%}
-Figure 10 depicts the relationship between the average GAM estimated local EONRs and the average local EONRs estimated by candidate ML models, considering 10 folds and 10 repeats for all simulations. It is evident from the plot that both the RF and BRF models consistently underestimate the gam EONRs.
-
-4.2.	Comparison of Yield-Based Model Selection and Entire Dataset Model Ranking 
-       
-![figure_10](/Users/mmousavi2/Dropbox/f13.jpg){width=70%}
-
-Figure 10 presents the performance of model selection based on yield prediction across different combinations of folds and repeats. The x-axis represents the ranking of the true EONR, where rank 1 indicates the ML model that truly performs the best in estimating EONRs.
-
-From the figure, it is evident that the yield-based model selection had a low success rate in identifying the correct model across all combinations. In the case of 5 folds and 1 repeat, and 5 folds and 10 repeats, the yield-based model selection correctly identified the best model in only 14.2 percent of the simulations. Similarly, for the combinations of 5 folds and 5 repeats, 7 folds and 5 repeats, 10 folds and 5 repeats, and 10 folds and 10 repeats, the success rate remained consistently low at 14.4 percent.
-
-These results indicate that the yield-based model selection method had limited effectiveness in accurately identifying the best model for EONR estimation across the various combinations of folds and repeats considered in the analysis.
-
-The impact of different combinations of folds and repeats on the model selection results for yield prediction in this case can be observed from the success rates of the yield-based model selection. The yield-based model selection method had a success rate of around 14.2-14.4 percent regardless of the number of folds and repeats employed.
-
-These results suggest that varying the number of folds and repeats did not have a significant impact on the performance of the yield-based model selection method in accurately identifying the best model for EONR estimation. 
+(
+  ggplot(perf_loss_data_pi[num_folds == 5 & num_repeats == 5, ]) +
+    geom_histogram(aes(x = value)) +
+    facet_grid(selection ~ .) +
+    theme_bw()+
+    theme(
+      axis.title = element_text()
+    )
+)+
+  theme(axis.title = element_text(size = 12, family = "Times") ) 
+```
 
 
-![figure_11](/Users/mmousavi2/Dropbox/f15.jpg){width=70%}
-Figure 11 illustrates the relationship between the RMSE values of yield and the RMSE values of true EONRs across all simulations and candidate ML models. The figure emphasizes that there are instances where the RMSE of the true EONR is the lowest, while the RMSE of yield prediction is the highest, and vice versa.
+```{r, tab.id = "table_1", tab.cap = "Averaged Performance and Profit Loss"}
+#knitr::include_graphics(here::here("Loss.jpg"))
+#knitr::include_graphics(file.path("/Users/mmousavi2/Dropbox/Local-Cross-Validation", "Loss.jpg"))
 
-This finding highlights the potential occurrence of cases where the accuracy of EONR estimation and yield prediction may not align. In some situations, even if the RMSE of the true EONR is minimized, the RMSE of yield prediction may be relatively higher. Similarly, there are cases where the RMSE of yield prediction is minimized while the RMSE of the true EONR may not be at its lowest. These results indicate a decoupling between the accuracy of EONR estimation and yield prediction in certain instances.
+```
+<br>
+<br>
+<br>
+
+![Averaged Performance and Profit Loss](/Users/mmousavi2/Dropbox/Local-Cross-Validation/Loss.jpg){width=70%}
+
+
+
+
+It's crucial to measure the impact on performance and profit when using our suggested model through our local EONR selection method, as depicted in Figures \@ref(fig:fig-5) and \@ref(fig:fig-6). These figures illustrate differences in the model's predictive accuracy for site-specific EONR and the resulting profits.
+
+The vertical lines in these figures represent how often a model leads to a certain level of performance or profit loss compared to the most accurate ML model across 500 simulations. Clearly, choosing the model based on yield prediction accuracy results in poorer performance and lower profits compared to the Local cross validation approach.
+
+These findings are summarized in Table 1, which shows average performance and profit changes for both local EONR and yield prediction methods. When using the yield prediction method, performance worsens by 6.70, and profits decrease by 12.13. On the other hand, the local EONR selection approach leads to much smaller performance loss (1.51) and only a minor profit reduction (2.47). This demonstrates that the local EONR approach is a better choice compared to the yield prediction method in terms of maintaining performance and profitability.
+
+
+## The impact of different fold repeat combination on local EONR selection and yield selection method
+
+```{r fig.id = "fig-7", fig.cap = "The impact of different fold repeat combinations\non local EONR and yield selection method", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
+perf_ranking_e <-
+  comp_results[, .(num_folds, num_repeats, selection_perf_rank_LE)] %>%
+  unnest(selection_perf_rank_LE) %>%
+  data.table()
+
+perf_ranking_y <-
+  comp_results[, .(num_folds, num_repeats, selection_perf_rank_Y)] %>%
+  unnest(selection_perf_rank_Y) %>%
+  data.table()
+
+# Add a new column "Type" to distinguish between 'e' and 'y'
+perf_ranking_e$Selection_Type <- "Local EONR Selection"
+perf_ranking_y$Selection_Type <- "Yield Selection"
+
+# Merge the two data frames into one
+perf_ranking_combined <- rbind(perf_ranking_e, perf_ranking_y)
+
+# Plot the combined data using dodge position and refined colors
+ggplot(perf_ranking_combined) +
+  geom_bar(aes(y = N, x = eonr_rank_true, fill = Selection_Type), stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("Local EONR Selection" = "#333333", "Yield Selection" = "#999999")) +  # Set colors
+  facet_grid(rows = vars(`Number of Folds` = num_folds), cols = vars(`Number of Repeats` = num_repeats),
+              labeller = labeller(`Number of Folds` = label_both, `Number of Repeats` = label_both)) +
+  labs(
+    x = "True EONR Rank",
+    y = "Count",
+    fill = "Selection Type"
+  ) +
+   theme_bw() +
+  theme(legend.position = "bottom")+  # Move the legend to the bottom
+   theme(strip.text = element_text(size = 6.5))+
+  theme(
+      legend.position = "bottom",  
+      #plot.title = element_text(size = 10, face = "bold"),  # Title appearance
+      #plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 10),  # X-axis label appearance
+      axis.title.y = element_text(size = 10),  # Y-axis label appearance
+      legend.title = element_text(size = 11),  # Legend title appearance
+      legend.text = element_text(size = 10)  # Legend text appearance
+    )+
+  theme(axis.title = element_text(size = 12, family = "Times") ) 
+
+
+  
+```
+Figure \@ref(fig:fig-7) presents a comparison of two model selection criteria: local EONR and yield-based, across various combinations of folds and repeats. The x-axis represents the ranking of the ML models in estimating true site-specific EONRs, with rank 1 indicating the best-performing model in estimating site-specific EONRs compared to the true EONRs.
+
+In the context of local EONR model selection, the y-axis depicts the frequency of selecting the right model. The local EONR criterion consistently demonstrated an increasing trend in accuracy as the number of folds and repeats increased. For example, with 5 folds and 1 repeat, the correct model was selected in approximately 57.2 percent of simulations. This success rate improved to 58.4 percent with 5 repeats, and further to 62.4 percent with 7 folds and 5 repeats. Notably, increasing the number of folds to 10 while maintaining 5 repeats resulted in a substantial improvement, achieving a success rate of 65.8 percent. The pattern continued across different combinations, such as 5 folds and 10 repeats (59.4 percent success) and 10 folds and 10 repeats (65.2 percent success). This consistent improvement in accuracy underscores the positive impact of increasing the number of folds and repeats on the local EONR model selection.
+
+In contrast, the yield-based model selection exhibited a lower success rate in identifying the best-performing model for EONR estimation. Across all combinations of folds and repeats, the yield-based method consistently achieved a success rate of approximately 14.2-14.4 percent. This low success rate remained largely unaffected by variations in the number of folds and repeats. Consequently, it can be inferred that altering the fold and repeat parameters did not significantly influence the performance of the yield-based model selection in accurately identifying the optimal model for EONR estimation.
+
+The findings from these two model selection criteria highlight a clear distinction in their responses to different combinations of folds and repeats. While the local EONR criterion exhibited a notable increase in accuracy as folds and repeats were increased, the yield-based model selection method consistently demonstrated limited effectiveness across all scenarios. 
+
+## Correlation Between GAM-Estimated EONR and True EONR
+
+```{r fig.id = "fig-8", fig.cap = "GAM vs True EONR", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
+
+gam_results_dif_combination <- readRDS(here::here("Shared/Results/Mona_results/gam_results_different_combinations.rds")) %>% data.table()
+
+gam_true <-
+    gam_results_dif_combination[, .(num_folds, num_repeats, comp_summary)] %>%
+    unnest(comp_summary) %>%
+    data.table()
+
+gam_true_vis <- ggplot(gam_true, aes(x = opt_N, y = opt_N_gam)) +
+    geom_point(colour = "black", size = 0.5) +
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
+    xlim(50, 300) +
+    ylim(50, 300) +
+    facet_grid(rows = vars(`Number of Folds` = num_folds), cols = vars(`Number of Repeats` = num_repeats),
+               labeller = labeller(`Number of Folds` = label_both, `Number of Repeats` = label_both)) +
+    xlab("True EONR") +
+    ylab("GAM Estimated EONR")+
+   theme_bw()+
+  theme(legend.position = "bottom")+
+    theme(strip.text = element_text(size = 6.5))+
+  theme(
+      legend.position = "bottom",  
+      #plot.title = element_text(size = 10, face = "bold"),  # Title appearance
+      #plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 10),  # X-axis label appearance
+      axis.title.y = element_text(size = 10),  # Y-axis label appearance
+      legend.title = element_text(size = 11),  # Legend title appearance
+      legend.text = element_text(size = 10)  # Legend text appearance
+    )+
+  theme(axis.title = element_text(size = 12, family = "Times") ) 
+  
+
+gam_true_vis
+```
+Figure \@ref(fig:fig-8) depicts the correlation between the true EONRs and the gam estimated local EONRs. The analysis considers multiple combinations of folds and repeats. Notably, a robust and consistent association is observed between the GAM-estimated local EONRs and the true EONRs, regardless of the specific number of folds and repeats utilized. This finding suggests that the estimated local EONRs derived from the GAM serve as a reliable proxy for the true EONRs. 
+GAMs often employ advanced smoothing techniques, such as spline functions, to estimate non-linear relationships. These smoothing techniques are adept at reducing noise within the data and revealing underlying patterns, ultimately leading to enhanced predictive accuracy. Another factor that strengthens GAM's role as a viable stand-in for true EONRs is our thorough model tuning and validation process, which reinforces the model's reliability and performance.
+
+## Visual Comparison: Average GAM EONR vs. Average Local EONR  
+
+```{r fig.id = "fig-9", fig.cap = "Average GAM EONR vs. Average Local EONR", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
+
+sum_results_gam<- readRDS(here::here("Shared/Results/Mona_results/sum_results_gam.rds"))
+main_sum_results <- readRDS(here::here("Shared/Results/Mona_results/main_sum_results.rds"))
+
+# combined results other version 
+combined_results_other_v <-
+  sum_results_gam[main_sum_results, on = c("sim", "split_id")] %>%
+  .[, opt_N_dif_select := opt_N_hat - opt_N_gam]
+
+
+# Group the data by "sim" and "method" columns, and calculate the average of "opt_N_hat" and "opt_N"
+averaged_df <- combined_results_other_v %>%
+  group_by(sim, method) %>%
+  summarize(avg_opt_N_hat = mean(opt_N_hat),
+            avg_opt_N_gam = mean(opt_N_gam))
+
+
+
+# Create separate graphs by method using facet_wrap
+ggplot(averaged_df, aes(x = avg_opt_N_gam, y = avg_opt_N_hat)) +
+  geom_point(colour = "black", size = 0.5) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black") +
+  scale_x_continuous(limits = c(100, 180)) +
+  scale_y_continuous(limits = c(100, 180)) +
+  labs(x = "Average GAM EONR", y = "Average Local EONR") +
+  facet_wrap(~ method, ncol = 2)+
+   theme(strip.text = element_text(size = 6.5))+
+   theme_bw()+
+  theme(
+      legend.position = "bottom",  
+      #plot.title = element_text(size = 10, face = "bold"),  # Title appearance
+      #plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 10),  # X-axis label appearance
+      axis.title.y = element_text(size = 10),  # Y-axis label appearance
+      legend.title = element_text(size = 11),  # Legend title appearance
+      legend.text = element_text(size = 10)  # Legend text appearance
+    )+
+  theme(axis.title = element_text(size = 12, family = "Times") ) 
+
+```
+
+Figure \@ref(fig:fig-9) illustrates the relationship between the average GAM-estimated local EONRs and those estimated by candidate ML models across all simulations. The plot shows that both the RF and BRF models consistently underestimate the GAM EONRs.
+
+Analyzing Figure \@ref(fig:fig-9) reveals that models like BRF or RF might excel in prediction but fall short in estimating EONR. Conversely, models like SE, linear, or CF significantly outperform in EONR estimation, likely due to their ability to capture complex relationships, spatial dependencies, and causal links within the data.
+
+## Assessing Accuracy in Yield-Based Model Selection: RMSE of Yield and RMSE of True EONR"
+
+```{r fig.id = "fig-10", fig.cap = "RMSE of Yield vs. RMSE of True EONR", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
+# Group the data by "sim" and "method" columns, and calculate the average of "rmse of yield" and "rmse of yield"
+averaged_df <- main_sum_results %>%
+  group_by(sim, method) %>%
+  summarize(avg_rmse_eonr_true = mean(rmse_eonr_true),
+            avg_rmse_yield = mean(rmse_yield))
+
+# Create separate graphs by method using facet_wrap
+ggplot(averaged_df, aes(x = avg_rmse_yield, y = avg_rmse_eonr_true)) +
+  geom_point(colour = "black", size = 0.5) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
+  #scale_x_continuous(limits = c(100, 180)) +
+  #scale_y_continuous(limits = c(100, 180)) +
+  labs(x = "RMSE of Yield", y = "RMSE of true EONR") +
+  facet_wrap(~ method, ncol = 2)+
+   theme(strip.text = element_text(size = 7))+
+   theme_bw()+
+  theme(
+      legend.position = "bottom",  
+      #plot.title = element_text(size = 10, face = "bold"),  # Title appearance
+      #plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 10),  # X-axis label appearance
+      axis.title.y = element_text(size = 10),  # Y-axis label appearance
+      legend.title = element_text(size = 11),  # Legend title appearance
+      legend.text = element_text(size = 10)  # Legend text appearance
+    )+
+  theme(axis.title = element_text(size = 12, family = "Times") ) 
+
+```
+
+Figure \@ref(fig:fig-10) illustrates the relationship between the RMSE values of yield compared to the true yield and the RMSE values of estimated true site-specific EONRs compared to the true EONRs across all simulations and candidate ML models. (Note: The CF model is excluded from yield estimation.) The figure highlights cases where the RMSE of the estimated true site-specific EONRs is the lowest while the RMSE of yield prediction is the highest, and vice versa.
+
+This finding highlights the potential occurrence of cases where the accuracy of EONR estimation and yield prediction may not align. In some situations, even if the RMSE of the true EONR is minimized, the RMSE of yield prediction may be relatively higher. Similarly, there are cases where the RMSE of yield prediction is minimized while the RMSE of the true EONR may not be at its lowest. 
+
+
+# Conclusion
+           
+In conclusion, our study introduced a new approach for selecting a ML model for predicting site-specific Economic Optimal Nitrogen Rate (EONR) using machine learning models. Traditional methodologies have often relied on selecting models based on their performance in predicting yield, assuming that such models would also excel in predicting EONR. However, our research demonstrated that this approach does not necessarily lead to accurate EONR predictions. Through the application of our proposed local EONR prediction method, utilizing cross-validation with EONR  rather than yield, we achieved rankings of machine learning models that closely aligned with the true rankings for site-specific EONR prediction.
+
+The comparison between rankings based on yield prediction accuracy and our local EONR prediction approach revealed a significant discrepancy. Models that excelled in yield prediction did not consistently perform well in predicting EONR accurately. This emphasizes the limitations of relying solely on yield-based model selection for EONR estimation.
+
+Moreover, our study quantified the economic implications of model selection criteria. The difference in profit between selecting models based on yield prediction versus local EONR prediction was substantial, with an average profit loss of 12.13 dollars per kilogram for the former compared to only $2.47 per kilogram for the latter. Additionally, we observed performance losses of 6.7 on average when utilizing yield-based selection and only 1.51 on average when employing our local EONR prediction approach.
+
+In essence, the local EONR prediction method we introduced not only achieves predictions closely aligned with true rankings but also leads to more economically sound decisions in nitrogen management. 
+
  
-
-+ Monte Carlo simulation 
-
-+ overview of the simulation results 
-
-+ data generation 
-
-+ model selection  
-
-	- local eonr-based (spatial cross-validation, local eonr estimated by GAM) 
-
-	- yield-based 
-
-+ model selection evaluation 
-
-	- train all the models using the entire dataset of a single field 
-
-	- find out their economic performance 
-
-	- check how the model selected by the two methods actually performed when applied the entire dataset 
-
-
-In our Monte Carlo simulations, .... All the the codes that implement the MC simulation analysis to reproduce the results presented in this study are publicly accessible at <span style = "color: blue;"> Github account</span>.
+`r run_pagebreak()` 
 
 
 
-# Results and Discussions
 
-# Conclusions
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+       
+
+
+
+
 
 <!--
 # /*===========================================================
@@ -436,14 +830,10 @@ In our Monte Carlo simulations, .... All the the codes that implement the MC sim
 
 # References
 
+
+
 <div id="refs"></div>
 
 \newpage
 
-# Figures {-}
-
-# Appendix {-}
-
-#```{r, child = "appendix.rmd"}
-#```
 

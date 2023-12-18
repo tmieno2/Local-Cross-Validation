@@ -1,0 +1,317 @@
+---
+title: "Suggested figures for the results"
+author: "Mona Mousavi"
+output: html_document
+---
+
+# Evaluate candidate models based on their performance in site-specific EONR prediction
+
+## Ranking of candidate ML models based on estimation of site-specific EONRs
+
+
+```{r fig.id = "fig-3", fig.cap = "Ranking of estimated site-specific EONRs", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
+
+sum_results_whole <- readRDS(here::here("Shared/Results/Mona_results/sum_results_whole.rds"))
+
+
+ RMSE_rank_of_site_specific_prediction <-
+    sum_results_whole[, .(num_selected = sum(eonr_selected_true)), by = method] %>%
+    ggplot(.) +
+    geom_bar(aes(y = num_selected, x = method), stat = "identity")
+
+RMSE_rank_of_site_specific_prediction
+```
+
+Figure \@ref(fig:fig-3) presents the evaluation of candidate ML models in estimating site-specific EONRs through 500 simulations. The figure highlights the frequency of model selection based on their ability to minimize the RMSE compared to the true EONR.
+
+The figure shows that the SE model was selected in 78% of the simulations, indicating its consistent performance in achieving the lowest RMSE when estimating site-specific EONR. The BRF model was chosen in 14% of cases, followed by the linear model at 7.6%. The CF model had a selection rate of 0.4%, while the RF model was not selected at all.
+
+The alignment between SE's estimated EONR and the true EONR can likely be attributed to its proficiency in capturing the dynamics between nitrogen levels and crop yield. In contrast, models like RF or BRF, while proficient in yield prediction, display limitations in representing the yield response function.Therefore, when it comes to determining the optimal nitrogen application rate for economic returns, the SE model's ability to capture the yield response function gives it an advantage.
+
+
+## Distribution of methods based on profit loss 
+
+
+```{r fig.id = "fig-4", fig.cap = "Distribution of Profit Deficit", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
+
+ # Filter the data for the five methods
+filtered_data_profit_loss <- sum_results_whole[sum_results_whole$method %in% c("S-learner (SE)", "R-learner (CF)", "S-learner (BRF)", "S-learner (Linear)", "S-learner (RF)"), ]
+
+# Create a plot with the distributions of the five methods
+ggplot(filtered_data_profit_loss, aes(x = pi_deficit, fill = method)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "profit_Loss", y = "Density", title = "Distribution of Methods based on profit loss") +
+  scale_fill_discrete(name = "Method")
+
+```
+
+The distribution analysis of profit loss within the simulation demonstrates that the SE model exhibits the lowest profit loss, with a selection frequency of 77.4% across the simulations. The BRF model follows with a selection frequency of 12.6%, while the Linear model is chosen in 9.4% of the simulations. The CF model has the lowest selection frequency at 0.6%. These findings emphasize the better performance of the SE model in minimizing profit loss, followed by the BRF and Linear models, while suggesting potential limitations of the CF model in this regard.
+Given the SE model's propensity for estimating EONR in proximity to true values, it stands to reason that its application for EONR estimation would yield the least profit loss.
+
+## Average RMSE of predicted site-specific EONRs and average profit loss over all simulation 
+
+```{r fig.id = "fig-5", fig.cap = "RMSE and Profit loss Across 500 Simulations (for Estimated True EONR)", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
+
+# Summarize the data by method and calculate the mean of RMSE of true EONR
+summary_table <- sum_results_whole %>%
+  group_by(method) %>%
+  summarise(Mean_RMSE = mean(rmse_eonr_true),
+            Mean_Profit = mean(pi_deficit))
+
+# Convert 'method' column to factor for correct ordering on the x-axis
+summary_table$method <- factor(summary_table$method, levels = unique(summary_table$method))
+
+# Create the plot
+plot <- ggplot(summary_table, aes(x = method)) +
+  geom_point(aes(y = Mean_RMSE, color = "Mean RMSE"), size = 3, alpha = 0.8) +
+  geom_point(aes(y = Mean_Profit, color = "Mean Profit"), size = 3, alpha = 0.8) +
+  labs(x = "Method", y = "Value", color = "Metric") +
+  scale_color_manual(values = c("Mean RMSE" = "blue", "Mean Profit" = "red")) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 16, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  ) +
+  ggtitle("Mean RMSE and Mean Profit by Method")
+
+# Set appropriate dimensions and resolution for publication
+options(repr.plot.width = 6, repr.plot.height = 4, repr.plot.res = 300)
+
+plot
+
+```
+
+Figure \@ref(fig:fig-5) represents the averaged RMSE between site specific EONR estimated by candidate ML models and true EONR and corresponding averaged profit loss across all the simulations. 
+
+The data presented underscores a consistent pattern: the SE model exhibits the smallest average RMSE, reflecting its accuracy in EONR estimation. Following this trend, the linear model, CF, BRF, and RF successively display higher average RMSE values.
+
+The parallel alignment between RMSE and profit loss becomes apparent in the figure. Notably, the SE model again emerges with the lowest average profit loss, echoing its proficiency in mitigating financial losses. The linear model, CF, BRF, and RF subsequently display incrementally higher average profit loss values.
+
+
+The spatial error model and the linear model share key principles in estimating relationships within spatial data. While both use linear regression and assume a specific variable relationship form, the SE model stands out by incorporating spatially correlated error terms to account for spatial patterns. This extra complexity makes it better suited for situations with significant spatial dependencies. Their shared estimation rationale helps them effectively capture yield responses. This advantage contributes to their favorable performance compared to models like RF and BRF.
+
+# Evaluate candidate ML models based on their performance in local EONR prediction
+
+## Gam estimated local EONR against true EONR for different fold repeat combination
+
+
+```{r fig.id = "fig-6", fig.cap = "GAM vs TRUE EONRs fordifferent fold repeats combination", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
+
+gam_results_dif_combination <- readRDS(here::here("Shared/Results/Mona_results/gam_results_dif_combination.rds"))
+
+
+# Create a list to store the plots
+plots <- list()
+
+# Create a graph for each row
+for (i in 1:nrow(gam_results_dif_combination)) {
+  # Filter data for the current row
+  row_data <- gam_results_dif_combination[i, ]
+  dt <- row_data[[3]][[1]]
+  # Create the plot
+  gam_true_visualization <- ggplot(dt, aes(x= opt_N, y= opt_N_gam))+
+    geom_point(colour= I("gray"))+
+    geom_abline(slope = 1, intercept = 0) +
+    xlim(50 , 300) +
+    ylim(50 , 300)
+  
+  
+  
+  # Add the plot to the list
+  plots[[i]] <- gam_true_visualization
+}
+
+# Set appropriate dimensions and resolution for publication
+options(repr.plot.width = 12, repr.plot.height = 4, repr.plot.res = 300)
+
+# Arrange the plots in a grid layout
+grid.arrange(grobs = plots, ncol = 2)
+
+
+```
+
+Figure \@ref(fig:fig-6) depicts the correlation between the true EONRs and the gam estimated local EONRs. The analysis considers multiple combinations of folds and repeats. Notably, a robust and consistent association is observed between the GAM-estimated local EONRs and the true EONRs, regardless of the specific number of folds and repeats utilized. This finding suggests that the estimated local EONRs derived from the GAM serve as a reliable proxy for the true EONRs.
+
+
+
+
+
+## Candidate ML models Ranked based on RMSE against GAM-estimated local EONR
+
+```{r fig.id = "fig-7", fig.cap = "Ranking of candidate ML vs GAM for 5 fold 5 repeats", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
+
+selection_ranks <- readRDS(here::here("Shared/Results/Mona_results/selection_ranks.rds"))
+
+
+(
+Local_EONR_based_visualization <- selection_ranks[, .(num_selected=sum(eonr_selected_gam)), by= method] %>%
+  ggplot(.) +
+  geom_bar(aes(y=num_selected, x= method), stat = "identity")
+)
+
+```
+
+Figure \@ref(fig:fig-7) provides an overview of the distribution of RMSE values for Local EONRs when compared to the EONRs estimated by the GAM in the scenario involving 5 folds and 5 repeats.
+
+Among the models, the SE model exhibited the lowest RMSE value when compared to the true EONR in approximately 70.2 percent of the simulations. This indicates that the SE model achieved the highest level of accuracy in estimating the local EONRs. Following the SE model, the linear model performed comparatively well, with around 17 percent of the simulations showing the lowest RMSE value with respect to the true EONR.
+
+The CF model ranked next, as it had the lowest RMSE value for the true EONR in approximately 10.8 percent of the simulations. Lastly, the BRF model displayed the lowest RMSE value for the true EONR in only 2 percent of the simulations, indicating its relatively weaker performance compared to the other models.
+
+
+The results highlight a consistent alignment between the ranking of estimated local EONRs, determined through the lowest RMSE with GAM-estimated local EONRs, and the ranking of site-specific estimated EONRs. This underscores the robustness of using local EONR estimation for ranking candidate machine learning models, significantly enhancing the likelihood of selecting the optimal model.
+
+## Profit loss compare to the true profit (simulated base) when choosing each model by Local EONR (which model has the lowest profit loss across all simulation?)
+
+```{r fig.id = "fig-8", fig.cap = "Local EONR vs Yield selection for 5 fold 5 repeats", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
+
+deficit_cal <- readRDS(here::here("Shared/Results/Mona_results/deficit_cal.rds"))
+
+
+
+profit_loss_visualization <-
+  deficit_cal[, .(num_selected = sum(deficit_selected)), by = method] %>%
+    ggplot(.) +
+    geom_bar(aes(y = num_selected, x = method), stat = "identity")+
+  ylab("Lowest Profit Loss")
+
+profit_loss_visualization
+
+```
+
+
+
+Figure \@ref(fig:fig-8)  showcases the ranking of candidate ML models based on their minimal profit loss in contrast to the profit loss associated with using true EONR values. The results consistently highlight the spatial error model as the preferred choice with the lowest profit loss. Remarkably, this outcome demonstrates that even in comparison to the true EONR (as opposed to the GAM EONR), the SE model stands out with the least profit loss. When contrasted with the insights derived from profit loss assessments using estimated site-specific EONRs, it becomes evident that utilizing local EONR as a criterion for model selection guides decision-makers toward choosing the model that minimizes profit loss most effectively.
+
+## Visualize Gam EONR vs Local EONR to see how each model overestimate or underestimate gam predicted EONR 
+
+
+```{r fig.id = "fig-9", fig.cap = "GAM EONR vs Local EONRs 5 Folds 5 repeats ", fig.width = 5, fig.width = 7, dpi = 400, cache=FALSE}
+
+sum_results_gam<- readRDS(here::here("Shared/Results/Mona_results/sum_results_gam.rds"))
+
+main_sum_results <- readRDS(here::here("Shared/Results/Mona_results/main_sum_results.rds"))
+
+
+# combined results other version 
+combined_results_other_v <-
+  sum_results_gam[main_sum_results, on = c("sim", "split_id")] %>%
+  .[, opt_N_dif_select := opt_N_hat - opt_N_gam]
+
+
+# Group the data by "sim" and "method" columns, and calculate the average of "opt_N_hat" and "opt_N"
+averaged_df <- combined_results_other_v %>%
+  group_by(sim, method) %>%
+  summarize(avg_opt_N_hat = mean(opt_N_hat),
+            avg_opt_N_gam = mean(opt_N_gam))
+
+
+
+# Create separate graphs by method using facet_wrap
+ggplot(averaged_df, aes(x = avg_opt_N_gam, y = avg_opt_N_hat)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
+  scale_x_continuous(limits = c(100, 180)) +
+  scale_y_continuous(limits = c(100, 180)) +
+  labs(x = "avg GAM EONR", y = "avg Local EONR") +
+  ggtitle("Average GAM EONR vs. Average Local EONR (5 folds 5 repeats)") +
+  facet_wrap(~ method, ncol = 2)
+
+```
+
+Figure \@ref(fig:fig-9) depicts the relationship between the average GAM estimated local EONRs and the average local EONRs estimated by candidate ML models, considering 5 folds and 5 repeats for all simulations. It is evident from the plot that both the RF and BRF models consistently underestimate the gam EONRs.
+The consistent underestimation of GAM EONRs by RF and BRF models could be due to their challenges in capturing intricate spatial patterns and dependencies, which the GAM model handles effectively. The GAM's spatial error structure better represents nuanced variable relationships, preventing overfitting and resulting in more realistic estimates. Unlike RF and BRF ensembles, the GAM's spatially correlated error term explicitly models spatial relationships, providing a distinct advantage.
+
+
+# Evaluate candidate ML models based on their performance in yield prediction
+
+## Candidate ML Models ranked by Yield RMSE
+
+```{r fig.id = "fig-10", fig.cap = "Ranking of candidate ML vs GAM for 5 fold 5 repeats", fig.width = 5, fig.width = 7, dpi = 400, cache=FALSE}
+
+(
+yield_based_visualization <- selection_ranks[, .(num_selected=sum(yield_selected)), by= method] %>%
+  ggplot(.) +
+  geom_bar(aes(y=num_selected, x= method), stat = "identity")
+)
+
+```
+
+Figure \@ref(fig:fig-10) presents the outcomes of model selection for yield prediction in the scenario involving 5 folds and 5 repeats. According to the results, the BRF model consistently exhibited the lowest RMSE in comparison to the true yield in approximately 99.2 percent of the simulations. Following the BRF model, the linear model had the lowest RMSE in a very small proportion of simulations, with around 0.8 percent of the simulations when compared to the true yield.
+
+
+The results highlight the superior performance of the BRF model in yield prediction during model selection. However, it is important to note that the actual true ML model is the SE model. Interestingly, if the selection criterion is solely based on yield, it would favor the BRF model over others, resulting in a substantial profit loss of $43.4 (per what?) in case of 5-folds and 5-repeats.
+
+### illustrate the relationship between the RMSE values of yield and the RMSE values of site specific EONRs across all simulations for candidate ML models to see how they are related 
+
+```{r fig.id = "fig-11", fig.cap = "RMSE of Yield vs. RMSE of True EONR (5 folds 5 repeats) ", fig.width = 5, fig.width = 7, dpi = 400, cache=FALSE}
+# Group the data by "sim" and "method" columns, and calculate the average of "rmse of yield" and "rmse of yield"
+averaged_df <- main_sum_results %>%
+  group_by(sim, method) %>%
+  summarize(avg_rmse_eonr_true = mean(rmse_eonr_true),
+            avg_rmse_yield = mean(rmse_yield))
+
+# Create separate graphs by method using facet_wrap
+ggplot(averaged_df, aes(x = avg_rmse_yield, y = avg_rmse_eonr_true)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
+  #scale_x_continuous(limits = c(100, 180)) +
+  #scale_y_continuous(limits = c(100, 180)) +
+  labs(x = "RMSE of Yield", y = "RMSE of true EONR") +
+  ggtitle(" RMSE of Yield vs. RMSE of True EONR (5 folds 5 repeats)") +
+  facet_wrap(~ method, ncol = 2)
+
+```
+
+Figure \@ref(fig:fig-11) illustrates the relationship between the RMSE values of yield and the RMSE values of true EONRs across all simulations and candidate ML models. The figure emphasizes that there are instances where the RMSE of the true EONR is the lowest, while the RMSE of yield prediction is the highest, and vice versa.
+
+This finding highlights the potential occurrence of cases where the accuracy of EONR estimation and yield prediction may not align. In some situations, even if the RMSE of the true EONR is minimized, the RMSE of yield prediction may be relatively higher. Similarly, there are cases where the RMSE of yield prediction is minimized while the RMSE of the true EONR may not be at its lowest. These results indicate a decoupling between the accuracy of EONR estimation and yield prediction in certain instances.
+ 
+
+# The impact of different fold repeat combination on local EONR selection and yield selection method
+
+```{r fig.id = "fig-12", fig.cap = "The impact of different fold repeat combination on local EONR selection and yield selection method ", fig.width = 5, fig.width = 7, dpi = 400, cache=FALSE}
+
+comp_results <- readRDS(here::here("Shared/Results/comp_results.rds"))
+
+generate_graph <- function(data, plot_title) {
+  comp_results_long <- data %>%
+    pivot_longer(cols = c(`Local EONR prediction`, `Yield prediction`), names_to = "Prediction", values_to = "Value")
+  
+  graph <- ggplot(comp_results_long, aes(x = eonr_rank_true, y = Value, fill = Prediction)) +
+    geom_bar(stat = "identity", position = "dodge", alpha = 0.5, width = 0.4) +
+    labs(x = "eonr_rank_true", y = "num_selected", fill = plot_title) +
+    scale_fill_manual(values = c("Local EONR prediction" = "blue", "Yield prediction" = "red")) +
+    theme_minimal() 
+
+  return(graph)
+}
+
+library(gridExtra)
+
+# Generate the graphs
+graph1 <- generate_graph(comp_results[[6]][[1]], "5_folds_1_repeats")
+graph2 <- generate_graph(comp_results[[6]][[2]], "7_folds_1_repeats")
+graph3 <- generate_graph(comp_results[[6]][[3]], "10_folds_1_repeats")
+graph4 <- generate_graph(comp_results[[6]][[4]], "5_folds_5_repeats")
+graph5 <- generate_graph(comp_results[[6]][[5]], "7_folds_5_repeats")
+graph6 <- generate_graph(comp_results[[6]][[6]], "10_folds_5_repeats")
+
+
+# Arrange the plots in a grid
+grid.arrange(graph1, graph2, graph3, graph4, graph5, graph6)
+
+```
+
+Figure \@ref(fig:fig-12) presents a comparison of two model selection criteria: local EONR and yield-based, across various combinations of folds and repeats. The x-axis represents the ranking of the true EONR, with rank 1 indicating the best-performing ML model in estimating EONRs.
+
+In the context of local EONR model selection, the y-axis depicts the frequency of correct model selection. The local EONR criterion consistently demonstrated an increasing trend in accuracy as the number of folds and repeats increased. For example, with 5 folds and 1 repeat, the correct model was selected in approximately 57.2 percent of simulations. This success rate improved to 58.4 percent with 5 repeats, and further to 62.4 percent with 7 folds and 5 repeats. Notably, increasing the number of folds to 10 while maintaining 5 repeats resulted in a substantial improvement, achieving a success rate of 65.8 percent. The pattern continued across different combinations, such as 5 folds and 10 repeats (59.4 percent success) and 10 folds and 10 repeats (65.2 percent success). This consistent improvement in accuracy underscores the positive impact of increasing the number of folds and repeats on the local EONR model selection.
+
+Contrastingly, yield-based model selection exhibited a lower success rate in identifying the best-performing model for EONR estimation. Across all combinations of folds and repeats, the yield-based method consistently achieved a success rate of approximately 14.2-14.4 percent. This low success rate remained largely unaffected by variations in the number of folds and repeats. Consequently, it can be inferred that altering the fold and repeat parameters did not significantly influence the performance of the yield-based model selection in accurately identifying the optimal model for EONR estimation.
+
+In summary, the findings from these two model selection criteria highlight a clear distinction in their responses to different combinations of folds and repeats. While the local EONR criterion exhibited a notable increase in accuracy as folds and repeats were increased, the yield-based model selection method consistently demonstrated limited effectiveness across all scenarios. These insights shed light on the impact of fold and repeat variations on the performance of model selection criteria for EONR estimation.
+
+
