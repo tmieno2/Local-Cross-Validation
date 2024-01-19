@@ -143,5 +143,45 @@ comp_results <-
 saveRDS(comp_results, here::here("Shared/Results/comp_results.rds"))
 ```
 
+# GAM results
 
+```{r}
+gam_results <-
+  #--- specify the combination of num_folds and num_repeats ---#
+  dplyr::tribble(
+    ~num_folds, ~num_repeats,
+    5, 1,
+    7, 1,
+    10, 1,
+    5, 5,
+    7, 5,
+    10, 5,
+    5, 10,
+    7, 10,
+    10, 10
+  ) %>%
+  rowwise() %>%
+  dplyr::mutate(gam_results = list(
+   list.files(
+    paste0("Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds),
+    full.names = TRUE
+  ) %>%
+  .[str_detect(., "gam")] %>%
+  purrr::map(readRDS) %>%
+  rbindlist(fill = TRUE)
+  )) %>%
+  unnest() %>%
+  data.table()
 
+sum_results_gam <-
+  gam_results %>%
+  #--- average opt_N by fold ---#
+  # opt_N_gam is the same for all the observations
+  # within a fold
+  .[, .(opt_N_gam = mean(opt_N_gam), opt_N = mean(opt_N)), by = .(sim, split_id, num_folds, num_repeats)] %>%
+  .[, opt_N_dif := opt_N - opt_N_gam] %>%
+  .[, rmse_local_eonr := sqrt(mean(opt_N_dif^2)), by = sim] %>%
+  .[order(num_folds, num_repeats, sim), ]
+
+saveRDS(sum_results_gam, here::here("Shared/Results/sum_results_gam.rds"))
+```

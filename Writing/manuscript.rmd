@@ -81,6 +81,8 @@ In this study, we use simulated data and apply ML techniques to propose a new ap
 
 ## Models and estimation procedures
 
+In our simulations, the model selection approaches we consider select one model from the five candiate models: random forest, boosted regression forest, causal forest, linear model, and spatial error model. 
+
 Use exactly the same set of variables for all the models. Only the data used is different depending on where you are on which stream.
 
 + Train dataset ($\Sigma$)
@@ -286,14 +288,15 @@ The findings from these two model selection criteria highlight a clear distincti
 
 ```{r fig.id = "fig-8", fig.cap = "GAM vs True EONR", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
 
-gam_results_dif_combination <- readRDS(here::here("Shared/Results/gam_results_different_combinations.rds")) %>% data.table()
+gam_results_dif_combination <- readRDS(here::here("Shared/Results/Mona_results/gam_results_dif_combination.rds")) %>% data.table()
 
 gam_true <-
-  gam_results_dif_combination[, .(num_folds, num_repeats, comp_summary)] %>%
-  unnest(comp_summary) %>%
+  gam_results_dif_combination[, .(num_folds, num_repeats, comb)] %>%
+  unnest(comb) %>%
   data.table()
 
-gam_true_vis <- ggplot(gam_true, aes(x = opt_N, y = opt_N_gam)) +
+gam_true_vis <- 
+  ggplot(gam_true, aes(x = opt_N, y = opt_N_gam)) +
   geom_point(colour = "black", size = 0.5) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
   xlim(50, 300) +
@@ -302,8 +305,8 @@ gam_true_vis <- ggplot(gam_true, aes(x = opt_N, y = opt_N_gam)) +
     rows = vars(`Number of Folds` = num_folds), cols = vars(`Number of Repeats` = num_repeats),
     labeller = labeller(`Number of Folds` = label_both, `Number of Repeats` = label_both)
   ) +
-  xlab("True EONR") +
-  ylab("GAM Estimated EONR") +
+  xlab("True Local EONR") +
+  ylab("GAM Estimated Local EONR") +
   theme_bw() +
   theme(legend.position = "bottom") +
   theme(strip.text = element_text(size = 6.5)) +
@@ -372,39 +375,3 @@ Figure \@ref(fig:fig-9) illustrates the relationship between the average GAM-est
 
 Analyzing Figure \@ref(fig:fig-9) reveals that models like BRF or RF might excel in prediction but fall short in estimating EONR. Conversely, models like SE, linear, or CF significantly outperform in EONR estimation, likely due to their ability to capture complex relationships, spatial dependencies, and causal links within the data.
 
-## Assessing Accuracy in Yield-Based Model Selection: RMSE of Yield and RMSE of True EONR"
-
-```{r fig.id = "fig-10", fig.cap = "RMSE of Yield vs. RMSE of True EONR", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
-# Group the data by "sim" and "method" columns, and calculate the average of "rmse of yield" and "rmse of yield"
-averaged_df <- main_sum_results %>%
-  group_by(sim, method) %>%
-  summarize(
-    avg_rmse_eonr_true = mean(rmse_eonr_true),
-    avg_rmse_yield = mean(rmse_yield)
-  )
-
-# Create separate graphs by method using facet_wrap
-ggplot(averaged_df, aes(x = avg_rmse_yield, y = avg_rmse_eonr_true)) +
-  geom_point(colour = "black", size = 0.5) +
-  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
-  # scale_x_continuous(limits = c(100, 180)) +
-  # scale_y_continuous(limits = c(100, 180)) +
-  labs(x = "RMSE of Yield", y = "RMSE of true EONR") +
-  facet_wrap(~method, ncol = 2) +
-  theme(strip.text = element_text(size = 7)) +
-  theme_bw() +
-  theme(
-    legend.position = "bottom",
-    # plot.title = element_text(size = 10, face = "bold"),  # Title appearance
-    # plot.subtitle = element_text(size = 12),
-    axis.title.x = element_text(size = 10), # X-axis label appearance
-    axis.title.y = element_text(size = 10), # Y-axis label appearance
-    legend.title = element_text(size = 11), # Legend title appearance
-    legend.text = element_text(size = 10) # Legend text appearance
-  ) +
-  theme(axis.title = element_text(size = 12, family = "Times"))
-```
-
-Figure \@ref(fig:fig-10) illustrates the relationship between the RMSE values of yield compared to the true yield and the RMSE values of estimated true site-specific EONRs compared to the true EONRs across all simulations and candidate ML models. (Note: The CF model is excluded from yield estimation.) The figure highlights cases where the RMSE of the estimated true site-specific EONRs is the lowest while the RMSE of yield prediction is the highest, and vice versa.
-
-This finding highlights the potential occurrence of cases where the accuracy of EONR estimation and yield prediction may not align. In some situations, even if the RMSE of the true EONR is minimized, the RMSE of yield prediction may be relatively higher. Similarly, there are cases where the RMSE of yield prediction is minimized while the RMSE of the true EONR may not be at its lowest.
