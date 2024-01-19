@@ -286,92 +286,11 @@ The findings from these two model selection criteria highlight a clear distincti
 
 ## Correlation Between GAM-Estimated EONR and True EONR
 
-```{r fig.id = "fig-8", fig.cap = "GAM vs True EONR", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
-
-gam_results_dif_combination <- readRDS(here::here("Shared/Results/Mona_results/gam_results_dif_combination.rds")) %>% data.table()
-
-gam_true <-
-  gam_results_dif_combination[, .(num_folds, num_repeats, comb)] %>%
-  unnest(comb) %>%
-  data.table()
-
-gam_true_vis <- 
-  ggplot(gam_true, aes(x = opt_N, y = opt_N_gam)) +
-  geom_point(colour = "black", size = 0.5) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
-  xlim(50, 300) +
-  ylim(50, 300) +
-  facet_grid(
-    rows = vars(`Number of Folds` = num_folds), cols = vars(`Number of Repeats` = num_repeats),
-    labeller = labeller(`Number of Folds` = label_both, `Number of Repeats` = label_both)
-  ) +
-  xlab("True Local EONR") +
-  ylab("GAM Estimated Local EONR") +
-  theme_bw() +
-  theme(legend.position = "bottom") +
-  theme(strip.text = element_text(size = 6.5)) +
-  theme(
-    legend.position = "bottom",
-    # plot.title = element_text(size = 10, face = "bold"),  # Title appearance
-    # plot.subtitle = element_text(size = 12),
-    axis.title.x = element_text(size = 10), # X-axis label appearance
-    axis.title.y = element_text(size = 10), # Y-axis label appearance
-    legend.title = element_text(size = 11), # Legend title appearance
-    legend.text = element_text(size = 10) # Legend text appearance
-  ) +
-  theme(axis.title = element_text(size = 12, family = "Times"))
-
-
-gam_true_vis
+```{r fig.id = "fig-cor-gam-leonr", fig.cap = "GAM vs True EONR", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
 ```
-Figure \@ref(fig:fig-8) depicts the correlation between the true EONRs and the gam estimated local EONRs. The analysis considers multiple combinations of folds and repeats. Notably, a robust and consistent association is observed between the GAM-estimated local EONRs and the true EONRs, regardless of the specific number of folds and repeats utilized. This finding suggests that the estimated local EONRs derived from the GAM serve as a reliable proxy for the true EONRs. 
+
+Figure \@ref(fig:fig-cor-gam-leonr) depicts the correlation between the true EONRs and the gam estimated local EONRs. The analysis considers multiple combinations of folds and repeats. Notably, a robust and consistent association is observed between the GAM-estimated local EONRs and the true EONRs, regardless of the specific number of folds and repeats utilized. This finding suggests that the estimated local EONRs derived from the GAM serve as a reliable proxy for the true EONRs. 
 GAMs often employ advanced smoothing techniques, such as spline functions, to estimate non-linear relationships. These smoothing techniques are adept at reducing noise within the data and revealing underlying patterns, ultimately leading to enhanced predictive accuracy. Another factor that strengthens GAM's role as a viable stand-in for true EONRs is our thorough model tuning and validation process, which reinforces the model's reliability and performance.
 
-## Visual Comparison: Average GAM EONR vs. Average Local EONR  
 
-```{r fig.id = "fig-9", fig.cap = "Average GAM EONR vs. Average Local EONR", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
-sum_results_gam <- readRDS(here::here("Shared/Results/Mona_results/sum_results_gam.rds"))
-main_sum_results <- readRDS(here::here("Shared/Results/Mona_results/main_sum_results.rds"))
-
-# combined results other version
-combined_results_other_v <-
-  sum_results_gam[main_sum_results, on = c("sim", "split_id")] %>%
-  .[, opt_N_dif_select := opt_N_hat - opt_N_gam]
-
-
-# Group the data by "sim" and "method" columns, and calculate the average of "opt_N_hat" and "opt_N"
-averaged_df <- combined_results_other_v %>%
-  group_by(sim, method) %>%
-  summarize(
-    avg_opt_N_hat = mean(opt_N_hat),
-    avg_opt_N_gam = mean(opt_N_gam)
-  )
-
-
-
-# Create separate graphs by method using facet_wrap
-ggplot(averaged_df, aes(x = avg_opt_N_gam, y = avg_opt_N_hat)) +
-  geom_point(colour = "black", size = 0.5) +
-  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black") +
-  scale_x_continuous(limits = c(100, 180)) +
-  scale_y_continuous(limits = c(100, 180)) +
-  labs(x = "Average GAM EONR", y = "Average Local EONR") +
-  facet_wrap(~method, ncol = 2) +
-  theme(strip.text = element_text(size = 6.5)) +
-  theme_bw() +
-  theme(
-    legend.position = "bottom",
-    # plot.title = element_text(size = 10, face = "bold"),  # Title appearance
-    # plot.subtitle = element_text(size = 12),
-    axis.title.x = element_text(size = 10), # X-axis label appearance
-    axis.title.y = element_text(size = 10), # Y-axis label appearance
-    legend.title = element_text(size = 11), # Legend title appearance
-    legend.text = element_text(size = 10) # Legend text appearance
-  ) +
-  theme(axis.title = element_text(size = 12, family = "Times"))
-```
-
-Figure \@ref(fig:fig-9) illustrates the relationship between the average GAM-estimated local EONRs and those estimated by candidate ML models across all simulations. The plot shows that both the RF and BRF models consistently underestimate the GAM EONRs.
-
-Analyzing Figure \@ref(fig:fig-9) reveals that models like BRF or RF might excel in prediction but fall short in estimating EONR. Conversely, models like SE, linear, or CF significantly outperform in EONR estimation, likely due to their ability to capture complex relationships, spatial dependencies, and causal links within the data.
 

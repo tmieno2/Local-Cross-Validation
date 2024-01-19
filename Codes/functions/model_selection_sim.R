@@ -1,9 +1,14 @@
-model_selection_sim <- function(data_files, field_sf, models, num_repeats, num_folds, num_cores) {
+model_selection_sim <- function(data_files, field_sf, models, num_repeats, num_folds, num_cores, force = FALSE) {
 
   #--- create a directory to store the results ---#
   print("Creating a directory to store the results.")
   results_dir <- paste0("Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds)
-  dir.create(results_dir)
+
+  if (file.exists(results_dir) & force == FALSE) {
+    stop("The directory for this case exists already. Skipping to the next case.")
+  } else {
+    dir.create(results_dir)
+  }
 
   #--- create seed for spatial cross-validation ---#
   print("Creating test-train split.")

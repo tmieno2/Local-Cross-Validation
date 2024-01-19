@@ -66,6 +66,33 @@ pbmclapply(
 
 # Run model-selection simulations
 
+```{r}
+sim_cases <-
+  data.table::CJ(
+    num_folds = c(5, 10, 20),
+    num_repeats = c(1, 5, 10)
+  ) %>%
+  rowwise()
+```
+
+```{r}
+set.seed(974345)
+
+lapply(
+  1:nrow(sim_cases),
+  \(x) {
+    model_selection_sim(
+      data_files = data_files,
+      field_sf = field_au_sf,
+      models = c("lm", "se", "rf", "brf", "cf", "gam"),
+      num_repeats = sim_cases[x, num_repeats],
+      num_folds = sim_cases[x, num_folds],
+      num_cores = 10
+    )
+  }
+)
+```
+
 ## 7 folds, 10 repetas
 
 ```{r}
