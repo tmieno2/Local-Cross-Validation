@@ -74,6 +74,8 @@ sum_results_whole <-
 # ggplot(sum_results_whole) +
 #   geom_histogram(aes(x = pi_deficit)) +
 #   facet_grid(method ~ .)
+
+saveRDS(sum_results_whole, here::here("Shared/Results/sum_results_whole.rds"))
 ```
 
 ## Ranking visualization
@@ -196,6 +198,8 @@ selection_ranks <-
   #--- within-sim rank based on yield prediction ---#
   .[, yield_rank := seq(.N), by = sim] %>%
   .[, yield_selected := ifelse(yield_rank == 1, 1, 0)]
+
+saveRDS(selection_ranks, here::here("Shared/Results/selection_ranks.rds"))
 ```
 
 Figure of the counts of being selected based on local EONR prediction.

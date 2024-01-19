@@ -71,7 +71,11 @@ sum_results_whole <-
   #--- ranking of rmse eonr ---#
   .[order(sim, rmse_eonr_true), ] %>%
   .[, eonr_rank_true := seq(.N), by = sim] %>%
-  .[, eonr_selected_true := ifelse(eonr_rank_true == 1, 1, 0)]
+  .[, eonr_selected_true := ifelse(eonr_rank_true == 1, 1, 0)] %>%
+  #--- ranking of profit deficit ---#
+  .[order(sim, -pi_deficit), ] %>%
+  .[, profit_rank_true := seq(.N), by = sim] %>%
+  .[, profit_selected_true := ifelse(profit_rank_true == 1, 1, 0)]
 
 # ggplot(sum_results_whole) +
 #   geom_histogram(aes(x = rmse_eonr)) +
@@ -80,6 +84,8 @@ sum_results_whole <-
 # ggplot(sum_results_whole) +
 #   geom_histogram(aes(x = pi_deficit)) +
 #   facet_grid(method ~ .)
+
+saveRDS(sum_results_whole, here::here("Shared/Results/sum_results_whole.rds"))
 ```
 
 ## Ranking visualization

@@ -64,8 +64,6 @@ library(modelsummary)
 library(tidyverse)
 ```
 
-
-
 ```{r figure_setup, cache = F, include=FALSE}
 #* +++++++++++++++++++++++++++++++++++
 #* Default figure setting
@@ -177,15 +175,13 @@ In this study, we use simulated data and apply ML techniques to propose a new ap
 <br>
 
 ```{r, fig.id = "Diagram", fig.cap = "Diagram of simulation", fig.width = 7.5, dpi = 1500}
-#knitr::include_graphics("Stream_1.jpg")
-#knitr::include_graphics(here( "Stream_1.jpg"))
-
+# knitr::include_graphics("Stream_1.jpg")
+# knitr::include_graphics(here( "Stream_1.jpg"))
 ```
 
 ```{r, fig.id = "Diagram", fig.cap = "Diagram of simulation", fig.width = 7.5, dpi = 1500}
-#knitr::include_graphics("D_updated.jpg")
-#knitr::include_graphics(here( "D_updated.jpg"))
-
+# knitr::include_graphics("D_updated.jpg")
+# knitr::include_graphics(here( "D_updated.jpg"))
 ```
 
 <br>
@@ -196,31 +192,94 @@ To propose a method for accurately predicting the optimal nitrogen rate, our stu
 
 Furthermore, to estimate the true site-specific EONR values, we trained machine learning models on the entire dataset and ranked them based on their RMSE against the true (not estimated) EONR values which were generated in the simulated data. By comparing the rankings of local EONR values and estimated true EONR values, we evaluated the performance of the local EONR model selection. Additionally, to assess the performance of our proposed method against the yield prediction model selection approach, we also conducted model selection based on yield prediction within the spatial folds. Subsequent sections will provide a detailed explanation of the steps and procedures involved.
 
+## Data generation
 
-## ML Model Performance in Site-Specific EONR Estimation with Complete Dataset (stream 1)
+### Field layout
 
-A simulated dataset, consisting of OFPE data from 500 fields, with each field containing 1440 sites, was utilized to estimate the true site-specific EONR values. These values were considered as the estimated true values because the entire dataset was used for both training and testing in the prediction of site-specific EONRs using different ML models. Later, these estimated values would be compared to the true EONRs, which were generated as an integral part of the simulation process.
+### Experimental Design
 
-To estimate the true site-specific EONRs, our research employed two distinct approaches for training the machine learning (ML) models: the S-learner approach and the R-learner approach.
+### Yield data
 
+## Models and estimation procedures
 
-To estimate true EONRs using the S-learner, a consistent approach was employed for our candidate ML models, including Random Forest (RF), Boosted Regression Forest (BRF), linear, and Spatial Error (SE) models. This involved training the ML models using the complete dataset. Subsequently, the yield response function associated with each model was estimated using validation data, which is the entire dataset in this context. Profits  were then computed for each model $m$, and the nitrogen level that maximized profit was determined site specifically within the dataset.
+Use exactly the same set of variables for all the models. Only the data used is different depending on where you are on which stream.
 
-Suppose we have a vector of variables, denoted as $\Omega$. Each variable within $\Omega_i$ corresponds to a subplot-level explanatory feature (specific soil/field
-characteristics). Let ${{g}}_{m}(N,\ \Omega)$ represent a yield response function estimated by one of the candidate ML models $m$. The estimated yield response function at $i$ within model $m$ can be denoted as ${\hat{g}}_{m}(N,\ \Omega_i)$. To determine the site-specific EONRs we solve the following optimization problem for all $i$ within each model $m$:
++ Train dataset ($\Sigma$)
++ Target data ($\Phi$): 
+  + N_{target}: the number of observations in the target dataset
+
+### Random Forest and Boosted Regression Forest
+
+Yield response function non-parametrically estimated.
 
 $$
-\widehat{N}_i^{o p t}=\underset{N}{\operatorname{argmax}}\left(p \cdot \hat{g}_{ m}\left(N, \Omega_i\right)-w \cdot N\right)
+\hat{N}_i =  argmax_{N} P_c \widehat{f(N, X|\Sigma)} - P_N N
 $$
 
-where $p$ and $w$ represent the prices of corn and N respectively. 
+### Causal Forest (CF)
 
-To estimate the true site-specific EONRs using the R-learner with a causal forest model, we utilized the entire dataset as the training dataset to predict treatment effects. Nitrogen was considered a factor variable and its application within a given field was categorized into $\alpha$ levels denoted as $(N_\alpha\ ,\ \alpha\ \in{1,\ 2,\ 3,...,l})$. The objective of our analysis was to estimate the changes in yield $(Y)$ resulting from changes in nitrogen rates, specifically from the lowest level $(N_1)$ to the remaining $l-1$ levels ${(N}_\alpha)$, using the validation data (the entire dataset in this context).
-We obtained $l-1$ distinct values representing the yield changes caused by varying the nitrogen rate for each observation $\left(\Delta Y_{N_1 \rightarrow N_\alpha}\right)$ in the validation dataset. Yield change was then treated as the dependent variable, while the nitrogen levels served as the explanatory variables. Subsequently, a GAM was trained for each observation, and yield response function was estimated. The site-specific optimal nitrogen rates were determined by solving the same optimization problem as in the S-learner approach.
+Yield response function non-parametrically estimated.
+
+### Linear (in parameter) models
+
+Yield response function parametrically estimated.
+
++ Linear Model
++ Spatial Error (SE) linear models. 
+
+Specify the models.
+
+**Profit Calculation**
+
+Let $\widehat{N}^*_{m}(X_i)$ denote the estimated EONR for cell $i$ based on the trained model $m$. Hereafter, the collection of EONR for all the cells are called simpley site-specific N prescription. The average profit per acre associate with the site-speicifc N prescription by model $m$ (denoted as \pi_m) is
+
+\begin{align}
+\pi_m  = \sum_{i=1}^{N} P_c \cdot f(\widehat{N}^*_{m}(X_i), X_i) - P_N \cdot \widehat{N}^*_{m}(X_i) / N
+\end{align}
+
+## True model performance in estimating Site-Specific EONR
+
+The main goal of the MC simualtions is to assess the ability of the two model selection procedures (based on local-EONR and yield) in estimating site-specific EONR. To achieve this simulation goal, it is necessary to identify the best performing model under the circumstance replicating the actual situation researchers faces: that is estimate models using the data from the whole field and estimate site-specific EONR. The ranking of the performance of the candidate models serve as the reference point to be compared against the ranking of their models suggested by the two model selection procedures. For example, suppose our LE-selection method suggests RE and Y-selection method suggests BRT as the top-performing model based on their own criteria. Further suppose that the process described here suggests BRT as the best performing model 
+
++ train data: all observations of the field
++ target data: all observations of the field
+
+For a given field, we take the following steps for each of the candidate models:
+
+\begin{enumerate}
+\item train the model using all the observations from the field
+\item find EONR for all the observation points (site-specific EONR) of the field 
+\item compare the estimated site-speicific EONR with the true EONRs and calculate RMSE of EONR estimation
+\end{enumerate}
+
+Once these steps are completed, then the candidate models are ranked based on their RMSE of EONR estimation. This process is repeated for all the fields. Note that step 3 of the above process compares the estimated EONR with the \textit{true} EONR and the obtained RMSEs represent the true performance of the models' ablity to estiamte site-specific EONR. This is possible only because we know the underlying site-speicifc yield reponse functions. A model selection method that is capable of selecting the true best model more often is considered a better one.
 
 
-There are variations in profit outcomes when estimating true site-specific EONRs using candidate ML models. To determine the profit deficits associated with each model, we establish reference points based on the true optimal yield and true optimal nitrogen levels. These reference values are generated through simulation and serve as benchmarks for comparison.
-By contrasting the model-predicted profits with the reference points, we can quantitatively assess the disparities and evaluate the accuracy of the ML models in estimating true site-specific EONRs. The profit deficit $\Delta \pi_i$ can be calculated as follows:
+$P_c f(\widehat{N}^*_{m_f}(X_i), X_i) - P_N \widehat{N}^*_{m_f}(X_i)$
+
+\begin{algorithm}[H] 
+\caption{Sum of Array Elements}
+\label{alg:loop}
+\begin{algorithmic}[1]
+\Require{$A_{1} \dots A_{N}$} 
+\Ensure{$Sum$ (sum of values in the array)}
+\Statex
+\Function{Loop}{$A[\;]$}
+  \State {$Sum$ $\gets$ {$0$}}
+    \State {$N$ $\gets$ {$length(A)$}}
+    \For{$k \gets 1$ to $N$}                    
+        \State {$Sum$ $\gets$ {$Sum + A_{k}$}}
+    \EndFor
+    \State \Return {$Sum$}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+### RMSE of EONR estiamtion and profit loss
+
+We use two indicators for models' ability to estiamte site-specific EOIR. First measure is the RMSE of site-speific EONR estimation. The second measure is the profitability associated with the site-specific EONR estiamted by the model.
+
+The profit deficit $\Delta \pi_i$ can be calculated as follows:
 
 $$
 \begin{gathered}
@@ -249,11 +308,54 @@ In this equation, ${\hat{N}}_{im}^{opt}$ represents the estimated site-specific 
 This evaluation metric provides a quantitative measure of the deviation between the estimated EONR and the true EONR. The lower the RMSE value, the closer the estimated EONRs are to the true values, indicating better EONR predictive performance of the model.
 After calculating the RMSE of the estimated site-specific EONRs for candidate ML model, we then rank these models based on the evaluation metrics.
 
-## Model Selection based on Local EONRs (stream 2)
+## Model Selection
 
-To estimate EONR values, we propose a model selection approach based on estimating local EONRs, which are defined as the averages of estimated site-specific EONRs for the subplots in the test data in each fold in Figure \@ref(fig:fig-1). 
+We implement two model selection approaches: one based on yield preidction accuracy and the other based on local EONR prediction accuracy. For both approaches, spatial cross-validation is employed. The entire dataset is split into a train and test datset in a spatially clustered manner. This process is repeated to create multiple folds (a set of spatially clustered train and test datasets) as depcited in Figure \ref{}. 
 
-The entire dataset is divided into multiple folds in a spatially clustered manner (Figure \@ref(fig:fig-1)). Autocorrelated data raises concerns about overfitting. Random sampling for train-test splits or cross-validation may violate the assumption of independent and identically distributed (IID) samples. If nearby samples with similar features are included in different sets, the model can make more accurate predictions for those samples. To prevent this, spatially clustering the data restricts the model from accessing information it should not have seen.
+### Model selection based on yield 
+
+For each of the fold, the following steps are implemented for each of the candidate models:
+
+\begin{enumerate}
+\item train the model using the train data 
+\item predict yield for each of the observations in the the test data based on the trained model ($\widehat{y^_{i, f,m}}$)
+\item calculate RMSE of yield prediction as $RMSE-Yield_{f,m} = \sqrt{\sum_{i=1}^{N_t}(\hat{y_{i,f,m}} - y_{i,f,m})^2/N_t}$
+\end{enumerate}
+
+Once the above process is completed for all the folds, then average RMSE-Yield was calculated for each model and the model with the lowest average RMSE value. 
+
+### Model selection based on local EONR 
+
+In validating models, it would be ideal if we could assess models based on their ability to estimate site-specific EONRs rather than yields because our ultimate interests lie in estimating EONRs, not yields. Of course, this is not possible because the true EONRs are never observable in the real world setting. We propose to overcome this challenge by validating on "local uniform EONR" estimated by a statistical model. Specifically, we train a GAM model using the test data and predict the uniform EONR for the test data, which we call local EONR. We then treat the estimated local EONR as the proxy for the true local EONR and select models that are capable of predicting the estimated local EONRs the best. Clearly, for this approach to perform well, it is vital that the estimation of local EONR is accruate enough (Later we assess the accuracy).
+
+For each of the fold, the following steps are implemented to estiamte local EONR:
+
+\begin{enumerate}
+\item train the GAM model using the test data 
+\item find uniform EONR for the test data ($\widehat{N^*_{f,gam}}$)
+\end{enumerate}
+
+For each of the fold, the following steps are implemented for each of the candidate models:
+
+\begin{enumerate}
+\item train the model using the train data 
+\item find uniform EONR for the test data based on the trained model ($\widehat{N^*_{f,m}}$)
+\end{enumerate}
+
+Once the above step process is completed for all the folds, then the RMSE of estiamting local EONR is calculated for each model as follows:
+
+\begin{align}
+RMSE-LEONR_{m} = \sqrt{\sum_{f=1}^F (\widehat{N^*_{f,m}} - \widehat{N^*_{f,gam}})^2 / F}
+\end{align}
+
+Then, the model with the lowest RMSE would be chosen as the selected model from this model selection method.
+
+## Evaluation of model selection performance
+
+Two criterion to evaluate model selection performace are used. First, they are evaluated based on the percentage of the times the selection approach picked the true best model in estimating EONR. The second and more practically informative criteria is based on loss in profit when the selected model was used instead of the true best model.  
+
+
+For example, suppose a selection approach 
 
 
 ```{r fig.id = "fig-1", fig.cap = "spatial_illustration", fig.width = 5, fig.width = 4, dpi = 400}
@@ -292,22 +394,22 @@ plot_combined_fold_q <- function(fold_number) {
   # Convert the training data to an sf object and add a "Type" column indicating "Train"
   sf_data_train <- st_as_sf(spatial_folds_q[[2]][[fold_number]])
   sf_data_train$Type <- "Train"
-  
+
   # Convert the test data to an sf object and add a "Type" column indicating "Test"
   sf_data_test <- st_as_sf(spatial_folds_q[[3]][[fold_number]])
   sf_data_test$Type <- "Test"
-  
+
   # Combine both datasets
   sf_data_combined <- rbind(sf_data_train, sf_data_test)
-  
+
   # Create a plot with fold number as subtitle
   g_combined <- ggplot(data = sf_data_combined) +
     geom_sf(aes(fill = Type), color = "black") +
     scale_fill_manual(values = c("Train" = "blue", "Test" = "red")) +
     theme_void() +
-    theme(legend.position = "none") +  # Remove legend for individual plots
+    theme(legend.position = "none") + # Remove legend for individual plots
     labs(subtitle = paste("Fold", fold_number), x = NULL, y = NULL)
-  
+
   # Return the plot
   return(g_combined)
 }
@@ -326,26 +428,21 @@ final_plot_q <- wrap_plots(plotlist = all_plots_q, ncol = 2, nrow = 3)
 # Add the legend to the final graph
 
 legend_title_q <- "Data Type"
-final_plot_q <- final_plot_q + 
+final_plot_q <- final_plot_q +
   theme(legend.position = "bottom") +
-  guides(fill = guide_legend(title = legend_title_q,
-                             override.aes = list(shape = c(15, 15),
-                                                 linetype = c(0, 0),
-                                                 size = c(2, 2),
-                                                 color = c("blue", "red"))))
+  guides(fill = guide_legend(
+    title = legend_title_q,
+    override.aes = list(
+      shape = c(15, 15),
+      linetype = c(0, 0),
+      size = c(2, 2),
+      color = c("blue", "red")
+    )
+  ))
 
 # Print the final combined plot
 print(final_plot_q)
-
 ```
-
-
-
-After repeatedly splitting our dataset into training and test sets, we conducted an analysis to identify overlapping observations and excluded folds and repetitions that exhibited significant similarities. For example, with 5 folds and 5 repetitions, we initially had 25 splits. However, our analysis led us to remove splits that were too similar to ensure the reliability of our analysis. Consequently, we ended up with fewer than 25 splits. This technique allows us to assess the robustness of the obtained clusters.
-
-Within each fold, we used the test data to train the GAM and estimate the yield response function. Subsequently, we derived local EONRs for the test data in that specific fold. These EONRs are referred to as the GAM-estimated local EONRs.
-
-We also trained candidate ML models using the training data. Afterward, we estimated site-specific EONRs for the observations in the test data and calculated their average to estimate the local EONR for the test dataset. The local EONRs obtained from both the GAM and candidate ML models were then compared and ranked using the RMSE metric.
 
 
 ### Estimate Local EONR Using GAM as a Proxy for True EONR
@@ -431,7 +528,6 @@ In addition, we calculated the profit loss associated with selecting the best mo
 ## Ranking of candidate ML models based on estimation of site-specific EONRs
 
 ```{r fig.id = "fig-3", fig.cap = "Ranking of Models Based on Actual Performance in Predicting Site Specific EONR", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
-
 sum_results_whole <- readRDS(here::here("Shared/Results/Mona_results/sum_results_whole.rds")) %>%
   data.table()
 
@@ -439,21 +535,20 @@ sum_results_whole <- readRDS(here::here("Shared/Results/Mona_results/sum_results
 # Create a visualization for RMSE rank of site-specific predictions
 rmse_rank_site_specific <- sum_results_whole[, .(N = sum(eonr_selected_true)), by = method] %>%
   ggplot() +
-  geom_bar(aes(y = N, x = method), stat = "identity", fill = "#555555") +  # Custom color
-  labs(x = "Methods", y = "Count") +  # Axes labels and plot title
-  theme_minimal() + 
+  geom_bar(aes(y = N, x = method), stat = "identity", fill = "#555555") + # Custom color
+  labs(x = "Methods", y = "Count") + # Axes labels and plot title
+  theme_minimal() +
   theme(
-      legend.position = "bottom",  
-      #plot.title = element_text(size = 10, face = "bold"),  # Title appearance
-      #plot.subtitle = element_text(size = 12),
-      axis.title.x = element_text(size = 10),  # X-axis label appearance
-      axis.title.y = element_text(size = 10),  # Y-axis label appearance
-      legend.title = element_text(size = 11),  # Legend title appearance
-      legend.text = element_text(size = 10)  # Legend text appearance
-    )+
-  
-  theme(axis.title = element_text(size = 12, family = "Times") ) 
- 
+    legend.position = "bottom",
+    # plot.title = element_text(size = 10, face = "bold"),  # Title appearance
+    # plot.subtitle = element_text(size = 12),
+    axis.title.x = element_text(size = 10), # X-axis label appearance
+    axis.title.y = element_text(size = 10), # Y-axis label appearance
+    legend.title = element_text(size = 11), # Legend title appearance
+    legend.text = element_text(size = 10) # Legend text appearance
+  ) +
+  theme(axis.title = element_text(size = 12, family = "Times"))
+
 
 print(rmse_rank_site_specific)
 ```
@@ -465,48 +560,45 @@ The figure shows that the SE model was selected in 78% of the simulations, indic
 ## The performance ranking of the model selected by our local-EONR-based approach and yield-based selection approach 
 
 ```{r fig.id = "fig-4", fig.cap = "Local EONR vs Yield Selection Approach", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
-
 selection_ranks <- readRDS(here::here("Shared/Results/Mona_results/selection_ranks.rds"))
 
- # Calculate the sum of 'eonr_selected_gam' for each 'method' and create a data table
-  local_eonr_plot <- selection_ranks[, .(N = sum(eonr_selected_gam)), by = method]
-  
-  # Calculate the sum of 'yield_selected' for each 'method' and create a data table
-  yield_plot <- selection_ranks[, .(N = sum(yield_selected)), by = method]
-  
-  # Add a 'Selection_Type' column to each data table
-  local_eonr_plot$Selection_Type <- "Local EONR Selection"
-  yield_plot$Selection_Type <- "Yield Selection"
-  
-  # Combine the two data tables into one
-  ranking_combined <- rbind(local_eonr_plot, yield_plot)
-  
-  # Create a professional-looking bar plot using ggplot
-  ggplot(ranking_combined) +
-    geom_bar(aes(y = N, x = method, fill = Selection_Type), stat = "identity", position = "dodge") +
-    
-    # Customize the fill colors
-    scale_fill_manual(values = c("Local EONR Selection" = "#333333", "Yield Selection" = "#999999")) +
-    
-    # Add labels and titles
-    labs(x = "Methods", y = "Count", fill = "Selection Type")+ 
-         #title = "Comparison of Selection Types",
-         #subtitle = "Based on EONR and Yield") +
-    
-    # Add a professional theme
-    theme_minimal() +
-    theme(
-      legend.position = "bottom",  
-      #plot.title = element_text(size = 10, face = "bold"),  # Title appearance
-      #plot.subtitle = element_text(size = 12),
-      axis.title.x = element_text(size = 10),  # X-axis label appearance
-      axis.title.y = element_text(size = 10),  # Y-axis label appearance
-      legend.title = element_text(size = 11),  # Legend title appearance
-      legend.text = element_text(size = 10)  # Legend text appearance
-    )+
-    theme(axis.title = element_text(size = 12, family = "Times") ) 
-  
+# Calculate the sum of 'eonr_selected_gam' for each 'method' and create a data table
+local_eonr_plot <- selection_ranks[, .(N = sum(eonr_selected_gam)), by = method]
 
+# Calculate the sum of 'yield_selected' for each 'method' and create a data table
+yield_plot <- selection_ranks[, .(N = sum(yield_selected)), by = method]
+
+# Add a 'Selection_Type' column to each data table
+local_eonr_plot$Selection_Type <- "Local EONR Selection"
+yield_plot$Selection_Type <- "Yield Selection"
+
+# Combine the two data tables into one
+ranking_combined <- rbind(local_eonr_plot, yield_plot)
+
+# Create a professional-looking bar plot using ggplot
+ggplot(ranking_combined) +
+  geom_bar(aes(y = N, x = method, fill = Selection_Type), stat = "identity", position = "dodge") +
+
+  # Customize the fill colors
+  scale_fill_manual(values = c("Local EONR Selection" = "#333333", "Yield Selection" = "#999999")) +
+
+  # Add labels and titles
+  labs(x = "Methods", y = "Count", fill = "Selection Type") +
+  # title = "Comparison of Selection Types",
+  # subtitle = "Based on EONR and Yield") +
+
+  # Add a professional theme
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    # plot.title = element_text(size = 10, face = "bold"),  # Title appearance
+    # plot.subtitle = element_text(size = 12),
+    axis.title.x = element_text(size = 10), # X-axis label appearance
+    axis.title.y = element_text(size = 10), # Y-axis label appearance
+    legend.title = element_text(size = 11), # Legend title appearance
+    legend.text = element_text(size = 10) # Legend text appearance
+  ) +
+  theme(axis.title = element_text(size = 12, family = "Times"))
 ```
 Figure \@ref(fig:fig-4) presents an illustrative representation of two model selection processes, including both local EONR and yield prediction criteria. On the X-axis, we depict the candidate ML models. For the local EONR selection approach, the Y-axis displays the frequency of model selection in comparison to EONRs estimated by the GAM using the RMSE metric. In the context of yield selection, the Y-axis illustrates the frequency of model preference based on its accuracy in yield prediction, determined by the RMSE between the predicted yield by candidate ML models and the true yield.
 
@@ -525,7 +617,6 @@ These findings underscore the potential viability of employing local EONR model 
 
 
 ```{r fig.id = "fig-5", fig.cap = "Performance Loss Compared to the True Best Model", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
-
 comp_results <-
   readRDS(here::here("Shared/Results/comp_results.rds")) %>%
   data.table()
@@ -547,13 +638,13 @@ perf_loss_data_eonr <-
   ggplot(perf_loss_data_eonr[num_folds == 5 & num_repeats == 5, ]) +
     geom_histogram(aes(x = value)) +
     facet_grid(selection ~ .) +
-    theme_bw()+
-     theme(
+    theme_bw() +
+    theme(
       axis.title = element_text()
     )
-     
-)+
-  theme(axis.title = element_text(size = 12, family = "Times") ) 
+
+) +
+  theme(axis.title = element_text(size = 12, family = "Times"))
 ```
 
 ```{r fig.id = "fig-6", fig.cap = "Profit Loss Compared to the True Best Model", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
@@ -569,19 +660,18 @@ perf_loss_data_pi <-
   ggplot(perf_loss_data_pi[num_folds == 5 & num_repeats == 5, ]) +
     geom_histogram(aes(x = value)) +
     facet_grid(selection ~ .) +
-    theme_bw()+
+    theme_bw() +
     theme(
       axis.title = element_text()
     )
-)+
-  theme(axis.title = element_text(size = 12, family = "Times") ) 
+) +
+  theme(axis.title = element_text(size = 12, family = "Times"))
 ```
 
 
 ```{r, tab.id = "table_1", tab.cap = "Averaged Performance and Profit Loss"}
-#knitr::include_graphics(here::here("Loss.jpg"))
-#knitr::include_graphics(file.path("/Users/mmousavi2/Dropbox/Local-Cross-Validation", "Loss.jpg"))
-
+# knitr::include_graphics(here::here("Loss.jpg"))
+# knitr::include_graphics(file.path("/Users/mmousavi2/Dropbox/Local-Cross-Validation", "Loss.jpg"))
 ```
 <br>
 <br>
@@ -622,30 +712,29 @@ perf_ranking_combined <- rbind(perf_ranking_e, perf_ranking_y)
 # Plot the combined data using dodge position and refined colors
 ggplot(perf_ranking_combined) +
   geom_bar(aes(y = N, x = eonr_rank_true, fill = Selection_Type), stat = "identity", position = "dodge") +
-  scale_fill_manual(values = c("Local EONR Selection" = "#333333", "Yield Selection" = "#999999")) +  # Set colors
-  facet_grid(rows = vars(`Number of Folds` = num_folds), cols = vars(`Number of Repeats` = num_repeats),
-              labeller = labeller(`Number of Folds` = label_both, `Number of Repeats` = label_both)) +
+  scale_fill_manual(values = c("Local EONR Selection" = "#333333", "Yield Selection" = "#999999")) + # Set colors
+  facet_grid(
+    rows = vars(`Number of Folds` = num_folds), cols = vars(`Number of Repeats` = num_repeats),
+    labeller = labeller(`Number of Folds` = label_both, `Number of Repeats` = label_both)
+  ) +
   labs(
     x = "True EONR Rank",
     y = "Count",
     fill = "Selection Type"
   ) +
-   theme_bw() +
-  theme(legend.position = "bottom")+  # Move the legend to the bottom
-   theme(strip.text = element_text(size = 6.5))+
+  theme_bw() +
+  theme(legend.position = "bottom") + # Move the legend to the bottom
+  theme(strip.text = element_text(size = 6.5)) +
   theme(
-      legend.position = "bottom",  
-      #plot.title = element_text(size = 10, face = "bold"),  # Title appearance
-      #plot.subtitle = element_text(size = 12),
-      axis.title.x = element_text(size = 10),  # X-axis label appearance
-      axis.title.y = element_text(size = 10),  # Y-axis label appearance
-      legend.title = element_text(size = 11),  # Legend title appearance
-      legend.text = element_text(size = 10)  # Legend text appearance
-    )+
-  theme(axis.title = element_text(size = 12, family = "Times") ) 
-
-
-  
+    legend.position = "bottom",
+    # plot.title = element_text(size = 10, face = "bold"),  # Title appearance
+    # plot.subtitle = element_text(size = 12),
+    axis.title.x = element_text(size = 10), # X-axis label appearance
+    axis.title.y = element_text(size = 10), # Y-axis label appearance
+    legend.title = element_text(size = 11), # Legend title appearance
+    legend.text = element_text(size = 10) # Legend text appearance
+  ) +
+  theme(axis.title = element_text(size = 12, family = "Times"))
 ```
 Figure \@ref(fig:fig-7) presents a comparison of two model selection criteria: local EONR and yield-based, across various combinations of folds and repeats. The x-axis represents the ranking of the ML models in estimating true site-specific EONRs, with rank 1 indicating the best-performing model in estimating site-specific EONRs compared to the true EONRs.
 
@@ -658,37 +747,38 @@ The findings from these two model selection criteria highlight a clear distincti
 ## Correlation Between GAM-Estimated EONR and True EONR
 
 ```{r fig.id = "fig-8", fig.cap = "GAM vs True EONR", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
-
 gam_results_dif_combination <- readRDS(here::here("Shared/Results/Mona_results/gam_results_different_combinations.rds")) %>% data.table()
 
 gam_true <-
-    gam_results_dif_combination[, .(num_folds, num_repeats, comp_summary)] %>%
-    unnest(comp_summary) %>%
-    data.table()
+  gam_results_dif_combination[, .(num_folds, num_repeats, comp_summary)] %>%
+  unnest(comp_summary) %>%
+  data.table()
 
 gam_true_vis <- ggplot(gam_true, aes(x = opt_N, y = opt_N_gam)) +
-    geom_point(colour = "black", size = 0.5) +
-    geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
-    xlim(50, 300) +
-    ylim(50, 300) +
-    facet_grid(rows = vars(`Number of Folds` = num_folds), cols = vars(`Number of Repeats` = num_repeats),
-               labeller = labeller(`Number of Folds` = label_both, `Number of Repeats` = label_both)) +
-    xlab("True EONR") +
-    ylab("GAM Estimated EONR")+
-   theme_bw()+
-  theme(legend.position = "bottom")+
-    theme(strip.text = element_text(size = 6.5))+
+  geom_point(colour = "black", size = 0.5) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
+  xlim(50, 300) +
+  ylim(50, 300) +
+  facet_grid(
+    rows = vars(`Number of Folds` = num_folds), cols = vars(`Number of Repeats` = num_repeats),
+    labeller = labeller(`Number of Folds` = label_both, `Number of Repeats` = label_both)
+  ) +
+  xlab("True EONR") +
+  ylab("GAM Estimated EONR") +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  theme(strip.text = element_text(size = 6.5)) +
   theme(
-      legend.position = "bottom",  
-      #plot.title = element_text(size = 10, face = "bold"),  # Title appearance
-      #plot.subtitle = element_text(size = 12),
-      axis.title.x = element_text(size = 10),  # X-axis label appearance
-      axis.title.y = element_text(size = 10),  # Y-axis label appearance
-      legend.title = element_text(size = 11),  # Legend title appearance
-      legend.text = element_text(size = 10)  # Legend text appearance
-    )+
-  theme(axis.title = element_text(size = 12, family = "Times") ) 
-  
+    legend.position = "bottom",
+    # plot.title = element_text(size = 10, face = "bold"),  # Title appearance
+    # plot.subtitle = element_text(size = 12),
+    axis.title.x = element_text(size = 10), # X-axis label appearance
+    axis.title.y = element_text(size = 10), # Y-axis label appearance
+    legend.title = element_text(size = 11), # Legend title appearance
+    legend.text = element_text(size = 10) # Legend text appearance
+  ) +
+  theme(axis.title = element_text(size = 12, family = "Times"))
+
 
 gam_true_vis
 ```
@@ -698,11 +788,10 @@ GAMs often employ advanced smoothing techniques, such as spline functions, to es
 ## Visual Comparison: Average GAM EONR vs. Average Local EONR  
 
 ```{r fig.id = "fig-9", fig.cap = "Average GAM EONR vs. Average Local EONR", fig.width = 4, fig.width = 6, dpi = 400, cache=FALSE}
-
-sum_results_gam<- readRDS(here::here("Shared/Results/Mona_results/sum_results_gam.rds"))
+sum_results_gam <- readRDS(here::here("Shared/Results/Mona_results/sum_results_gam.rds"))
 main_sum_results <- readRDS(here::here("Shared/Results/Mona_results/main_sum_results.rds"))
 
-# combined results other version 
+# combined results other version
 combined_results_other_v <-
   sum_results_gam[main_sum_results, on = c("sim", "split_id")] %>%
   .[, opt_N_dif_select := opt_N_hat - opt_N_gam]
@@ -711,8 +800,10 @@ combined_results_other_v <-
 # Group the data by "sim" and "method" columns, and calculate the average of "opt_N_hat" and "opt_N"
 averaged_df <- combined_results_other_v %>%
   group_by(sim, method) %>%
-  summarize(avg_opt_N_hat = mean(opt_N_hat),
-            avg_opt_N_gam = mean(opt_N_gam))
+  summarize(
+    avg_opt_N_hat = mean(opt_N_hat),
+    avg_opt_N_gam = mean(opt_N_gam)
+  )
 
 
 
@@ -723,20 +814,19 @@ ggplot(averaged_df, aes(x = avg_opt_N_gam, y = avg_opt_N_hat)) +
   scale_x_continuous(limits = c(100, 180)) +
   scale_y_continuous(limits = c(100, 180)) +
   labs(x = "Average GAM EONR", y = "Average Local EONR") +
-  facet_wrap(~ method, ncol = 2)+
-   theme(strip.text = element_text(size = 6.5))+
-   theme_bw()+
+  facet_wrap(~method, ncol = 2) +
+  theme(strip.text = element_text(size = 6.5)) +
+  theme_bw() +
   theme(
-      legend.position = "bottom",  
-      #plot.title = element_text(size = 10, face = "bold"),  # Title appearance
-      #plot.subtitle = element_text(size = 12),
-      axis.title.x = element_text(size = 10),  # X-axis label appearance
-      axis.title.y = element_text(size = 10),  # Y-axis label appearance
-      legend.title = element_text(size = 11),  # Legend title appearance
-      legend.text = element_text(size = 10)  # Legend text appearance
-    )+
-  theme(axis.title = element_text(size = 12, family = "Times") ) 
-
+    legend.position = "bottom",
+    # plot.title = element_text(size = 10, face = "bold"),  # Title appearance
+    # plot.subtitle = element_text(size = 12),
+    axis.title.x = element_text(size = 10), # X-axis label appearance
+    axis.title.y = element_text(size = 10), # Y-axis label appearance
+    legend.title = element_text(size = 11), # Legend title appearance
+    legend.text = element_text(size = 10) # Legend text appearance
+  ) +
+  theme(axis.title = element_text(size = 12, family = "Times"))
 ```
 
 Figure \@ref(fig:fig-9) illustrates the relationship between the average GAM-estimated local EONRs and those estimated by candidate ML models across all simulations. The plot shows that both the RF and BRF models consistently underestimate the GAM EONRs.
@@ -749,30 +839,31 @@ Analyzing Figure \@ref(fig:fig-9) reveals that models like BRF or RF might excel
 # Group the data by "sim" and "method" columns, and calculate the average of "rmse of yield" and "rmse of yield"
 averaged_df <- main_sum_results %>%
   group_by(sim, method) %>%
-  summarize(avg_rmse_eonr_true = mean(rmse_eonr_true),
-            avg_rmse_yield = mean(rmse_yield))
+  summarize(
+    avg_rmse_eonr_true = mean(rmse_eonr_true),
+    avg_rmse_yield = mean(rmse_yield)
+  )
 
 # Create separate graphs by method using facet_wrap
 ggplot(averaged_df, aes(x = avg_rmse_yield, y = avg_rmse_eonr_true)) +
   geom_point(colour = "black", size = 0.5) +
   geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
-  #scale_x_continuous(limits = c(100, 180)) +
-  #scale_y_continuous(limits = c(100, 180)) +
+  # scale_x_continuous(limits = c(100, 180)) +
+  # scale_y_continuous(limits = c(100, 180)) +
   labs(x = "RMSE of Yield", y = "RMSE of true EONR") +
-  facet_wrap(~ method, ncol = 2)+
-   theme(strip.text = element_text(size = 7))+
-   theme_bw()+
+  facet_wrap(~method, ncol = 2) +
+  theme(strip.text = element_text(size = 7)) +
+  theme_bw() +
   theme(
-      legend.position = "bottom",  
-      #plot.title = element_text(size = 10, face = "bold"),  # Title appearance
-      #plot.subtitle = element_text(size = 12),
-      axis.title.x = element_text(size = 10),  # X-axis label appearance
-      axis.title.y = element_text(size = 10),  # Y-axis label appearance
-      legend.title = element_text(size = 11),  # Legend title appearance
-      legend.text = element_text(size = 10)  # Legend text appearance
-    )+
-  theme(axis.title = element_text(size = 12, family = "Times") ) 
-
+    legend.position = "bottom",
+    # plot.title = element_text(size = 10, face = "bold"),  # Title appearance
+    # plot.subtitle = element_text(size = 12),
+    axis.title.x = element_text(size = 10), # X-axis label appearance
+    axis.title.y = element_text(size = 10), # Y-axis label appearance
+    legend.title = element_text(size = 11), # Legend title appearance
+    legend.text = element_text(size = 10) # Legend text appearance
+  ) +
+  theme(axis.title = element_text(size = 12, family = "Times"))
 ```
 
 Figure \@ref(fig:fig-10) illustrates the relationship between the RMSE values of yield compared to the true yield and the RMSE values of estimated true site-specific EONRs compared to the true EONRs across all simulations and candidate ML models. (Note: The CF model is excluded from yield estimation.) The figure highlights cases where the RMSE of the estimated true site-specific EONRs is the lowest while the RMSE of yield prediction is the highest, and vice versa.

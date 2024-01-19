@@ -1,0 +1,165 @@
+
+# Introduction
+
+In conventional agriculture, the natural spatial variations within a field are disregarded, and the entire area is managed uniformly. However, implementing uniformly spatial nitrogen management can result in economic and environmental inefficiencies [@fassa2022site]. One potential solution to address this issue involves implementing site-specific (variable rate) nitrogen application techniques that can recognize spatially heterogeneous crop nitrogen demand [@fassa2022site; @malzer1996corn]. Such  management practices can improve the profits of production while reducing its environmental impacts [@bullock1994quadratic; @puntel2016modeling; @wortmann2011nitrogen; @lobell2007cost; @malzer1996corn; @termin2023dynamic; @wen2022optimizing]. 
+
+A variety of methods have been developed to provide site-specific nitrogen recommendations. These methods include yield goal-based N recommendations, the Maximum Return to N (MRTN) [@ransom2019statistical] and the use of remote sensing techniques [@reussi2015using; @oliveira2013calibrating]. Other approaches to estimate EONR are crop simulation models [@miao2006evaluating]. Adapt-N [@melkonian2008adapt] and Maize-N [@setiyono2011maize] use computer simulation models for nitrogen recommendations. soil testing and nutrient analysis [@bundy1995soil] are also among other N recommendation approaches.
+
+One of the emerging and promising approaches for providing site-specific N management is through on-farm precision experiments (OFPE). OFPE employs technologies like GPS and variable rate input applicators to conduct experimental designs and nitrogen trials within the field [@paccioretti2021statistical]. Subsequent to data collection and collation, including variables like yield, as-applied nitrogen, soil characteristics, and weather conditions, statistical analysis is performed to estimate site-specific yield response function, which then can be used to identify site-specific EONR [@de2023predicting; @morales2022generation; @li2023economic]. 
+
+Machine learning (ML) is a statistical tool for analyzing experimental data and providing site-specific EONR recommendations based on modeled yield responses to different inputs. When utilizing ML techniques to estimate site-specific EONRs from experimental data, it is important to recognize that the purpose of conducting experimental designs is to capture the variability of crop responses to input applications [@paccioretti2021statistical], forming the basis for EONR estimation. However, using ML to estimate EONRs requires caution. Several emerging studies [@barbosa2020risk; @barbosa2020modeling; @krause2020random; @gardner2021economic]  have employed ML techniques to predict site-specific EONRs using data from OFPE. However, they consistently select ML methods based on their ability to accurately predict yield. This raises a significant question, especially when the primary goal is to provide reliable site-specific EONR recommendations. A strong counterpoint to this practice is presented by @kakimoto2022causal. Through simulations, the study showed that achieving high accuracy in yield prediction does not necessarily imply accurate EONR prediction. This underscores the importance of understanding the causal relationship between treatment variables and crop yield. Empirical evidence further supports this idea, as studies have found that the correlation between EONR and the corresponding yield at EONR is weak [@morris2018strengths; @sawyer2006concepts; @vanotti1994alternative]. 
+
+In this study, we use simulated data and apply ML techniques to propose a new approach for model selection to predict EONR. This approach is based on the spatial cross-validation and involves deriving yield responses to input variables in order to estimate local EONRs. Our inspiration for this method draws from the work of @de2023predicting. The approach uses spatial clustering to divide data into folds for training and testing. Within each fold, our candidate ML models estimate local EONR values. The performance of these estimates is evaluated by comparing them against a benchmark model using Root Mean Squared Error (RMSE). We further train the models on the complete dataset and rank them based on their RMSE in relation to the true EONR values. By comparing the rankings of locally estimated EONR values with the true values, we assess the performance of our local EONR model selection. Additionally, we evaluate the performance of a yield-based model selection approach. We found that the local EONR model selection approach consistently outperforms the yield-based model selection method when it comes to choosing a model for effectively predicting site-specific EONR.
+
+
+# Materials and Method
+
+## Data generation
+
+### Field layout
+
+### Experimental Design
+
+### Yield data
+
+## Models and estimation procedures
+
+Use exactly the same set of variables for all the models. Only the data used is different depending on where you are on which stream.
+
++ Train dataset ($\Sigma$)
++ Target data ($\Phi$): 
+  + N_{target}: the number of observations in the target dataset
+
+### Random Forest and Boosted Regression Forest
+
+Yield response function non-parametrically estimated.
+
+$$
+\hat{N}_i =  argmax_{N}\;\; P_c \hat{f}(N, X|\Sigma) - P_N N
+$$
+
+### Causal Forest (CF)
+
+Yield response function non-parametrically estimated.
+
+### Linear (in parameter) models
+
+Yield response function parametrically estimated.
+
++ Linear Model
++ Spatial Error (SE) linear models. 
+
+Specify the models.
+
+
+
+## True model performance in estimating Site-Specific EONR
+
+### Site-specific EONR estimation
+
+The main goal of the MC simulations is to assess and compare the ability of the two model selection procedures to select a model that estimates site-specific EONR well (not yield well). To achieve this simulation goal, it is necessary to identify the best performing model under the circumstance replicating the actual situation researchers faces: that is estimate models using the data from the whole field and estimate site-specific EONR for the very field on which data is obtained via an on-farm experiment. The performance of the candidate models obtained here serve as the reference point to be compared against the ranking of their models suggested by the two model selection procedures. For example, suppose our LE-selection method suggests RE and Y-selection method suggests BRT as the top-performing model based on their own criteria. Further suppose that the process described here suggests BRT as the best performing model, then that would mean that the LE-selection method worked better for that iteration.
+
+Specifically, we take the following steps for each of the candidate models for a given field:
+
+\begin{enumerate}
+\item train the model using all the observations from the field
+\item find EONR for all the observation points (site-specific EONR) of the field 
+\item compare the estimated site-specific EONR with the true EONRs and calculate RMSE of EONR estimation
+\end{enumerate}
+
+Once these steps are completed, then the candidate models are ranked based on their RMSE of EONR estimation. This process is repeated for all the fields. Note that step 3 of the above process compares the estimated EONR with the \textit{true} EONR and the obtained RMSEs represent the true performance of the models' ability to estimate site-specific EONR. This is possible only because we know the underlying site-specific yield response functions. 
+
+### Model Performance
+
+We use two criterion to evaluate the performance of the candidate models. First, we use RNSE of site-specific EONR prediction. Let $\widehat{N}^*_{m}(X_i)$ denote the estimated EONR for cell $i$ based on the trained model $m$. Hereafter, the collection of EONR for all the cells are called simply site-specific N prescription. 
+
+Then, the RMSE for model $m$ is
+
+$$
+RMSE_{f,m} = \sqrt{\frac{\sum_{i=1}^N(\widehat{N}^*_{m}(X_i) - N^*_i)^2}{N}}
+$$
+
+Second, we use profit loss relative to the true site-specific EONR. The average per-acre profit from true site-specific EONR (denoted as $\pi_{true}$) is
+
+$$
+\pi_{true}  = \frac{1}{N}\cdot \sum_{i=1}^{N} [P_c \cdot f(N^*_i, X_i) - P_N \cdot N^*_i]
+$$
+
+This represents the maximum profit achievable average per-acre profit if you were to know the true site-specific EONR.
+
+The average profit per acre associate with the site-specific N prescription by model $m$ (denoted as $\pi_m$), which is defined as
+
+$$
+\pi_m  = \frac{1}{N}\cdot \sum_{i=1}^{N} [P_c \cdot f(\widehat{N}^*_{m}(X_i), X_i) - P_N \cdot \widehat{N}^*_{m}(X_i)]
+$$
+
+Then the profit loss of model $m$ relative to the true maximum profit achievable (denoted as $\pi-loss_{m}$) is then defined as
+
+$$
+\Delta\pi_m  = \pi_{true} - \pi_m
+$$
+
+The lower the value of $\Delta\pi_m$, the better.
+
+## Model Selection
+
+We implement two model selection approaches: one based on yield prediction accuracy and the other based on local EONR prediction accuracy. For both approaches, spatial cross-validation is employed. The entire dataset is split into a train and test dataset in a spatially clustered manner, which is repeated to create multiple folds as depicted in Figure \ref{}. 
+
+### Model selection based on yield 
+
+For each of the fold, the following steps are implemented for each of the candidate models:
+
+\begin{enumerate}
+\item train the model using the train data
+\item predict yield for each of the observations in the the test data based on the trained model ($\widehat{y^_{i, f,m}}$)
+\item calculate RMSE of yield prediction as $RMSE-Yield_{f,m} = \sqrt{\sum_{i=1}^{N_t}(\hat{y_{i,f,m}} - y_{i,f,m})^2/N_t}$
+\end{enumerate}
+
+Once the above process is completed for all the folds, then average RMSE-Yield is calculated for each model and the model with the lowest average RMSE value is selected. 
+
+### Model selection based on local EONR 
+
+In validating models, it would be ideal if we could assess models based on their ability to estimate site-specific EONRs rather than yields because our ultimate interests lie in estimating EONRs, not yields. Of course, this is not possible because the true EONRs are never observable in the real world setting unlike yield. We propose to overcome this challenge by validating on "local uniform EONR" estimated by a statistical model. Specifically, we train a GAM model using the test data and predict the uniform EONR for the test data, which we call local EONR. We then treat the estimated local EONR as the proxy for the true local EONR and select models that are capable of predicting the estimated local EONRs the best. Clearly, for this approach to perform well, it is vital that the estimation of local EONR is accurate enough (Later we assess the accuracy).
+
+For each of the fold, the following steps are implemented to estimate local EONR:
+
+\begin{enumerate}
+\item train the GAM model using the test data 
+\item find uniform EONR for the test data ($\widehat{N^*_{f,gam}}$)
+\end{enumerate}
+
+For each of the fold, the following steps are implemented for each of the candidate models:
+
+\begin{enumerate}
+\item train the model using the train data 
+\item find uniform EONR for the test data based on the trained model ($\widehat{N^*_{f,m}}$)
+\end{enumerate}
+
+Once the above processes are completed for all the folds, then the RMSE of estimating local EONR is calculated for each model as follows:
+
+\begin{align}
+RMSE-LE_{m} = \sqrt{\sum_{f=1}^F (\widehat{N^*_{f,m}} - \widehat{N^*_{f,gam}})^2 / F}
+\end{align}
+
+Then, the model with the lowest RMSE would be chosen as the selected model from this model selection method.
+
+## Evaluation of model selection performance
+
+Model selection performance is evaluated based on the performance of the model selected by the model selection approach.
+
+Two criterion to evaluate model selection performance are used. First, they are evaluated based on the percentage of the times the selection approach picked the true best model in estimating EONR. The second and more practically informative criteria is based on profit deficit when the selected model was used instead of the true best model. 
+
+For example, let $m^*_f$ denote the true best model for a given field $f$, then the highest profit that could be achieved would be $\pi_{m^*_f}$ (defined in equation ..).
+Not knowing what the true best model, one needs to rely on a model selection procedure to pick a model. Suppose the procedure suggested model $m$, then the profit loss relative to $\pi_{m^*_f}$ is $\pi_{m^*_f} - \pi_{m}$. If the produce is able to suggest the true best model, then the profit loss will be zero. The lower the value of profit loss, the better a selection approach is. 
+
+# Results and Discussions
+
+## Performance of the candidate models
+
+
+
+# Conclusion
+
+
+
+

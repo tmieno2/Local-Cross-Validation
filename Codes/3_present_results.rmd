@@ -7,91 +7,126 @@ output: html_document
 
 # Preparation
 
-## Packages and functions 
+## Set up a ggplot theme
+
 ```{r}
-library(tidyverse)
-library(pasim)
-list.files(here::here("GitControlled/Codes/functions/"), full.names = TRUE) %>%
-  lapply(., source)
+theme_fig <-
+  theme_bw() +
+  theme(
+    axis.title.x =
+      element_text(
+        size = 7, angle = 0, hjust = .5, vjust = -0.3, family = "Helvetica"
+      ),
+    axis.title.y =
+      element_text(
+        size = 7, angle = 90, hjust = .5, vjust = .9, family = "Helvetica"
+      ),
+    axis.text.x =
+      element_text(
+        size = 7, angle = 0, hjust = .5, vjust = 1.5, family = "Helvetica"
+      ),
+    axis.text.y =
+      element_text(
+        size = 7, angle = 0, hjust = 1, vjust = 0, family = "Helvetica"
+      ),
+    axis.ticks =
+      element_line(
+        linewidth = 0.3, linetype = "solid"
+      ),
+    axis.ticks.length = unit(.15, "cm"),
+    #--- legend ---#
+    legend.text =
+      element_text(
+        size = 7, angle = 0, hjust = 0, vjust = 0.5, family = "Helvetica"
+      ),
+    legend.title =
+      element_text(
+        size = 7, angle = 0, hjust = 0, vjust = 0, family = "Helvetica"
+      ),
+    legend.key.size = unit(0.5, "cm"),
+    #--- strip (for faceting) ---#
+    strip.text = element_text(size = 7, family = "Helvetica"),
+    #--- plot title ---#
+    plot.title = element_text(family = "Helvetica", face = "bold", size = 7),
+    #--- margin ---#
+    # plot.margin = margin(0, 0, 0, 0, "cm"),
+    #--- panel ---#
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    panel.border = element_rect(fill = NA)
+  )
 ```
+
+## Load results
+
 ```{r}
+sum_results_whole <- readRDS(here::here("Shared/Results/sum_results_whole.rds"))
+
 comp_results <-
   readRDS(here::here("Shared/Results/comp_results.rds")) %>%
   data.table()
 ```
 
-# The actual performance ranking of the model selected by our LEONR-based approach
+
+# Performance of candidate models: true, yield-based, EONR-based
 
 ```{r}
-perf_ranking_e <-
-  comp_results[, .(num_folds, num_repeats, selection_perf_rank_LE)] %>%
-  unnest(selection_perf_rank_LE) %>%
-  data.table()
+true_rank <-
+  sum_results_whole[, .(N = sum(eonr_selected_true)), by = method] %>%
+  .[, type := "True"]
 
-ggplot(perf_ranking_e) +
-  geom_bar(aes(y = N, x = eonr_rank_true), stat = "identity") +
-  facet_grid(num_folds ~ num_repeats)
+model_selection_ranks <-
+  readRDS(here::here("Shared/Results/selection_ranks.rds")) %>%
+  .[, .(N_LE = sum(eonr_selected_gam), N_Y = sum(yield_selected)), by = method] %>%
+  melt(id.var = "method", value.name = "N") %>%
+  .[, type := case_when(
+    variable == "N_LE" ~ "Local EONR",
+    variable == "N_Y" ~ "Yield"
+  )] %>%
+  .[, variable := NULL]
+
+all_ranks <- rbind(true_rank, model_selection_ranks)
+
+g_ranking <-
+  ggplot(all_ranks) +
+  geom_bar(
+    aes(y = N, x = method, fill = type),
+    stat = "identity",
+    position = "dodge"
+  ) +
+  scale_fill_viridis_d() +
+  # Add labels and titles
+  labs(x = "Model", y = "Count", fill = "Selection Type") +
+  theme_fig +
+  theme(
+    legend.position = "bottom"
+  )
 ```
 
-# The actual performance ranking of the model selected by yield-based selection approach 
+# Profit loss
 
 ```{r}
-perf_ranking_y <-
-  comp_results[, .(num_folds, num_repeats, selection_perf_rank_Y)] %>%
-  unnest(selection_perf_rank_Y) %>%
-  data.table()
-
-ggplot(perf_ranking_y) +
-  geom_bar(aes(y = N, x = eonr_rank_true), stat = "identity") +
-  facet_grid(num_folds ~ num_repeats)
-```
-
-# Performance loss  
-
-```{r}
-perf_loss_data <-
+profit_loss_data <-
   comp_results[, .(num_folds, num_repeats, loss_data)] %>%
-  unnest(loss_data) %>%
-  data.table()
-```
-
-## RMSE of EONR (selected versus true best) 
-
-How much difference in rmse of site-speicific EONR prediction between the model selected based on LEONR or Yield and the model that is truly the best in predicting site-speicific EONR.
-
-```{r}
-perf_loss_data_eonr <-
-  perf_loss_data[, .(sim, num_folds, num_repeats, e_rmse_eonr_loss, y_rmse_eonr_loss)] %>%
-  melt(id.var = c("sim", "num_folds", "num_repeats")) %>%
-  .[, selection := case_when(
-    variable == "e_rmse_eonr_loss" ~ "LEONR-based Selection",
-    variable == "y_rmse_eonr_loss" ~ "Yield-based Selection"
-  )]
-
-(
-  ggplot(perf_loss_data_eonr[num_folds == 7 & num_repeats == 10, ]) +
-    geom_histogram(aes(x = value)) +
-    facet_grid(selection ~ .) +
-    theme_bw()
-)
-```
-
-##
-
-```{r}
-perf_loss_data_pi <-
-  perf_loss_data[, .(sim, num_folds, num_repeats, e_pi_loss, y_pi_loss)] %>%
+  unnest() %>%
+  data.table() %>%
+  .[, .(sim, num_folds, num_repeats, e_pi_loss, y_pi_loss)] %>%
   melt(id.var = c("sim", "num_folds", "num_repeats")) %>%
   .[, selection := case_when(
     variable == "e_pi_loss" ~ "LEONR-based Selection",
     variable == "y_pi_loss" ~ "Yield-based Selection"
   )]
 
-(
-  ggplot(perf_loss_data_pi[num_folds == 7 & num_repeats == 10, ]) +
-    geom_histogram(aes(x = value)) +
-    facet_grid(selection ~ .) +
-    theme_bw()
-)
+g_pi_loss <-
+  ggplot(profit_loss_data[num_folds == 5 & num_repeats == 5, ]) +
+  geom_histogram(
+    aes(x = value),
+    color = "blue",
+    fill = "white"
+  ) +
+  facet_wrap(selection ~ ., ncol = 1) +
+  ylab("Count") +
+  xlab("Profit Loss ($/acre)") +
+  theme_bw()
 ```
 
