@@ -25,24 +25,20 @@ header-includes:
 ```{r echo = F, cache = F, include = F}
 library(knitr)
 library(here)
-
 library(tinytex)
 
 
 opts_chunk$set(
   fig.align = "center",
   fig.retina = 5,
-  warning = F,
-  message = F,
+  warning = FALSE,
+  message = FALSE,
   cache = FALSE,
-  echo = F,
-  error = T,
-  fig.cap = T
+  echo = FALSE,
+  error = TRUE,
+  fig.cap = TRUE
 )
 ```
-
-
-
 
 ```{r cache = F, include = F}
 #--- packages ---#

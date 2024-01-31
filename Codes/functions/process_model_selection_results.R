@@ -98,30 +98,31 @@ process_model_selection_results <- function(num_folds, num_repeats) {
   #* Combine with the true rank data
   #* +++++++++++++++++++++++++++++++++++
 
-  comp_ranks_data <-
+  comp_summary <-
     selection_ranks[sum_results_whole, on = c("sim", "method")]
 
-  return(comp_ranks_data)
+  return(comp_summary)
 }
 
 # How similar rmse_eonr is between the selected and the actual best
 
-find_loss_from_selection <- function(comp_ranks_data) {
+find_loss_from_selection <- function(comp_summary) {
+
   eonr_selected <-
-    comp_ranks_data[eonr_rank_gam == 1, .(sim, method, pi_deficit, rmse_eonr_true)] %>%
+    comp_summary[eonr_rank_gam == 1, .(sim, method, pi_deficit, rmse_eonr_true)] %>%
     setnames(
       c("method", "pi_deficit", "rmse_eonr_true"),
       c("e_selected_method", "e_selected_pi_deficit", "e_selected_rmse_eonr_true")
     )
 
   yield_selected <-
-    comp_ranks_data[yield_rank == 1, .(sim, method, pi_deficit, rmse_eonr_true)] %>%
+    comp_summary[yield_rank == 1, .(sim, method, pi_deficit, rmse_eonr_true)] %>%
     setnames(
       c("method", "pi_deficit", "rmse_eonr_true"),
       c("y_selected_method", "y_selected_pi_deficit", "y_selected_rmse_eonr_true")
     )
 
-  eonr_true_best <- comp_ranks_data[eonr_rank_true == 1, .(sim, method, pi_deficit, rmse_eonr_true)]
+  eonr_true_best <- comp_summary[profit_rank_true == 1, .(sim, method, pi_deficit, rmse_eonr_true)]
 
   loss_data <-
     eonr_true_best %>%

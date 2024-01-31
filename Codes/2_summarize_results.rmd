@@ -102,20 +102,11 @@ saveRDS(sum_results_whole, here::here("Shared/Results/sum_results_whole.rds"))
 # Model selection simulation results
 
 ```{r}
+sim_cases <- readRDS(here::here("Shared/Results/sim_cases.rds"))
+
 comp_results <-
   #--- specify the combination of num_folds and num_repeats ---#
-  dplyr::tribble(
-    ~num_folds, ~num_repeats,
-    5, 1,
-    7, 1,
-    10, 1,
-    5, 5,
-    7, 5,
-    10, 5,
-    5, 10,
-    7, 10,
-    10, 10
-  ) %>%
+  sim_cases %>%
   rowwise() %>%
   mutate(comp_summary = list(
     process_model_selection_results(num_folds, num_repeats)
@@ -148,18 +139,7 @@ saveRDS(comp_results, here::here("Shared/Results/comp_results.rds"))
 ```{r}
 gam_results <-
   #--- specify the combination of num_folds and num_repeats ---#
-  dplyr::tribble(
-    ~num_folds, ~num_repeats,
-    5, 1,
-    7, 1,
-    10, 1,
-    5, 5,
-    7, 5,
-    10, 5,
-    5, 10,
-    7, 10,
-    10, 10
-  ) %>%
+  sim_cases %>%
   rowwise() %>%
   dplyr::mutate(gam_results = list(
    list.files(

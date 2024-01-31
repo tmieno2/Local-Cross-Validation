@@ -5,7 +5,7 @@ model_selection_sim <- function(data_files, field_sf, models, num_repeats, num_f
   results_dir <- paste0("Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds)
 
   if (file.exists(results_dir) & force == FALSE) {
-    stop("The directory for this case exists already. Skipping to the next case.")
+    return(NULL)
   } else {
     dir.create(results_dir)
   }
@@ -33,7 +33,8 @@ model_selection_sim <- function(data_files, field_sf, models, num_repeats, num_f
         train_test_split = train_test_split
       )
     },
-    mc.cores = num_cores
+    mc.cores = num_cores,
+    mc.preschedule = FALSE
   )
 }
 

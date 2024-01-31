@@ -1,15 +1,4 @@
-
----
-title: "Make figures and tables"
-date: "2023-02-07"
-output: html_document
----
-
-# Preparation
-
-## Load results
-
-```{r}
+## -----------------------------------------------------------------------------
 sum_results_whole <- readRDS(here::here("Shared/Results/sum_results_whole.rds"))
 
 comp_results <-
@@ -17,11 +6,9 @@ comp_results <-
   data.table()
 
 sum_results_gam <- readRDS(here::here("Shared/Results/sum_results_gam.rds"))
-```
 
-## Set up a ggplot theme
 
-```{r}
+## -----------------------------------------------------------------------------
 theme_fig <-
   theme_bw() +
   theme(
@@ -67,14 +54,9 @@ theme_fig <-
     panel.background = element_blank(),
     panel.border = element_rect(fill = NA)
   )
-```
 
 
-
-
-# Performance of candidate models: true, yield-based, EONR-based
-
-```{r}
+## -----------------------------------------------------------------------------
 true_rank <-
   sum_results_whole[, .(N = sum(eonr_selected_true)), by = method] %>%
   .[, type := "True"]
@@ -114,11 +96,9 @@ g_ranking <-
 #   height = 3.5,
 #   dpi = 600
 # )
-```
 
-## Table
 
-```{r}
+## -----------------------------------------------------------------------------
 accuracy_table <-
   comp_results %>%
   .[, .(num_folds, num_repeats, comp_summary)] %>%
@@ -148,15 +128,8 @@ main_accuracy_table <-
   autofit() %>%
   align(j = 2:4, align = "center")
 
-saveRDS(main_accuracy_table, here::here("GitControlled/Writing/FiguresTables/main_selection_accuracy_table.rds"))
 
-saveRDS(accuracy_table, here::here("GitControlled/Writing/FiguresTables/selection_accuracy_table.rds"))
-```
-
-
-# Profit loss
-
-```{r}
+## -----------------------------------------------------------------------------
 profit_loss_data <-
   comp_results[, .(num_folds, num_repeats, loss_data)] %>%
   unnest() %>%
@@ -169,11 +142,7 @@ profit_loss_data <-
   )]
 
 
-```
-
-## Main case
-
-```{r}
+## -----------------------------------------------------------------------------
 g_pi_loss <-
   ggplot(profit_loss_data[num_folds == 5 & num_repeats == 5, ]) +
   geom_histogram(
@@ -186,12 +155,8 @@ g_pi_loss <-
   xlab("Profit Loss ($/acre)") +
   theme_bw()
 
-saveRDS(g_pi_loss, here::here("GitControlled/Writing/FiguresTables/g_pi_loss.rds"))
-```
 
-## All cases for LEONR-based selection (Table)
-
-```{r}
+## -----------------------------------------------------------------------------
 
 profit_loss_data[, .(mean = mean(value), sd = sd(value)), by = .(num_folds, num_repeats, selection)] %>%
   .[selection == "LEONR-based Selection", ] %>%
@@ -201,13 +166,9 @@ profit_loss_data[, .(mean = mean(value), sd = sd(value)), by = .(num_folds, num_
 
 # ggplot(profit_loss_data[selection == "LEONR-based Selection", ]) +
 #   geom_boxplot(aes(y = value, x = factor(num_folds), fill = factor(num_repeats)))
-```
 
-# Correlation Between GAM-Estimated EONR and True EONR
 
-## All cases
-
-```{r}
+## -----------------------------------------------------------------------------
 gam_leonr_fit_all <-
   ggplot(sum_results_gam) +
   geom_point(
@@ -236,11 +197,9 @@ gam_leonr_fit_all <-
   theme(
     legend.position = "bottom"
   )
-```
 
-## Main case
 
-```{r}
+## -----------------------------------------------------------------------------
 gam_leonr_fit_main <-
   ggplot(sum_results_gam[num_folds == 5 & num_repeats == 5, ]) +
   geom_point(
@@ -261,12 +220,9 @@ gam_leonr_fit_main <-
   theme(
     legend.position = "bottom"
   )
-```
 
 
-# The impact of different fold repeat combination on local EONR selection and yield selection method
-
-```{r}
+## -----------------------------------------------------------------------------
 #--- ranking based on LEONR ---#
 perf_ranking_e <-
   comp_results[, .(num_folds, num_repeats, selection_perf_rank_LE)] %>%
@@ -313,14 +269,9 @@ g_sensitivity_fold_repeat <-
     legend.text = element_text(size = 10) # Legend text appearance
   ) +
   theme(axis.title = element_text(size = 12, family = "Times"))
-```
 
 
-# Average GAM EONR vs. Average Local EONR
-
-Illustrate bias in estimating EONR
-
-```{r}
+## -----------------------------------------------------------------------------
 sum_results_gam <- readRDS(here::here("Shared/Results/Mona_results/sum_results_gam.rds"))
 main_sum_results <- readRDS(here::here("Shared/Results/Mona_results/main_sum_results.rds"))
 
@@ -341,8 +292,7 @@ averaged_df <- combined_results_other_v %>%
 
 
 # Create separate graphs by method using facet_wrap
-g_leonr_comp <- 
-  ggplot(averaged_df, aes(x = avg_opt_N_gam, y = avg_opt_N_hat)) +
+ggplot(averaged_df, aes(x = avg_opt_N_gam, y = avg_opt_N_hat)) +
   geom_point(colour = "black", size = 0.5) +
   geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black") +
   scale_x_continuous(limits = c(100, 180)) +
@@ -362,20 +312,3 @@ g_leonr_comp <-
   ) +
   theme(axis.title = element_text(size = 12, family = "Times"))
 
-saveRDS(g_leonr_comp, here::here("GitControlled/Writing/FiguresTables/g_leonr_comp.rds"))
-```
-
-# Accuracy of GAM-estimated LEONR
-
-```{r}
-g_gam_leonr <-
-  sum_results_gam[, .(opt_N_gam = mean(opt_N_gam), opt_N = mean(opt_N)), by = sim] %>%
-  ggplot(data = .) +
-  geom_point(aes(y = opt_N, x = opt_N_gam)) +
-  geom_abline(slope = 1, color = "red") +
-  theme_fig +
-  ylab("True Optimal LEONR (lb/acre)") +
-  xlab("Estimated (by GAM) Optimal LEONR (lb/acre)")
-
-saveRDS(g_gam_leonr, here::here("GitControlled/Writing/FiguresTables/g_gam_leonr.rds"))
-```
