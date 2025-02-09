@@ -1,4 +1,3 @@
-
 ---
 title: "Make figures and tables"
 date: "2023-02-07"
@@ -6,6 +5,16 @@ output: html_document
 ---
 
 # Preparation
+
+## Packages
+
+```{r}
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(flextable)
+library(officedown)
+```
 
 ## Load results
 
@@ -79,7 +88,6 @@ true_rank <-
   sum_results_whole[, .(N = sum(eonr_selected_true)), by = method] %>%
   .[, type := "True"]
 
-
 model_selection_ranks <-
   readRDS(here::here("Shared/Results/selection_ranks.rds")) %>%
   .[, .(N_LE = sum(eonr_selected_gam), N_Y = sum(yield_selected)), by = method] %>%
@@ -107,13 +115,13 @@ g_ranking <-
     legend.position = "bottom"
   )
 
-# ggsave(
-#   "GitControlled/Writing/Figures/g_ranking.png",
-#   g_ranking,
-#   width = 6,
-#   height = 3.5,
-#   dpi = 600
-# )
+ggsave(
+  "GitControlled/Writing/FiguresTables/g_ranking.png",
+  g_ranking,
+  width = 6,
+  height = 3.5,
+  dpi = 400
+)
 ```
 
 ## Table
@@ -122,7 +130,7 @@ g_ranking <-
 accuracy_table <-
   comp_results %>%
   .[, .(num_folds, num_repeats, comp_summary)] %>%
-  unnest() %>%
+  tidyr::unnest() %>%
   data.table() %>%
   # .[eonr_selected_true == 1, ] %>%
   .[, .(
@@ -159,7 +167,7 @@ saveRDS(accuracy_table, here::here("GitControlled/Writing/FiguresTables/selectio
 ```{r}
 profit_loss_data <-
   comp_results[, .(num_folds, num_repeats, loss_data)] %>%
-  unnest() %>%
+  tidyr::unnest() %>%
   data.table() %>%
   .[, .(sim, num_folds, num_repeats, e_pi_loss, y_pi_loss)] %>%
   melt(id.var = c("sim", "num_folds", "num_repeats")) %>%
@@ -167,8 +175,6 @@ profit_loss_data <-
     variable == "e_pi_loss" ~ "LEONR-based Selection",
     variable == "y_pi_loss" ~ "Yield-based Selection"
   )]
-
-
 ```
 
 ## Main case
@@ -182,11 +188,17 @@ g_pi_loss <-
     fill = "white"
   ) +
   facet_wrap(selection ~ ., ncol = 1) +
-  ylab("Count") +
-  xlab("Profit Loss ($/acre)") +
+  ylab("Number of iterations") +
+  xlab("Profit loss relative to the true best model ($/acre)") +
   theme_bw()
 
-saveRDS(g_pi_loss, here::here("GitControlled/Writing/FiguresTables/g_pi_loss.rds"))
+ggsave(
+  here::here("GitControlled/Writing/FiguresTables/g_pi_loss.png"),
+  g_pi_loss,
+  dpi = 300,
+  width = 6,
+  height = 3.5
+)
 ```
 
 ## All cases for LEONR-based selection (Table)
@@ -270,18 +282,16 @@ gam_leonr_fit_main <-
 #--- ranking based on LEONR ---#
 perf_ranking_e <-
   comp_results[, .(num_folds, num_repeats, selection_perf_rank_LE)] %>%
-  unnest(selection_perf_rank_LE) %>%
-  data.table()
+  tidyr::unnest(selection_perf_rank_LE) %>%
+  data.table() %>%
+  .[, selection_method := "Based on Local EONR"]
 
 #--- ranking based on Yield ---#
 perf_ranking_y <-
   comp_results[, .(num_folds, num_repeats, selection_perf_rank_Y)] %>%
-  unnest(selection_perf_rank_Y) %>%
-  data.table()
-
-# Add a new column "Type" to distinguish between 'e' and 'y'
-perf_ranking_e$Selection_Type <- "Local EONR Selection"
-perf_ranking_y$Selection_Type <- "Yield Selection"
+  tidyr::unnest(selection_perf_rank_Y) %>%
+  data.table() %>%
+  .[, selection_method := "Based on Yield"]
 
 # Merge the two data frames into one
 perf_ranking_combined <- rbind(perf_ranking_e, perf_ranking_y)
@@ -289,30 +299,38 @@ perf_ranking_combined <- rbind(perf_ranking_e, perf_ranking_y)
 # Plot the combined data using dodge position and refined colors
 g_sensitivity_fold_repeat <-
   ggplot(perf_ranking_combined) +
-  geom_bar(aes(y = N, x = eonr_rank_true, fill = Selection_Type), stat = "identity", position = "dodge") +
-  scale_fill_manual(values = c("Local EONR Selection" = "#333333", "Yield Selection" = "#999999")) + # Set colors
+  geom_bar(aes(y = N, x = eonr_rank_true, fill = selection_method), stat = "identity", position = "dodge") +
+  scale_fill_viridis_d() + # Set colors
   facet_grid(
     rows = vars(`Number of Folds` = num_folds), cols = vars(`Number of Repeats` = num_repeats),
     labeller = labeller(`Number of Folds` = label_both, `Number of Repeats` = label_both)
   ) +
   labs(
-    x = "True EONR Rank",
-    y = "Count",
-    fill = "Selection Type"
+    x = "True ranking of the selected model",
+    y = "Number of iterations",
+    fill = "Model Selection Approach"
   ) +
   theme_bw() +
   theme(legend.position = "bottom") + # Move the legend to the bottom
-  theme(strip.text = element_text(size = 6.5)) +
+  theme(strip.text = element_text(size = 9)) +
   theme(
     legend.position = "bottom",
     # plot.title = element_text(size = 10, face = "bold"),  # Title appearance
     # plot.subtitle = element_text(size = 12),
-    axis.title.x = element_text(size = 10), # X-axis label appearance
-    axis.title.y = element_text(size = 10), # Y-axis label appearance
-    legend.title = element_text(size = 11), # Legend title appearance
-    legend.text = element_text(size = 10) # Legend text appearance
+    axis.title.x = element_text(size = 12), # X-axis label appearance
+    axis.title.y = element_text(size = 12), # Y-axis label appearance
+    legend.title = element_text(size = 12), # Legend title appearance
+    legend.text = element_text(size = 9) # Legend text appearance
   ) +
-  theme(axis.title = element_text(size = 12, family = "Times"))
+  theme(axis.title = element_text(size = 12))
+
+ggsave(
+  here::here("GitControlled/Writing/FiguresTables/g_sensitivity_fold_repeat.png"),
+  g_sensitivity_fold_repeat,
+  width = 6,
+  height = 6,
+  dpi = 300
+)
 ```
 
 
@@ -322,6 +340,7 @@ Illustrate bias in estimating EONR
 
 ```{r}
 sum_results_gam <- readRDS(here::here("Shared/Results/Mona_results/sum_results_gam.rds"))
+
 main_sum_results <- readRDS(here::here("Shared/Results/Mona_results/main_sum_results.rds"))
 
 # combined results other version
@@ -329,19 +348,20 @@ combined_results_other_v <-
   sum_results_gam[main_sum_results, on = c("sim", "split_id")] %>%
   .[, opt_N_dif_select := opt_N_hat - opt_N_gam]
 
-
 # Group the data by "sim" and "method" columns, and calculate the average of "opt_N_hat" and "opt_N"
-averaged_df <- combined_results_other_v %>%
-  group_by(sim, method) %>%
-  summarize(
+averaged_df <-
+  combined_results_other_v %>%
+  .[, .(
     avg_opt_N_hat = mean(opt_N_hat),
     avg_opt_N_gam = mean(opt_N_gam)
-  )
+  ),
+  by = .(sim, method)
+  ]
 
 
 
 # Create separate graphs by method using facet_wrap
-g_leonr_comp <- 
+g_leonr_comp <-
   ggplot(averaged_df, aes(x = avg_opt_N_gam, y = avg_opt_N_hat)) +
   geom_point(colour = "black", size = 0.5) +
   geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black") +
@@ -362,7 +382,13 @@ g_leonr_comp <-
   ) +
   theme(axis.title = element_text(size = 12, family = "Times"))
 
-saveRDS(g_leonr_comp, here::here("GitControlled/Writing/FiguresTables/g_leonr_comp.rds"))
+ggsave(
+  here::here("GitControlled/Writing/FiguresTables/g_leonr_comp.png"),
+  g_leonr_comp,
+  dpi = 300,
+  height = 5,
+  width = 6
+)
 ```
 
 # Accuracy of GAM-estimated LEONR
@@ -377,5 +403,11 @@ g_gam_leonr <-
   ylab("True Optimal LEONR (lb/acre)") +
   xlab("Estimated (by GAM) Optimal LEONR (lb/acre)")
 
-saveRDS(g_gam_leonr, here::here("GitControlled/Writing/FiguresTables/g_gam_leonr.rds"))
+ggsave(
+  here::here("GitControlled/Writing/FiguresTables/g_gam_leonr.png"),
+  g_gam_leonr,
+  dpi = 300,
+  height = 3.5,
+  width = 6
+)
 ```
