@@ -411,3 +411,102 @@ ggsave(
   width = 6
 )
 ```
+
+
+
+# spatial cross validation (example of a fold with train and test data)
+
+```{r}
+# spatial_cross_validation_example_map 
+  
+pCorn <- 6.25 / 25.4 # $/kg
+pN <- 1 / 0.453592 # $/kg
+
+sim_data_1 <- readRDS(here::here("Shared/Data/SimData/sim_data_1.rds"))
+
+whole_data <-
+  sim_data_1[[2]][[1]] %>%
+  # find true EONR
+  .[, opt_N := (pN / pCorn - b1) / (2 * b2)] %>%
+  .[, opt_N := pmin(Nk, opt_N)] %>%
+  .[, opt_N := pmax(0, opt_N)]
+
+train_test_split_q <- readRDS(here::here("Shared/Results/sim_results_num_repeats_1_num_folds_5/train_test_split.rds"))
+
+library(sf)
+data_sf <- st_as_sf(whole_data, coords = c("X", "Y"))
+
+spatial_folds_q <-
+  train_test_split_q %>%
+  rowwise() %>%
+  mutate(training_data = list(
+    whole_data[aunit_id %in% training_ids, ]
+  )) %>%
+  mutate(test_data = list(
+    whole_data[aunit_id %in% test_ids, ]
+  )) %>%
+  data.table() %>%
+  .[, .(split_id, training_data, test_data)]
+
+
+
+plot_combined_fold_q <- function(fold_number) {
+  # add a "Type" column indicating "Train"
+  sf_data_train <- st_as_sf(spatial_folds_q[[2]][[fold_number]])
+  sf_data_train$Type <- "Train"
+  
+  #  add a "Type" column indicating "Test"
+  sf_data_test <- st_as_sf(spatial_folds_q[[3]][[fold_number]])
+  sf_data_test$Type <- "Test"
+  
+  # Combine both datasets
+  sf_data_combined <- rbind(sf_data_train, sf_data_test)
+  
+  # Create a plot with fold number as subtitle
+  g_combined <- ggplot(data = sf_data_combined) +
+    geom_sf(aes(fill = Type), color = "black") +
+    scale_fill_manual(values = c("Train" = "blue", "Test" = "red")) +
+    theme_void() +
+    theme(legend.position = "none") +  # Remove legend for individual plots
+    labs(subtitle = paste("Fold", fold_number), x = NULL, y = NULL)
+  
+  # Return the plot
+  return(g_combined)
+}
+
+# Create a list to store all the plots
+all_plots_q <- list()
+
+# run function for each fold and store the plots in the list
+for (fold in 1:5) {
+  all_plots_q[[fold]] <- plot_combined_fold_q(fold)
+}
+
+# Combine and arrange all the plots in a 2x5 grid layout
+
+library(patchwork)
+
+final_plot_q <- wrap_plots(plotlist = all_plots_q, ncol = 2, nrow = 3)
+
+# Add the legend to the final graph
+
+legend_title_q <- "Data Type"
+spatial_cross_validation_example_map <- final_plot_q +
+  theme(legend.position = "bottom") +
+  guides(fill = guide_legend(title = legend_title_q,
+                             override.aes = list(shape = c(15, 15),
+                                                 linetype = c(0, 0),
+                                                 size = c(2, 2),
+                                                 color = c("blue", "red"))))
+
+
+print(spatial_cross_validation_example_map)
+
+ggplot2::ggsave(
+  here::here("GitControlled/Writing/FiguresTables/spatial_cross_validation_example_map.png"),
+  spatial_cross_validation_example_map,
+  dpi = 300,
+  height = 5,
+  width = 10
+)
+```
