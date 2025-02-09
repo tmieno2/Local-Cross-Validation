@@ -1,27 +1,24 @@
-# Generate simulation data
+---
+title: Generate simulation data
+---
+
+# Preparation
 
 ```{r}
-# /*===========================================================
-#' # Preparation
-# /*===========================================================
 # === Packages ===#
 library(data.table)
 library(tidyverse)
-
 # devtools::install_github("tmieno2/pasim")
 library(pasim)
 ```
 
-```{r}
-# /*===========================================================
-#' # Create a field
-# /*===========================================================
-# ! Define field and plot characteristics here
+# Generate simulation data
 
+```{r}
 set.seed(278543)
 
 sim_data <-
-  gen_fields(
+  pasim::gen_fields(
     plot_length = 12, # the length of a plot (in number of cells)
     plot_width = 3, # the width of a plot (in number of cells)
     cell_buffer = 1,
@@ -35,12 +32,12 @@ sim_data <-
     field_row = 72 # the number of row columns
   ) %>%
   #--- add trial design layout ---#
-  assign_trial_design(
+  pasim::assign_trial_design(
     design = "Latin Square Fixed 5"
   ) %>%
   #--- generate true field parameters ---#
   mutate(field_pars = list(
-    gen_field_parameters(
+    pasim::gen_field_parameters(
       field_sf,
       sp_range = 600,
       gstat_model = "Sph",
@@ -49,15 +46,15 @@ sim_data <-
   )) %>%
   #--- generate trial design ---#
   mutate(trial_design = list(
-    gen_trial_design(field_sf, field_pars, design_name, num_treatments, Nk_minus = 40, Nk_plus = 20)
+    pasim::gen_trial_design(field_sf, field_pars, design_name, num_treatments, Nk_minus = 40, Nk_plus = 20)
   )) %>%
   #--- generate regression data ---#
   mutate(reg_data = list(
-    gen_analysis_data(field_pars, field_sf, field_au_sf, trial_design)
+    pasim::gen_analysis_data(field_pars, field_sf, field_au_sf, trial_design)
   )) %>%
   #--- create the weight matrix if necessary ---#
   mutate(weight_matrix = list(
-    gen_weight_matrix(reg_data, cutoff = 50)
+    pasim::gen_weight_matrix(reg_data, cutoff = 50)
   ))
 
 #* save the data
@@ -70,11 +67,23 @@ saveRDS(sim_data, here::here("Shared/Data/raw_sim_data.rds"))
 sim_data <-
   readRDS(here::here("Shared/Data/raw_sim_data.rds")) %>%
   data.table()
+```
 
+Weight matrix for spatial error model:
+
+```{r}
 saveRDS(sim_data$weight_matrix[[1]], here::here("Shared/Data/weight_matrix.rds"))
+```
 
+Field `sf`:
+
+```{r}
 saveRDS(sim_data$field_au_sf[[1]], here::here("Shared/Data/field_au_sf.rds"))
+```
 
+Simulation data:
+
+```{r}
 reg_data_all <- sim_data$reg_data[[1]]
 
 lapply(

@@ -1,16 +1,13 @@
 ---
 title: "Run Simulations"
-author: "Mona Mousavi"
-date: "2023-02-07"
-output: html_document
 ---
 
 # Objective 
 
 + To see if the cross validation method based on local EONR can select the right model (the best in predicting EONR)
-  - local EONR (GAM) vs EONR estaimtes from ML-based methods
+  - local EONR (GAM) vs EONR estimates from ML-based methods
 + How do we check whether our method is working or not (comparing with true EONR) 
-+ How does the number of folds and repetas affect the usefulness of our cross-validation approach?
++ How does the number of folds and repeats affect the usefulness of our cross-validation approach?
 
 # Preparation
 
