@@ -234,7 +234,14 @@ The lower the value of $\Delta\pi_m$, the better. We would like a model selectio
 
 ## Model Selection (Step 2-2)
 
-We implement two model selection approaches: one based on yield prediction accuracy and the other based on local EONR prediction accuracy. For both approaches, spatial cross-validation is employed. The entire dataset is split into a train and test dataset in a spatially clustered manner, which is repeated to create multiple folds as depicted in Figure \ref{}. 
+We implement two model selection approaches: one based on yield prediction accuracy and the other based on local EONR prediction accuracy. For both approaches, spatial cross-validation is employed. The entire dataset is split into a train and test dataset in a spatially clustered manner, which is repeated to create multiple folds as depicted in @fig-fold-example. 
+
+```{r}
+#| label: fig-fold-example
+#| fig-cap: "An example of the train-test split for each of the five folds."
+
+knitr::include_graphics("FiguresTables/g_split_example.png")
+```
 
 Let $f$ and $F$ indicates a fold and the total number of folds, respectively.
 

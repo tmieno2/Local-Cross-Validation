@@ -311,4 +311,3 @@ ggplot(averaged_df, aes(x = avg_opt_N_gam, y = avg_opt_N_hat)) +
     legend.text = element_text(size = 10) # Legend text appearance
   ) +
   theme(axis.title = element_text(size = 12, family = "Times"))
-
