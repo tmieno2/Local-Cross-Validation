@@ -3,12 +3,17 @@ title: "A new model selection approach based on local economically optimal input
 author:
   - Mona Mousavi^[University of Nebraska Lincoln, mmousavi2@huskers.unl.edu], Taro Mieno^[University of Nebraska Lincoln, tmieno2@unl.edu],  David S. Bullock^[University of Illinois, dsbulloc@illinois.edu]
 format: 
-  html: default
-  docx: default
+  html: 
+    number-sections: true
+    number-depth: 3
+  docx: 
+    number-sections: true
+    number-depth: 3
 bibliography: PA.bib
-csl: computers-and-electronics-in-agriculture.csl
+csl: american-journal-of-agricultural-economics.csl
 abstract: ""
 ---
+
 
 ```{r echo = F, cache = F, include = F}
 library(knitr)
@@ -36,14 +41,6 @@ library(sf)
 library(flextable)
 ```
 
-```{r, eval = FALSE}
-# create figures and tables by running 3_present_results.rmd
-
-knitr::purl("../Codes/3_present_results.rmd")
-source("../Codes/3_present_results.R")
-```
-
-
 
 # Introduction
 
@@ -63,17 +60,17 @@ One of the emerging and promising approaches for providing site-specific N manag
 
 Machine learning (ML) is a statistical tool for analyzing experimental data and providing site-specific EONR recommendations based on modeled yield responses to different inputs. When utilizing ML techniques to estimate site-specific EONRs from experimental data, it is important to recognize that the purpose of conducting experimental designs is to capture the variability of crop responses to input applications [@paccioretti2021statistical], forming the basis for EONR estimation. However, using ML to estimate EONRs requires caution. Several emerging studies [@barbosa2020risk; @barbosa2020modeling; @krause2020random; @gardner2021economic]  have employed ML techniques to predict site-specific EONRs using data from OFPE. However, they consistently select ML methods based on their ability to accurately predict yield. This raises a significant question, especially when the primary goal is to provide reliable site-specific EONR recommendations. A strong counterpoint to this practice is presented by @kakimoto2022causal. Through simulations, the study showed that achieving high accuracy in yield prediction does not necessarily imply accurate EONR prediction. This underscores the importance of understanding the causal relationship between treatment variables and crop yield. Empirical evidence further supports this idea, as studies have found that the correlation between EONR and the corresponding yield at EONR is weak [@morris2018strengths; @sawyer2006concepts; @vanotti1994alternative]. 
 
-In this study, we use simulated data and apply ML techniques to propose a new approach for model selection to predict EONR. This approach is based on the spatial cross-validation and involves deriving yield responses to input variables in order to estimate local EONRs. Our inspiration for this method draws from the work of @de2023predicting. The approach uses spatial clustering to divide data into folds for training and testing. Within each fold, our candidate ML models estimate local EONR values. The performance of these estimates is evaluated by comparing them against a benchmark model using Root Mean Squared Error (RMSE). We further train the models on the complete dataset and rank them based on their RMSE in relation to the true EONR values. By comparing the rankings of locally estimated EONR values with the true values, we assess the performance of our local EONR model selection. Additionally, we evaluate the performance of a yield-based model selection approach. We found that the local EONR model selection approach consistently outperforms the yield-based model selection method when it comes to choosing a model for effectively predicting site-specific EONR.
+In this study, we use simulated data and apply ML techniques to propose a new approach for model selection to predict EONR. This approach is based on the spatial cross-validation and involves deriving yield responses to input variables in order to estimate local EONRs. Our inspiration for this method draws from the work of @de2023predicting. The approach uses spatial clustering to divide data into folds for training and testing. Within each fold, our candidate ML models estimate local EONR values. The performance of these estimates is evaluated by comparing them against a benchmark model using Root Mean Squared Error (RMSE). We further train the models on the complete dataset and rank them based on their RMSE in relation to the true EONR values. By comparing the rankings of locally estimated EONR values with the true values, we assess the performance of our local EONR model selection. Additionally, we evaluate the performance of a yield-based model selection approach. We found that the local EONR model selection approach outperforms the yield-based model selection method when it comes to choosing a model for effectively predicting site-specific EONR.
 
 
-# Materials and Method
+# Method
 
 To test the effectiveness of our proposed model selection approach against the traditional yield-based approach, we conduct Monte Carlo simulations of 1000 iterations.
 
 A single iteration of our simulation follows the following steps:
 
 + Step 1: Generate OFPE experiment data
-+ Step 2-1: Identify the true best (most profitable VRA application rate) model among the five candidates models
++ Step 2-1: Identify the true best (most profitable VRA application rate) model among the five candidate models
 + Step 2-2: Select the best model among the 5 candidate models based on
   + yield (conventional approach)
   + local-EONR (our approach)
@@ -135,7 +132,7 @@ In each simulation, the true yield $y_{j, i}$ for each cell $(j, i)$ was generat
 
 To align with real-world OFPEs, it was assumed that harvesting equipment could accurately record yields only at an 18m $\times$ 12m (subplot) resolution. Given that every cell within a plot received the same N application rate, it follows that $N_{j, 1}=N_{j, 2}=\cdots=N_{j, 6}=N_j$ for each subplot $j$. Letting $\mu_j$ denote the mean of yields for the cells in subplot $j$, the analysis of each round's data was based on 1440 $\left(\mu_j, N_j\right)$ observations.
 
-## Identify the true best model among the five candidates models (Step 2-1)
+## Identify the true best model among the five candidate models (Step 2-1)
 
 In this step, each of the candidate models are trained using the whole experiment data and then variable rate EONR are estimated for the whole field. Then, the estiamted variable rate N recommendations are evaluated against the **true** variable rate N to evaluate the performance of the models.
 
@@ -207,7 +204,7 @@ P_C\cdot \theta_k(\alpha_i, \beta_i) + P_N \cdot (N_k - N_1)
 
 The EONR for site $i$ is $N_k$ that produces the highest positive profit differntial unless all the profit differentials are negative, in which case, $N_1$ is the EONR.
 
-### True model performance 
+### True model performance {#sec-true-model}
 
 We use profit loss relative to the true site-specific EONR as the criteia for model performance as that is farmers' ultimate objective. The average per-acre profit from true site-specific EONR (denoted as $\pi_{true}$) is
 
@@ -234,7 +231,7 @@ The lower the value of $\Delta\pi_m$, the better. We would like a model selectio
 
 ## Model Selection (Step 2-2)
 
-We implement two model selection approaches: one based on yield prediction accuracy and the other based on local EONR prediction accuracy. For both approaches, spatial cross-validation is employed. The entire dataset is split into a train and test dataset in a spatially clustered manner, which is repeated to create multiple folds as depicted in @fig-fold-example. 
+We implement two model selection approaches: one based on yield prediction accuracy and the other based on local EONR prediction accuracy. For both approaches, spatial cross-validation is employed. The entire dataset is randomly split into a train and test dataset in a spatially clustered manner, which is repeated to create multiple folds as depicted in @fig-fold-example. 
 
 ```{r}
 #| label: fig-fold-example
@@ -243,21 +240,56 @@ We implement two model selection approaches: one based on yield prediction accur
 knitr::include_graphics("FiguresTables/g_split_example.png")
 ```
 
-Let $f$ and $F$ indicates a fold and the total number of folds, respectively.
+This process is repeated multiple times to create more folds. @tbl-fold-repeat presents the the complete set of combinations of the number of folds and repeats that are tried in our simulation analysis. As our main results, we present the results with case 5 (# of folds = 10 and # of repeats = 5) in @sec-results-main. In @sec-results-sensitivity-fold-repeat, how the choice of fold-repeat affect the performance of the model selection approaches.
+
+```{r}
+#| label: tbl-fold-repeat
+#| tbl-cap: "List of fold-repeat combinations"
+ 
+accuracy_table <- readRDS("FiguresTables/selection_accuracy_table.rds")
+
+num_folds <- accuracy_table[, unique(num_folds)]
+num_repeats <- accuracy_table[, unique(num_repeats)]
+
+data.table::CJ(
+  num_folds = num_folds,
+  num_repeats = num_repeats
+) %>%
+  .[, total_num_folds := num_folds * num_repeats] %>%
+  .[, case := 1:.N] %>%
+  .[, .(case, num_folds, num_repeats, total_num_folds)] %>%
+  flextable() %>%
+  align(j = 1:3, align = "center") %>%
+  set_header_labels(
+    values = list(
+      case = "Case",
+      num_folds = "# folds",
+      num_repeats = "# repeats",
+      total_num_folds = "total # of folds"
+    )
+  ) %>%
+  autofit()
+```
 
 ### Model selection based on yield level prediction
 
-For each of the candidate models, the following steps are implemented for each fold:
+Let $f$ and $F$ indicates a fold and the total number of folds, respectively. For each of the candidate models, the following steps are implemented for each fold:
 
 1. train the model using the train data of the fold
-2. predict yield for each of the observations in the the test data based on the trained model ($\hat{y}_{i,f,m}$)
-3. calculate RMSE of yield prediction as $RMSE-Yield_{f,m} = \sqrt{\sum_{i=1}^{N_t}(\hat{y}_{i,f,m} - y_{i,f,m})^2/N_t}$
+2. predict yield for each of the observations in the the test data based on the trained model ($\hat{y}_{i,f}$)
+3. calculate RMSE of yield prediction as $RMSE-Yield_{m,f} = \sqrt{\sum_{i=1}^{N_t}(\hat{y}_{i,f} - y_{i, f})^2/N_t}$
 
-Once this process is completed for all folds, the average RMSE for yield prediction is calculated for the model. This process is repeated for all the models, and the model with the lowest average RMSE is selected.
+Once this process is completed for all folds, the average RMSE for yield prediction is calculated for the model. 
+
+```{=tex}
+RMSE-Yield_{m} = \sum_{f=1}^F RMSE-Yield_{m, f}
+```
+
+This process is repeated for all the models, and the model with the lowest average RMSE is selected.
 
 ### Model selection based on local EONR 
 
-In selecting a model for EONR prediction, it would be ideal if we could assess models based on their ability to estimate site-specific EONRs rather than yields because our ultimate interests lie in estimating EONRs, not yields. Of course, this is simply impossible because the true EONRs are never observable in the real world setting unlike yield. Our model selection approach attemps to overcome this challenge by validating models on "local uniform EONR" estimated by a statistical model in place of unobservable true EONR. In other words, we treat the estimated local EONR as the proxy for the true local EONR and select models that are capable of predicting the estimated local EONRs the best. Clearly, for our approach to perform well, it is vital that the estimation of local EONR is accurate enough. In this study, we will use the GAM model to find local EONR because it can estimate yield response function without making any functional form assumptions. We first lay out the entire process and then provide details of the steps.
+In selecting a model for EONR prediction, it would be ideal if we could assess models based on their ability to estimate site-specific EONRs rather than yields because our ultimate interests lie in estimating EONRs, not crop yield levels. Of course, this is simply impossible because the true EONRs are never observable in the real world setting unlike crop yield. Our model selection approach attemps to overcome this challenge by validating models on "local uniform EONR" estimated by a statistical model in place of unobservable true EONR. In other words, we treat the estimated local EONR as the proxy for the true local EONR and select models that are capable of predicting the estimated local EONRs the best. Clearly, for our approach to perform well, it is vital that the estimation of local EONR is accurate enough. In this study, we will use the GAM model to find local EONR because it can estimate yield response function without making any functional form assumptions. We first lay out the entire process and then provide details of the steps.
 
 For each fold and a given candidate model, the following steps are performed:
 
@@ -291,21 +323,55 @@ Once the GAM model is trained, a uniform (not variable) EONR is obtained by nume
 
 Steps 3 and 4 are exactly the same as Step 2-1 except that the candidate models are trained on the train data of the fold and site-specific EONR are estiamted for the test data of the fold.
 
+## Evaluation of model selection performance (Step 3) {#sec-selection-performance}
 
-## Evaluation of model selection performance (Step 3)
+Let $m^*$ denote the true best model for a given simulation iteration identified as explained in @sec-true-model. Further, let $\widehat{N}^*_{m^*}(X_i)$ denote the EONR for cell $i$ estimated based on the best model ($m^*$). Then the highest profit that could be achieved for this field is:
 
-Model selection performance is evaluated based on the performance of the model selected by the model selection approach.
 
-Two criterion to evaluate model selection performance are used. First, they are evaluated based on the percentage of the times the selection approach picked the true best model in estimating EONR. The second and more practically informative criteria is based on profit deficit when the selected model was used instead of the true best model. 
+```{=tex}
+\begin{align*}
+\pi_{m^*}  = \frac{1}{N}\cdot \sum_{i=1}^{N} [P_c \cdot f(\widehat{N}^*_{m^*}(X_i), X_i) - P_N \cdot \widehat{N}^*_{m^*}(X_i)]
+\end{align*}
+```
 
-For example, let $m^*_f$ denote the true best model for a given field $f$, then the highest profit that could be achieved would be $\pi_{m^*_f}$ (defined in equation ..).
-Not knowing what the true best model, one needs to rely on a model selection procedure to pick a model. Suppose the procedure suggested model $m$, then the profit loss relative to $\pi_{m^*_f}$ is $\pi_{m^*_f} - \pi_{m}$. If the produce is able to suggest the true best model, then the profit loss will be zero. The lower the value of profit loss, the better a selection approach is. 
+Now let $m^{s}$ and $\widehat{N}^*_{m^s}(X_i)$ denote the model selected by model selection approach $s$ and the EONR for cell $i$ estimated based on the model. Then the profit achieved by this model is:
 
-# Results and Discussions
+```{=tex}
+\begin{align*}
+\pi_{m^s}  = \frac{1}{N}\cdot \sum_{i=1}^{N} [P_c \cdot f(\widehat{N}^*_{m^s}(X_i), X_i) - P_N \cdot \widehat{N}^*_{m^s}(X_i)]
+\end{align*}
+```
 
-## Performance of the model selection approaches
+Their difference, $\pi_{m^*}$ - $\pi_{m^s}$, measures the economic performance of the model selection approach. The difference is always positive by construction. The smaller the difference is, the better the model selection approach has performed. For example if the model selection approach picks the same model as the true best model, then the profit difference is zero. 
 
-@fig-selection-performance presents the number of times models are selected by the two model selection approaches and also selected as the actual best perfoming model in terms of site-specific EONR prediction using RMSE. Hereafter, we mean performing the best in predicting site-specific EONR by "performs the best" unless otherwise noted for the sake of consiseness. Yield-based model selection approach selected BRF for all the 500 simulation rounds. However, BRF was actually the best in only about 70 rounds. Among the candidate models, the linear spatial error model was the best most often at about 380 rounds. Our model selection approach, on the other hand, selects SE as often as it is selected as the actual best. Our model selection approach tends to select BRF much less than it is chosen as the actual best. 
+
+# Results and Discussions {#sec-results}
+
+```{r}
+# accuracy_table <- readRDS("GitControlled/Writing/FiguresTables/selection_accuracy_table.rds")
+
+main_table <- accuracy_table[num_folds == 10 & num_repeats == 5, ]
+
+num_se_by_leonr <- main_table[method == "SE", num_selected_leonr]
+
+num_se_by_leonr_correct <- main_table[method == "SE", num_selected_leonr_correct]
+
+num_se_true <- main_table[method == "SE", num_selected_true]
+
+num_all_by_lenor_correct <- main_table[, sum(num_selected_leonr_correct)]
+
+num_lm_by_lenor <- main_table[method == "LM", num_selected_leonr]
+
+num_lm_by_lenor_correct <- main_table[method == "LM", num_selected_leonr_correct]
+
+num_brf_by_yield_correct <- main_table[method == "BRF", num_selected_yield_correct]
+
+num_brf_true <- main_table[method == "BRF", num_selected_true]
+```
+
+## Performance of the model selection approaches {#sec-results-main}
+
+@fig-selection-performance presents the number of times models are selected by the two model selection approaches and also selected as the actual best perfoming model. Yield-based model selection approach selected BRF for all the 500 simulation rounds. However, BRF was actually the best model in only `r num_brf_true` rounds. Among the candidate models, the linear spatial error model was the best most often at `r num_se_true` rounds. Our model selection approach, on the other hand, selects SE as often as it is selected as the actual best. Our model selection approach tends to select BRF much less than it is chosen as the actual best. 
 
 ```{r}
 #| label: fig-selection-performance
@@ -313,48 +379,48 @@ Not knowing what the true best model, one needs to rely on a model selection pro
 knitr::include_graphics("FiguresTables/g_ranking.png")
 ```
 
-```{r}
-accuracy_table <- readRDS("FiguresTables/selection_accuracy_table.rds")
-
-main_table <- accuracy_table[num_repeats == 10 & num_folds == 10, ]
-
-num_se_by_leonr <- main_table[method == "S-learner (SE)", num_selected_leonr]
-
-num_se_by_leonr_correct <- main_table[method == "S-learner (SE)", num_selected_leonr_correct]
-
-num_se_true <- main_table[method == "S-learner (SE)", num_selected_true]
-
-num_all_by_lenor_correct <- main_table[, sum(num_selected_leonr_correct)]
-
-num_lm_by_lenor <- main_table[method == "S-learner (Linear)", num_selected_leonr]
-
-num_lm_by_lenor_correct <- main_table[method == "S-learner (Linear)", num_selected_leonr_correct]
-
-num_brf_by_yield_correct <- main_table[method == "S-learner (BRF)", num_selected_yield_correct]
-```
-
-@fig-leonr-comp
+@tbl-accuracy-table provides a deeper insights into the performance of the model selection approaches. Numbers in parenthesis indicate the number of times the model is selected. For example, the LEONR-based approach selected the SE model `r num_se_by_leonr` times. Numbers to the left of parenthesis indicates the number of times the model is correctly selected, meaning that a selection approacha selected the model that indeed performed the best. For example, among the `r num_se_true` times the SE model performed the best, the LEONR-based approach selected the SE model correclty `r num_se_by_leonr_correct` times. The LEONR-based approach selected the liner model `r num_lm_by_lenor` times, but its choice was correct only `r num_lm_by_lenor_correct` times. In total, the LEONR-based approach correctly selected the best model `r num_all_by_lenor_correct` times. The yield-based approach selected the BRF model for all the simulation rounds, while its choice is correct only `r num_brf_by_yield_correct` times. Overall, the LEONR-based approach performs far better than the yield-based approach.
 
 ```{r}
-#| label: fig-leonr-comp
-#| fig-cap: "Comparison of average model-estimated LEONR and GAM-estimated LEONR"
- 
-knitr::include_graphics("FiguresTables/g_leonr_comp.png")
-```
-
-Table \@ref(tab:accuracy-table) provides a deeper insights into the performance of the model selection approaches. Numbers in parenthesis indicate the number of times the model is selected. For example, the LEONR-based approach selected the SE model `r num_se_by_leonr` times. Numbers to the left of parenthesis indicates the number of times the model is correctly selected, meaning that a selection approacha selected the model that indeed performed the best. For example, among the `r num_se_true` times the SE model performed the best, the LEONR-based approach selected the SE model correclty `r num_se_by_leonr_correct` times. The LEONR-based approach selected the liner model `r num_lm_by_lenor` times, but its choice was correct only `r num_lm_by_lenor_correct` times. In total, the LEONR-based approach correctly selected the best model `r num_all_by_lenor_correct` times. The yield-based approach selected the BRF model for all the simulation rounds, while its choice is correct only `r num_brf_by_yield_correct` times. Overall, the LEONR-based approach performs far better than the yield-based approach.
-
-```{r tab.id = "accuracy-table", tab.cap = "table-name"}
+#| label: tbl-accuracy-table
+#| tbl-cap: "Accuracy of the model selection approaches"
 readRDS("FiguresTables/main_selection_accuracy_table.rds")
 ```
 
-Even when a selection approach selects a model that is not the best in predicting site-specific EONR, the selection approach is considered performing well as long as its site-specific EONR is similar to that of the true model because the selected model would achieve a similar level of profit as that from the best model in such a circumstance. @fig-profit-loss presents the distribution of the loss in profit relative to the actual best model. For example, if a selection approach correctly selects the best model, then the profit loss for that round would be zero. However, if a selection approach selects a sub-optimal model and its site-specific EONR recommendation make $10/acre less than the profit generated by the recommendation from the best model, then the profit loss for that round is 10. Since agricultural producers' ultimate interest lies in the profitability, this measure is more relevant than the frequency of correctly secting the best model. As can be seen in the figure, the LEONR-based selection would result in a much smaller profit loss (much higher profit) compared to the yield-based selection.
+Even when a selection approach selects a model that is not the best in predicting site-specific EONR, the selection approach is considered performing well as long as its site-specific EONR is similar to that of the true model because the selected model would achieve a similar level of profit as that from the best model in such a circumstance. @fig-profit-loss presents the distribution of the loss in profit relative to the actual best model defined in @sec-selection-performance. For example, if a selection approach correctly selects the best model, then the profit loss for that round would be zero. However, if a selection approach selects a sub-optimal model and its site-specific EONR recommendation make $10/acre less than the profit generated by the recommendation from the best model, then the profit loss for that round is $10/acre. Since agricultural producers' ultimate interest lies in the profitability, this measure is more relevant than the frequency of correctly secting the best model. As can be seen in the figure, the LEONR-based selection would result in a much smaller profit loss (much higher profit) compared to the yield-based selection.
 
 ```{r}
 #| label: fig-profit-loss
 #| fig-cap: "Distribution of profit loss relative to the actual best model"
 knitr::include_graphics("FiguresTables/g_pi_loss.png")
 ```
+
+<!-- @fig-leonr-comp -->
+
+```{r}
+#| eval: false
+#| label: fig-leonr-comp
+#| fig-cap: "Comparison of average model-estimated LEONR and GAM-estimated LEONR"
+
+knitr::include_graphics("FiguresTables/g_leonr_comp.png")
+```
+
+## The impact of different fold-repeat combination on local EONR selection and yield selection method {#sec-results-sensitivity-fold-repeat}
+
+```{r}
+#| label: fig-fold-repeat
+#| fig-cap: "The impact of different fold-repeat combinations on the performance of the model selection approaches based on local EONR and yield"
+
+knitr::include_graphics("FiguresTables/g_sensitivity_fold_repeat.png")
+```
+
+@fig-fold-repeat presents a comparison of two model selection criteria: local EONR and yield-based, across various combinations of folds and repeats. The x-axis represents the ranking of the ML models in estimating true site-specific EONRs, with rank 1 indicating the best-performing model in estimating site-specific EONRs compared to the true EONRs.
+
+In the context of local EONR model selection, the y-axis depicts the frequency of selecting the right model. The local EONR criterion consistently demonstrated an increasing trend in accuracy as the number of folds and repeats increased. For example, with 5 folds and 1 repeat, the correct model was selected in approximately 57.2 percent of simulations. This success rate improved to 58.4 percent with 5 repeats, and further to 62.4 percent with 7 folds and 5 repeats. Notably, increasing the number of folds to 10 while maintaining 5 repeats resulted in a substantial improvement, achieving a success rate of 65.8 percent. The pattern continued across different combinations, such as 5 folds and 10 repeats (59.4 percent success) and 10 folds and 10 repeats (65.2 percent success). This consistent improvement in accuracy underscores the positive impact of increasing the number of folds and repeats on the local EONR model selection.
+
+In contrast, the yield-based model selection exhibited a lower success rate in identifying the best-performing model for EONR estimation. Across all combinations of folds and repeats, the yield-based method consistently achieved a success rate of approximately 14.2-14.4 percent. This low success rate remained largely unaffected by variations in the number of folds and repeats. Consequently, it can be inferred that altering the fold and repeat parameters did not significantly influence the performance of the yield-based model selection in accurately identifying the optimal model for EONR estimation.
+
+The findings from these two model selection criteria highlight a clear distinction in their responses to different combinations of folds and repeats. While the local EONR criterion exhibited a notable increase in accuracy as folds and repeats were increased, the yield-based model selection method consistently demonstrated limited effectiveness across all scenarios.
 
 # Conclusion
 
@@ -381,21 +447,5 @@ Our selection approach replaces true local EONRs with local EONRs estimated by G
 knitr::include_graphics("FiguresTables/g_gam_leonr.png")
 ```
 
-## The impact of different fold repeat combination on local EONR selection and yield selection method
-
-```{r}
-#| label: fig-fold-repeat
-#| fig-cap: "The impact of different fold-repeat combinations on the performance of the model selection approaches based on local EONR and yield"
-
-knitr::include_graphics("FiguresTables/g_sensitivity_fold_repeat.png")
-
-```
-
-@fig-fold-repeat presents a comparison of two model selection criteria: local EONR and yield-based, across various combinations of folds and repeats. The x-axis represents the ranking of the ML models in estimating true site-specific EONRs, with rank 1 indicating the best-performing model in estimating site-specific EONRs compared to the true EONRs.
-
-In the context of local EONR model selection, the y-axis depicts the frequency of selecting the right model. The local EONR criterion consistently demonstrated an increasing trend in accuracy as the number of folds and repeats increased. For example, with 5 folds and 1 repeat, the correct model was selected in approximately 57.2 percent of simulations. This success rate improved to 58.4 percent with 5 repeats, and further to 62.4 percent with 7 folds and 5 repeats. Notably, increasing the number of folds to 10 while maintaining 5 repeats resulted in a substantial improvement, achieving a success rate of 65.8 percent. The pattern continued across different combinations, such as 5 folds and 10 repeats (59.4 percent success) and 10 folds and 10 repeats (65.2 percent success). This consistent improvement in accuracy underscores the positive impact of increasing the number of folds and repeats on the local EONR model selection.
-
-In contrast, the yield-based model selection exhibited a lower success rate in identifying the best-performing model for EONR estimation. Across all combinations of folds and repeats, the yield-based method consistently achieved a success rate of approximately 14.2-14.4 percent. This low success rate remained largely unaffected by variations in the number of folds and repeats. Consequently, it can be inferred that altering the fold and repeat parameters did not significantly influence the performance of the yield-based model selection in accurately identifying the optimal model for EONR estimation.
-
-The findings from these two model selection criteria highlight a clear distinction in their responses to different combinations of folds and repeats. While the local EONR criterion exhibited a notable increase in accuracy as folds and repeats were increased, the yield-based model selection method consistently demonstrated limited effectiveness across all scenarios. 
+ 
 

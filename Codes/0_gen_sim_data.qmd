@@ -96,3 +96,5 @@ lapply(
   }
 )
 ```
+
+Single file contains simulation data for single iteration. This is more memory efficient than loading a single file that contains all the simulation data and filter for a particular simulation in the simulation loop later.

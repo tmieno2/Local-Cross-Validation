@@ -20,7 +20,16 @@ library(officedown)
 ## Load results
 
 ```{r}
-sum_results_whole <- readRDS(here::here("Shared/Results/sum_results_whole.rds"))
+sum_results_whole <-
+  readRDS(here::here("Shared/Results/sum_results_whole.rds")) %>%
+  .[, method := case_when(
+    method == "S-learner (SE)" ~ "SE",
+    method == "R-learner (CF)" ~ "CF",
+    method == "S-learner (BRF)" ~ "BRF",
+    method == "S-learner (Linear)" ~ "LM",
+    method == "S-learner (RF)" ~ "RF"
+  )] %>%
+  .[, method := factor(method, levels = c("LM", "SE", "RF", "BRF", "CF"))]
 
 comp_results <-
   readRDS(here::here("Shared/Results/comp_results.rds")) %>%
@@ -37,19 +46,19 @@ theme_fig <-
   theme(
     axis.title.x =
       element_text(
-        size = 7, angle = 0, hjust = .5, vjust = -0.3, family = "Helvetica"
+        size = 12, angle = 0, hjust = .5, vjust = -0.3, family = "Helvetica"
       ),
     axis.title.y =
       element_text(
-        size = 7, angle = 90, hjust = .5, vjust = .9, family = "Helvetica"
+        size = 12, angle = 90, hjust = .5, vjust = .9, family = "Helvetica"
       ),
     axis.text.x =
       element_text(
-        size = 7, angle = 0, hjust = .5, vjust = 1.5, family = "Helvetica"
+        size = 9, angle = 0, hjust = .5, vjust = 1.5, family = "Helvetica"
       ),
     axis.text.y =
       element_text(
-        size = 7, angle = 0, hjust = 1, vjust = 0, family = "Helvetica"
+        size = 9, angle = 0, hjust = 1, vjust = 0, family = "Helvetica"
       ),
     axis.ticks =
       element_line(
@@ -59,17 +68,17 @@ theme_fig <-
     #--- legend ---#
     legend.text =
       element_text(
-        size = 7, angle = 0, hjust = 0, vjust = 0.5, family = "Helvetica"
+        size = 12, angle = 0, hjust = 0, vjust = 0.5, family = "Helvetica"
       ),
     legend.title =
       element_text(
-        size = 7, angle = 0, hjust = 0, vjust = 0, family = "Helvetica"
+        size = 12, angle = 0, hjust = 0, vjust = 0, family = "Helvetica"
       ),
     legend.key.size = unit(0.5, "cm"),
     #--- strip (for faceting) ---#
-    strip.text = element_text(size = 7, family = "Helvetica"),
+    strip.text = element_text(size = 9, family = "Helvetica"),
     #--- plot title ---#
-    plot.title = element_text(family = "Helvetica", face = "bold", size = 7),
+    plot.title = element_text(face = "bold", size = 12),
     #--- margin ---#
     # plot.margin = margin(0, 0, 0, 0, "cm"),
     #--- panel ---#
@@ -78,9 +87,6 @@ theme_fig <-
     panel.border = element_rect(fill = NA)
   )
 ```
-
-
-
 
 # Performance of candidate models: true, yield-based, EONR-based
 
@@ -97,9 +103,19 @@ model_selection_ranks <-
     variable == "N_LE" ~ "Local EONR",
     variable == "N_Y" ~ "Yield"
   )] %>%
-  .[, variable := NULL]
+  .[, variable := NULL] %>%
+  .[, method := case_when(
+    method == "S-learner (SE)" ~ "SE",
+    method == "R-learner (CF)" ~ "CF",
+    method == "S-learner (BRF)" ~ "BRF",
+    method == "S-learner (Linear)" ~ "LM",
+    method == "S-learner (RF)" ~ "RF"
+  )] %>%
+  .[, method := factor(method, levels = c("LM", "SE", "RF", "BRF", "CF"))]
 
-all_ranks <- rbind(true_rank, model_selection_ranks)
+all_ranks <-
+  rbind(true_rank, model_selection_ranks) %>%
+  .[, type := factor(type, levels = c("True", "Local EONR", "Yield"))]
 
 g_ranking <-
   ggplot(all_ranks) +
@@ -113,7 +129,8 @@ g_ranking <-
   labs(x = "Model", y = "Count", fill = "Selection Type") +
   theme_fig +
   theme(
-    legend.position = "bottom"
+    legend.position = "bottom",
+    legend.title = element_text(vjust = 0.5)
   )
 
 ggsave(
@@ -125,7 +142,7 @@ ggsave(
 )
 ```
 
-## Table
+## Selection accuracy table
 
 ```{r}
 accuracy_table <-
@@ -144,18 +161,35 @@ accuracy_table <-
     num_selected_yield = sum(yield_selected)
   ),
   by = .(method, num_folds, num_repeats)
-  ]
+  ] %>%
+  .[, method := case_when(
+    method == "S-learner (SE)" ~ "SE",
+    method == "R-learner (CF)" ~ "CF",
+    method == "S-learner (BRF)" ~ "BRF",
+    method == "S-learner (Linear)" ~ "LM",
+    method == "S-learner (RF)" ~ "RF"
+  )] %>%
+  .[, method := factor(method, levels = c("LM", "SE", "RF", "BRF", "CF"))] %>%
+  .[order(method), ]
 
 main_accuracy_data <-
-  accuracy_table[num_folds == 10 & num_repeats == 10, ] %>%
+  accuracy_table[num_folds == 10 & num_repeats == 5, ] %>%
   .[, leonr_based := paste0(num_selected_leonr_correct, " (", num_selected_leonr, ")")] %>%
   .[, yield_based := paste0(num_selected_yield_correct, " (", num_selected_yield, ")")] %>%
   .[, .(method, num_selected_true, leonr_based, yield_based)]
 
 main_accuracy_table <-
   flextable(main_accuracy_data) %>%
-  autofit() %>%
-  align(j = 2:4, align = "center")
+  align(j = 2:4, align = "center") %>%
+  set_header_labels(
+    values = list(
+      method = "Method",
+      num_selected_true = "True optimal",
+      leonr_based = "LEONR-based selection",
+      yield_based = "Yield-based selection"
+    )
+  ) %>%
+  autofit()
 
 saveRDS(main_accuracy_table, here::here("GitControlled/Writing/FiguresTables/main_selection_accuracy_table.rds"))
 
@@ -182,9 +216,14 @@ profit_loss_data <-
 
 ```{r}
 g_pi_loss <-
-  ggplot(profit_loss_data[num_folds == 5 & num_repeats == 5, ]) +
+  ggplot(profit_loss_data[num_folds == 10 & num_repeats == 5, ]) +
   geom_histogram(
-    aes(x = value),
+    aes(
+      x = value,
+      y = ifelse(
+        after_stat(count) > 0, after_stat(count), NA
+      )
+    ),
     color = "blue",
     fill = "white"
   ) +
@@ -255,7 +294,7 @@ gam_leonr_fit_all <-
 
 ```{r}
 gam_leonr_fit_main <-
-  ggplot(sum_results_gam[num_folds == 5 & num_repeats == 5, ]) +
+  ggplot(sum_results_gam[num_folds == 10 & num_repeats == 5, ]) +
   geom_point(
     aes(x = opt_N, y = opt_N_gam),
     size = 0.5
@@ -358,8 +397,6 @@ averaged_df <-
   ),
   by = .(sim, method)
   ]
-
-
 
 # Create separate graphs by method using facet_wrap
 g_leonr_comp <-
