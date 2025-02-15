@@ -1,0 +1,78 @@
+---
+title: "Run Simulations for the data without any spatial correlation"
+---
+
+# Objective 
+
++ Run simulations using the data where none of the variables are spatially correlated
+
+**Hypothesis**:
+
+Our procedure is not as effective.
+
+# Simulation setup
+
+## Data
+
+```{r}
+sim_raw_data_files <-
+  list.files(
+    here::here("data/no-sp/individual-fields"),
+    full.names = TRUE
+  )
+
+field_au_sf <-
+  readRDS(here::here("data/no-sp/field_au_sf.rds")) %>%
+  sf::st_as_sf()
+```
+
+## Set up simulations (global variables)
+
+```{r}
+x_vars <-
+  c(
+    "theta_b2_2", "theta_b1_2",
+    "Nk_2_1", "Nk_2_2", "Nk_1_1", "Nk_1_2",
+    "plateau_2_1", "plateau_2_2", "plateau_1_1", "plateau_1_2"
+  )
+
+pCorn <- 6.25 / 25.4 # $/kg
+pN <- 1 / 0.453592 # $/kg
+```
+
+# VRA for the whole field by method
+```{r, eval = FALSE}
+models <- c("brf", "rf", "lm", "se", "cf")
+
+parallel::mclapply(
+  1:length(sim_raw_data_files),
+  #--- loop over fields (sim) ---#
+  function(x) {
+    print(x)
+    find_vra_single_whole_field(
+      data_file_path = sim_raw_data_files[x],
+      x_vars = x_vars,
+      models = models,
+      file_append = "no_sp"
+    )
+  },
+  mc.cores = parallel::detectCores() - 4,
+  mc.preschedule = FALSE
+)
+```
+
+# Run model-selection simulations
+
+```{r}
+set.seed(974345)
+
+model_selection_sim(
+  data_files = sim_raw_data_files,
+  field_sf = field_au_sf,
+  models = c("lm", "se", "rf", "brf", "cf", "gam"),
+  num_repeats = 5,
+  num_folds = 10,
+  num_cores = parallel::detectCores() - 4,
+  results_root_dir = "results/no-sp"
+)
+```

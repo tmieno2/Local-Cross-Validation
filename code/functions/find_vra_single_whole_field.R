@@ -1,8 +1,6 @@
-find_vra_single_whole_field <- function(file_path, x_vars, models = c("brf", "rf", "lm", "se", "cf")) {
-  print(paste0("Working on ", file_path))
-
+find_vra_single_whole_field <- function(x_vars, models = c("brf", "rf", "lm", "se", "cf"), data_file_path, results_path) {
   #--- load the data ---#
-  w_data <- readRDS(file_path)
+  w_data <- readRDS(data_file_path)
   train_data <- copy(w_data$data[[1]])
   eval_data <- copy(train_data) # since finding eonr for the training data
 
@@ -21,15 +19,18 @@ find_vra_single_whole_field <- function(file_path, x_vars, models = c("brf", "rf
   #* Site-specific EONR for the entire field
   #* +++++++++++++++++++++++++++++++++++
   vra_eonr <-
-    data.table(
-      model = models
-    ) %>%
+    data.table(model = models) %>%
     rowwise() %>%
     mutate(fcn = list(
       model_picker(model)
     )) %>%
     mutate(results = list(
-      fcn(x_vars, train_data, eval_data, yield_pred = FALSE)
+      fcn(
+        x_vars = x_vars,
+        train_data = train_data,
+        eval_data = eval_data,
+        yield_pred = FALSE
+      )
     )) %>%
     data.table() %>%
     .[, .(model, results)] %>%
@@ -53,7 +54,7 @@ find_vra_single_whole_field <- function(file_path, x_vars, models = c("brf", "rf
       file_name <- paste0(model, "_sim_", w_data$sim, ".rds")
       saveRDS(
         vra_eonr[x, data][[1]],
-        here::here("Shared/Results/WholeField/", file_name)
+        here::here(results_path, file_name)
       )
     }
   )

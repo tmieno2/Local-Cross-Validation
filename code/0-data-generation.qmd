@@ -1,0 +1,221 @@
+---
+title: Generate simulation data
+---
+
+# Preparation
+
+```{r}
+# === Packages ===#
+library(data.table)
+library(tidyverse)
+# devtools::install_github("tmieno2/pasim")
+library(pasim)
+```
+
+## Main simulation data
+
+# Generate simulation data
+
+```{r}
+#| eval: false 
+
+set.seed(278543)
+
+sim_data <-
+  pasim::gen_fields(
+    plot_length = 12, # the length of a plot (in number of cells)
+    plot_width = 3, # the width of a plot (in number of cells)
+    cell_buffer = 1,
+    aunit_length = 2, # the length of an analysis unit (in number of cells)
+    aunit_width = 3, # the width of an analysis unit (in number of cells)
+    cell = 6, # the length of a cell in meter
+    #* how wide the field is
+    # field_col = c(36, 72, 144), # the number of cell columns
+    field_col = 144, # the number of cell columns
+    #* how tall the field is
+    field_row = 72 # the number of row columns
+  ) %>%
+  #--- add trial design layout ---#
+  pasim::assign_trial_design(
+    design = "Latin Square Fixed 5"
+  ) %>%
+  #--- generate true field parameters ---#
+  mutate(field_pars = list(
+    pasim::gen_field_parameters(
+      field_sf,
+      sp_range = 600,
+      gstat_model = "Sph",
+      nsim = 500
+    )
+  )) %>%
+  #--- generate trial design ---#
+  mutate(trial_design = list(
+    pasim::gen_trial_design(field_sf, field_pars, design_name, num_treatments, Nk_minus = 40, Nk_plus = 20)
+  )) %>%
+  #--- generate regression data ---#
+  mutate(reg_data = list(
+    pasim::gen_analysis_data(field_pars, field_sf, field_au_sf, trial_design)
+  )) %>%
+  #--- create the weight matrix if necessary ---#
+  mutate(weight_matrix = list(
+    pasim::gen_weight_matrix(reg_data, cutoff = 50)
+  ))
+
+#* save the data
+saveRDS(sim_data, here::here("data/main/raw_sim_data.rds"))
+```
+
+## Save simulation data separately
+
+```{r}
+sim_data <-
+  readRDS(here::here("data/main/raw_sim_data.rds")) %>%
+  data.table()
+```
+
+Weight matrix for spatial error model:
+
+```{r}
+saveRDS(sim_data$weight_matrix[[1]], here::here("data/main/weight_matrix.rds"))
+```
+
+Field `sf`:
+
+```{r}
+saveRDS(sim_data$field_au_sf[[1]], here::here("data/main/field_au_sf.rds"))
+```
+
+Simulation data:
+
+```{r}
+reg_data_all <- sim_data$reg_data[[1]]
+
+lapply(
+  1:nrow(reg_data_all),
+  function(x) {
+    saveRDS(
+      reg_data_all[x, ],
+      here::here(paste0("data/main/individual-fields/sim_data_", reg_data_all[x, sim], ".rds"))
+    )
+  }
+)
+```
+
+Single file contains simulation data for single iteration. This is more memory efficient than loading a single file that contains all the simulation data and filter for a particular simulation in the simulation loop later.
+
+## Quick visualization of the data
+
+```{r}
+sim_data$reg_data[[1]]$data[[1]] %>%
+  sf::st_as_sf() %>%
+  ggplot() +
+  geom_sf(aes(fill = Nk_1)) +
+  scale_fill_viridis_c()
+```
+
+# Data for testing the impact of the spatial correlation of the datga
+
+## Objective
+
+The data generated here is used to examine how our selection approach performs if the data has no spatial correlation.
+
+## Generate data
+
+```{r}
+#| eval: false
+ 
+set.seed(78347465)
+
+sim_data_no_sp <-
+  pasim::gen_fields(
+    plot_length = 12, # the length of a plot (in number of cells)
+    plot_width = 3, # the width of a plot (in number of cells)
+    cell_buffer = 1,
+    aunit_length = 2, # the length of an analysis unit (in number of cells)
+    aunit_width = 3, # the width of an analysis unit (in number of cells)
+    cell = 6, # the length of a cell in meter
+    #* how wide the field is
+    # field_col = c(36, 72, 144), # the number of cell columns
+    field_col = 144, # the number of cell columns
+    #* how tall the field is
+    field_row = 72 # the number of row columns
+  ) %>%
+  #--- add trial design layout ---#
+  pasim::assign_trial_design(
+    design = "Latin Square Fixed 5"
+  ) %>%
+  #--- generate true field parameters ---#
+  mutate(field_pars = list(
+    pasim::gen_field_parameters(
+      field_sf,
+      sp_range = 0.01,
+      gstat_model = "Sph",
+      nsim = 500
+    )
+  )) %>%
+  #--- generate trial design ---#
+  mutate(trial_design = list(
+    pasim::gen_trial_design(field_sf, field_pars, design_name, num_treatments, Nk_minus = 40, Nk_plus = 20)
+  )) %>%
+  #--- generate regression data ---#
+  mutate(reg_data = list(
+    pasim::gen_analysis_data(field_pars, field_sf, field_au_sf, trial_design)
+  )) %>%
+  #--- create the weight matrix if necessary ---#
+  mutate(weight_matrix = list(
+    pasim::gen_weight_matrix(reg_data, cutoff = 50)
+  ))
+
+#* save the data
+saveRDS(sim_data_no_sp, here::here("data/no-sp/raw_sim_data.rds"))
+```
+
+## Save simulation data separately
+
+```{r}
+sim_data_no_sp <-
+  readRDS(here::here("data/no-sp/raw_sim_data.rds")) %>%
+  data.table()
+```
+
+Weight matrix for spatial error model:
+
+```{r}
+saveRDS(sim_data_no_sp$weight_matrix[[1]], here::here("data/no-sp/weight_matrix.rds"))
+```
+
+Field `sf`:
+
+```{r}
+saveRDS(sim_data_no_sp$field_au_sf[[1]], here::here("data/no-sp/field_au_sf.rds"))
+```
+
+Simulation data:
+
+```{r}
+reg_data_all <- sim_data_no_sp$reg_data[[1]]
+
+lapply(
+  1:nrow(reg_data_all),
+  function(x) {
+    saveRDS(
+      reg_data_all[x, ],
+      here::here(paste0("data/no-sp/individual-fields/sim_data_", reg_data_all[x, sim], ".rds"))
+    )
+  }
+)
+```
+
+Single file contains simulation data for single iteration. This is more memory efficient than loading a single file that contains all the simulation data and filter for a particular simulation in the simulation loop later.
+
+## Quick visualization of the data
+
+```{r}
+sim_data_no_sp$reg_data[[1]]$data[[1]] %>%
+  sf::st_as_sf() %>%
+  ggplot() +
+  geom_sf(aes(fill = Nk_1)) +
+  scale_fill_viridis_c()
+```
+
+As can be seen in the figure, the variable has no spatial correlation.

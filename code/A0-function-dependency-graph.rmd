@@ -9,6 +9,13 @@ list.files(here::here("GitControlled/Codes/functions/"), full.names = TRUE) %>%
 ```
 
 ## Display the function dependency graph
+
+Install the `foodwebr` package.
+
+```{r}
+devtools::install_github("lewinfox/foodwebr")
+```
+
 ```{r}
 fcn_dependencies <- foodwebr::foodweb()
 plot(fcn_dependencies)

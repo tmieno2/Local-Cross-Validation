@@ -9,3 +9,5 @@ Codes_sample/*
 *.pdf
 Writing/manuscript_files/*
 Writing/method_data_generation_files/*
+data/*
+results/*

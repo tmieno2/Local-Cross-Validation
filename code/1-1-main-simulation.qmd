@@ -4,28 +4,25 @@ title: "Run Simulations"
 
 # Objective 
 
-+ To see if the cross validation method based on local EONR can select the right model (the best in predicting EONR)
++ Test if the cross validation method based on local EONR can select the right model (the best in predicting EONR)
   - local EONR (GAM) vs EONR estimates from ML-based methods
 + How do we check whether our method is working or not (comparing with true EONR) 
 + How does the number of folds and repeats affect the usefulness of our cross-validation approach?
 
-# Preparation
-
-```{r}
-library(tidyverse)
-list.files(here::here("GitControlled/Codes/functions/"), full.names = TRUE) %>%
-  lapply(., source)
-```
 
 # Simulation setup
 
 ## Data
 
 ```{r}
-sim_raw_data_files <- list.files(here::here("Shared/Data/SimData"), full.names = TRUE)
+sim_raw_data_files <- 
+  list.files(
+    here::here("data/main/individual-fields"), 
+    full.names = TRUE
+  )
 
 field_au_sf <-
-  readRDS(here::here("Shared/Data/field_au_sf.rds")) %>%
+  readRDS(here::here("data/main/field_au_sf.rds")) %>%
   st_as_sf()
 ```
 
@@ -52,12 +49,14 @@ pbmclapply(
   #--- loop over fields (sim) ---#
   function(x) {
     find_vra_single_whole_field(
-      file_path = sim_raw_data_files[x],
+      data_file_path = sim_raw_data_files[x],
       x_vars = x_vars,
-      models = models
+      models = models,
+      results_path = "results/main/true-best-model"
     )
   },
-  mc.cores = 10
+  mc.cores = parallel::detectCores() - 4,
+  mc.preschedule = FALSE
 )
 ```
 
@@ -70,7 +69,7 @@ sim_cases <-
     num_repeats = c(1, 5, 10)
   )
 
-saveRDS(sim_cases, here::here("Shared/Results/sim_cases.rds"))
+saveRDS(sim_cases, here::here("results/main/sim_cases.rds"))
 ```
 
 ```{r}
@@ -85,7 +84,8 @@ lapply(
       models = c("lm", "se", "rf", "brf", "cf", "gam"),
       num_repeats = sim_cases[x, num_repeats],
       num_folds = sim_cases[x, num_folds],
-      num_cores = 10
+      num_cores = parallel::detectCores() - 4,
+      results_root_dir = "results/main"
     )
   }
 )

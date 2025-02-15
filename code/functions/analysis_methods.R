@@ -1,14 +1,14 @@
 #* ===========================================================
 #* BRF
 #* ===========================================================
-# temp <- find_opt_vra_BRF(data, x_vars)
+# find_opt_vra_BRF(x_vars, train_data, eval_data)
 
 find_opt_vra_BRF <- function(x_vars, train_data, eval_data, yield_pred = TRUE) {
   print("Working on BRF")
 
   Y <- train_data[, yield]
   all_x_vars <- c("N", x_vars)
-  X <- train_data[, ..all_x_vars]
+  X <- train_data[, all_x_vars, with = FALSE]
 
   #* +++++++++++++++++++++++++++++++++++
   #* Training
@@ -31,7 +31,7 @@ find_opt_vra_BRF <- function(x_vars, train_data, eval_data, yield_pred = TRUE) {
     eval_data[, c(x_vars, "aunit_id"), with = FALSE] %>%
     reshape::expand.grid.df(N_data, .) %>%
     data.table() %>%
-    .[, y_hat := predict(brf_trained, newdata = .[, ..all_x_vars])] %>%
+    .[, y_hat := predict(brf_trained, newdata = .[, all_x_vars, with = FALSE])] %>%
     .[, pi_hat := (pCorn * y_hat) - (pN * N)] %>%
     .[, .SD[which.max(pi_hat), ], by = aunit_id] %>%
     .[, .(aunit_id, N)] %>%
@@ -44,7 +44,7 @@ find_opt_vra_BRF <- function(x_vars, train_data, eval_data, yield_pred = TRUE) {
   if (yield_pred == TRUE) {
     yield_hat_data <-
       eval_data %>%
-      .[, yield_hat := predict(brf_trained, newdata = .[, ..all_x_vars])] %>%
+      .[, yield_hat := predict(brf_trained, newdata = .[, all_x_vars, with = FALSE])] %>%
       .[, .(aunit_id, yield, yield_hat)]
 
     eonr_yield_hat <- yield_hat_data[opt_EONR, on = "aunit_id"]
@@ -60,14 +60,14 @@ find_opt_vra_BRF <- function(x_vars, train_data, eval_data, yield_pred = TRUE) {
 #* ===========================================================
 #* RF
 #* ===========================================================
-# temp <- find_opt_vra_RF(data, x_vars)
+# find_opt_vra_RF(x_vars, train_data, eval_data)
 
 find_opt_vra_RF <- function(x_vars, train_data, eval_data, yield_pred = TRUE) {
   print("Working on RF")
 
   Y <- train_data[, yield]
   all_x_vars <- c("N", x_vars)
-  X <- train_data[, ..all_x_vars]
+  X <- train_data[, all_x_vars, with = FALSE]
 
   #* +++++++++++++++++++++++++++++++++++
   #* Train RF
@@ -90,7 +90,7 @@ find_opt_vra_RF <- function(x_vars, train_data, eval_data, yield_pred = TRUE) {
     eval_data[, c(x_vars, "aunit_id"), with = FALSE] %>%
     reshape::expand.grid.df(N_data, .) %>%
     data.table() %>%
-    .[, y_hat := predict(rf_trained, newdata = .[, ..all_x_vars])] %>%
+    .[, y_hat := predict(rf_trained, newdata = .[, all_x_vars, with = FALSE])] %>%
     .[, pi_hat := (pCorn * y_hat) - (pN * N)] %>%
     .[, .SD[which.max(pi_hat), ], by = aunit_id] %>%
     .[, .(aunit_id, N)] %>%
@@ -103,7 +103,7 @@ find_opt_vra_RF <- function(x_vars, train_data, eval_data, yield_pred = TRUE) {
   if (yield_pred == TRUE) {
     yield_hat_data <-
       eval_data %>%
-      .[, yield_hat := predict(rf_trained, newdata = .[, ..all_x_vars])] %>%
+      .[, yield_hat := predict(rf_trained, newdata = .[, all_x_vars, with = FALSE])] %>%
       .[, .(aunit_id, yield, yield_hat)]
 
     eonr_yield_hat <- yield_hat_data[opt_EONR, on = "aunit_id"]
