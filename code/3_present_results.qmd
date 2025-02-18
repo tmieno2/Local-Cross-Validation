@@ -572,3 +572,72 @@ ggplot2::ggsave(
 )
 ```
 
+<<<<<<< HEAD:code/3_present_results.qmd
+=======
+
+# spatial cross validation (example: 10 fold) 
+
+```{r}
+### code for 10 folds ########$$$$$$$%^&*(*&&&&&&&&&&&&&)
+
+#--- first simulation ---#
+whole_data <-
+  readRDS(here::here("Shared/Data/SimData/sim_data_1.rds"))$data[[1]] %>%
+  data.table()
+
+#--- train or test ---#
+train_test_split_q <-
+  readRDS(here::here("Shared/Results/sim_results_num_repeats_1_num_folds_10/train_test_split.rds"))
+
+spatial_folds_q <-
+  train_test_split_q %>%
+  rowwise() %>%
+  mutate(training_data = list(
+    whole_data[aunit_id %in% training_ids, .(aunit_id, geometry)] %>%
+      .[, type := "Training"]
+  )) %>%
+  mutate(test_data = list(
+    whole_data[aunit_id %in% test_ids, .(aunit_id, geometry)] %>%
+      .[, type := "Test"]
+  )) %>%
+  dplyr::mutate(combined_data = list(
+    rbind(training_data, test_data)
+  )) %>%
+  dplyr::select(split_id, combined_data) %>%
+  tidyr::unnest(cols = combined_data) %>%
+  sf::st_as_sf() %>%
+  dplyr::mutate(split_txt := paste0("Fold ", split_id))
+
+spatial_folds_q <- spatial_folds_q %>%
+  arrange(split_id) %>%  #  correct order in dataset
+  mutate(split_txt = factor(split_txt, levels = unique(split_txt)))  # convert to ordered factor
+
+
+g_split_example_10_folds <-
+  ggplot(spatial_folds_q) +
+  geom_sf(aes(fill = type), color = NA) +
+  facet_wrap(~split_txt, ncol = 3)  +
+  scale_fill_discrete(
+    name = "Role of the data",
+    guide = guide_legend(title.position = "top", nrow = 1)
+  ) +
+  theme_void() +
+  theme(
+    legend.position = "bottom",  
+    legend.justification = c(0, 0),  # Aligns it to the left
+    legend.box = "horizontal", 
+    strip.text = element_text(size = 12),
+    legend.text = element_text(size = 12),
+    legend.title = element_text(size = 12)
+  )
+
+ggplot2::ggsave(
+  here::here("GitControlled/Writing/FiguresTables/g_split_example_10_folds.png"),
+  g_split_example_10_folds,
+  dpi = 300,
+  height = 6,
+  width = 6
+)
+
+```
+>>>>>>> Local-Cross-Validation/main:Codes/3_present_results.qmd
