@@ -1,0 +1,171 @@
+---
+title: "Summarize the results"
+---
+
+# Objective 
+
++ Summarize the results
+
+# Preparation
+
+## Parameters
+
+```{r}
+pCorn <- 6.25 / 25.4 # $/kg
+pN <- 1 / 0.453592 # $/kg
+```
+
+## Data
+
+```{r}
+raw_data <- readRDS(here::here("data/no-sp/raw_sim_data.rds"))
+
+#--- data for profit calculation ---#
+all_reg_data <-
+  raw_data$reg_data[[1]] %>%
+  unnest(data) %>%
+  data.table() %>%
+  .[, .(sim, aunit_id, b0, b1, b2, Nk)]
+```
+
+# Whole-field analysis
+
+## Combine the results and calcualte profit deficit
+
+```{r}
+results_whole <-
+  list.files(
+    here::here("results/no-sp/true-best-model"),
+    full.names = TRUE
+  ) %>%
+  purrr::map(readRDS) %>%
+  rbindlist() %>%
+  all_reg_data[., on = c("aunit_id", "sim")] %>%
+  .[, yield_opt := gen_yield_QP(b0, b1, b2, Nk, opt_N)] %>%
+  .[, yield_opt_hat := gen_yield_QP(b0, b1, b2, Nk, opt_N_hat)] %>%
+  .[, pi_opt := pCorn * yield_opt - pN * opt_N] %>%
+  .[, pi_opt_hat := pCorn * yield_opt_hat - pN * opt_N_hat] %>%
+  .[, pi_deficit := pi_opt_hat - pi_opt] %>%
+  .[order(sim), ]
+```
+
+## Summarize the results by sim and method
+
+Find average RMSE of EONR and $\pi_{deficit}$ and rank methods by sim based on RMSE of EONR.
+
+```{r}
+sum_results_whole <-
+  results_whole %>%
+  .[, N_dif := opt_N_hat - opt_N] %>%
+  .[, .(
+    rmse_eonr_true = sqrt(mean(N_dif^2)),
+    pi_deficit = mean(pi_deficit)
+  ), by = .(sim, method)] %>%
+  #--- ranking of rmse eonr ---#
+  .[order(sim, rmse_eonr_true), ] %>%
+  .[, eonr_rank_true := seq(.N), by = sim] %>%
+  .[, eonr_selected_true := ifelse(eonr_rank_true == 1, 1, 0)] %>%
+  #--- ranking of profit deficit ---#
+  .[order(sim, -pi_deficit), ] %>%
+  .[, profit_rank_true := seq(.N), by = sim] %>%
+  .[, profit_selected_true := ifelse(profit_rank_true == 1, 1, 0)]
+
+# ggplot(sum_results_whole) +
+#   geom_histogram(aes(x = rmse_eonr)) +
+#   facet_grid(method ~ .)
+
+# ggplot(sum_results_whole) +
+#   geom_histogram(aes(x = pi_deficit)) +
+#   facet_grid(method ~ .)
+
+saveRDS(sum_results_whole, here::here("results/no-sp/sum_results_whole.rds"))
+```
+
+## True ranking visualization
+
+```{r}
+(
+  g_true_rank_rmse_eonr <-
+    sum_results_whole[, .(num_selected = sum(eonr_selected_true)), by = method] %>%
+    ggplot(.) +
+    geom_bar(aes(y = num_selected, x = method), stat = "identity")
+)
+```
+
+# Model selection simulation results
+
+```{r}
+sim_cases <- readRDS(here::here("results/no-sp/sim_cases.rds"))
+
+# num_folds <- 10
+# num_repeats <- 5
+
+comp_results <-
+  #--- specify the combination of num_folds and num_repeats ---#
+  sim_cases %>%
+  rowwise() %>%
+  mutate(comp_summary = list(
+    process_model_selection_results(
+      num_folds = num_folds, 
+      num_repeats = num_repeats,
+      results_root_dir = "results/no-sp"
+    )
+  )) %>%
+  #--- create a table of selection performance based on local EONR prediction ---#
+  mutate(selection_perf_rank_LE = list(
+    comp_summary[eonr_selected_gam == 1, .N, by = eonr_rank_true] %>%
+      .[order(eonr_rank_true), ] %>%
+      .[, select_method := "Local EONR prediction"]
+  )) %>%
+  #--- create a table of selection performance based on yield prediction ---#
+  mutate(selection_perf_rank_Y = list(
+    comp_summary[yield_selected == 1, .N, by = eonr_rank_true] %>%
+      .[order(eonr_rank_true), ] %>%
+      .[, select_method := "Yield prediction"]
+  )) %>%
+  mutate(selection_perf = list(
+    rbind(selection_perf_rank_LE, selection_perf_rank_Y) %>%
+      dcast(eonr_rank_true ~ select_method, value.var = "N")
+  )) %>%
+  mutate(loss_data = list(
+    find_loss_from_selection(comp_summary)
+  ))
+
+saveRDS(comp_results, here::here("results/no-sp/comp_results.rds"))
+```
+
+# GAM results
+
+```{r}
+gam_results <-
+  #--- specify the combination of num_folds and num_repeats ---#
+  sim_cases %>%
+  rowwise() %>%
+  dplyr::mutate(gam_results = list(
+   list.files(
+    paste0("results/no-sp/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds),
+    full.names = TRUE
+  ) %>%
+  .[str_detect(., "gam")] %>%
+  purrr::map(readRDS) %>%
+  rbindlist(fill = TRUE)
+  )) %>%
+  unnest() %>%
+  data.table()
+
+sum_results_gam <-
+  gam_results %>%
+  #--- average opt_N by fold ---#
+  # opt_N_gam is the same for all the observations
+  # within a fold
+  .[, .(
+    opt_N_gam = mean(opt_N_gam), 
+    opt_N = mean(opt_N)
+  ), 
+    by = .(sim, split_id, num_folds, num_repeats)] %>%
+  .[, opt_N_dif := opt_N - opt_N_gam] %>%
+  .[, rmse_local_eonr := sqrt(mean(opt_N_dif^2)), by = sim] %>%
+  .[order(num_folds, num_repeats, sim), ]
+
+saveRDS(sum_results_gam, here::here("results/no-sp/sum_results_gam.rds"))
+```

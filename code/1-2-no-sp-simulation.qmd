@@ -42,8 +42,6 @@ pN <- 1 / 0.453592 # $/kg
 
 # VRA for the whole field by method
 ```{r, eval = FALSE}
-models <- c("brf", "rf", "lm", "se", "cf")
-
 parallel::mclapply(
   1:length(sim_raw_data_files),
   #--- loop over fields (sim) ---#
@@ -52,8 +50,8 @@ parallel::mclapply(
     find_vra_single_whole_field(
       data_file_path = sim_raw_data_files[x],
       x_vars = x_vars,
-      models = models,
-      file_append = "no_sp"
+      models = c("brf", "rf", "lm", "se", "cf"),
+      results_path = "results/no-sp/true-best-model"
     )
   },
   mc.cores = parallel::detectCores() - 4,
@@ -62,6 +60,17 @@ parallel::mclapply(
 ```
 
 # Run model-selection simulations
+
+```{r}
+sim_cases <-
+  data.table::CJ(
+    num_folds = 10,
+    num_repeats = 5
+  )
+
+saveRDS(sim_cases, here::here("results/no-sp/sim_cases.rds"))
+```
+
 
 ```{r}
 set.seed(974345)
@@ -73,6 +82,7 @@ model_selection_sim(
   num_repeats = 5,
   num_folds = 10,
   num_cores = parallel::detectCores() - 4,
-  results_root_dir = "results/no-sp"
+  results_root_dir = "results/no-sp",
+  force = TRUE
 )
 ```

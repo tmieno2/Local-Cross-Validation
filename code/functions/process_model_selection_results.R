@@ -1,9 +1,13 @@
-process_model_selection_results <- function(num_folds, num_repeats) {
+process_model_selection_results <- function(num_folds, num_repeats, results_root_dir) {
   # num_folds <- 7
   # num_repeats <- 10
 
-  results_dir <- paste0("Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds)
-
+  results_dir <- file.path(
+    results_root_dir,
+    paste0(
+      "sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds
+    )
+  )
   #* +++++++++++++++++++++++++++++++++++
   #* Gam results
   #* +++++++++++++++++++++++++++++++++++
@@ -107,7 +111,6 @@ process_model_selection_results <- function(num_folds, num_repeats) {
 # How similar rmse_eonr is between the selected and the actual best
 
 find_loss_from_selection <- function(comp_summary) {
-
   eonr_selected <-
     comp_summary[eonr_rank_gam == 1, .(sim, method, pi_deficit, rmse_eonr_true)] %>%
     setnames(

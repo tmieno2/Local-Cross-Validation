@@ -13,11 +13,20 @@ find_vra_single_whole_field <- function(x_vars, models = c("brf", "rf", "lm", "s
     .[, opt_N := (pN / pCorn - b1) / (2 * b2)] %>%
     .[, opt_N := pmin(Nk, opt_N)] %>%
     .[, opt_N := pmax(0, opt_N)] %>%
-    .[, .(aunit_id, opt_N)]
+    .[, yield_opt := gen_yield_QP(b0, b1, b2, Nk, opt_N)] %>%
+    .[, pi_opt := pCorn * yield_opt - pN * opt_N] %>%
+    .[, .(aunit_id, b0, b1, b2, Nk, opt_N, yield_opt, pi_opt)]
 
   #* +++++++++++++++++++++++++++++++++++
   #* Site-specific EONR for the entire field
   #* +++++++++++++++++++++++++++++++++++
+
+  # cor(vra_eonr$data[[1]]$opt_N_hat, vra_eonr$data[[5]]$opt_N)
+  # cor(vra_eonr$data[[2]]$opt_N_hat, vra_eonr$data[[5]]$opt_N)
+  # cor(vra_eonr$data[[3]]$opt_N_hat, vra_eonr$data[[5]]$opt_N)
+  # cor(vra_eonr$data[[4]]$opt_N_hat, vra_eonr$data[[5]]$opt_N)
+  # cor(vra_eonr$data[[5]]$opt_N_hat, vra_eonr$data[[5]]$opt_N)
+
   vra_eonr <-
     data.table(model = models) %>%
     rowwise() %>%
@@ -38,6 +47,9 @@ find_vra_single_whole_field <- function(x_vars, models = c("brf", "rf", "lm", "s
     unnest(results) %>%
     data.table() %>%
     true_eonr[., on = "aunit_id"] %>%
+    .[, yield_opt_hat := gen_yield_QP(b0, b1, b2, Nk, opt_N_hat)] %>%
+    .[, pi_opt_hat := pCorn * yield_opt_hat - pN * opt_N_hat] %>%
+    .[, pi_deficit := pi_opt_hat - pi_opt] %>%
     nest_by(model) %>%
     mutate(data = list(
       data.table(data)

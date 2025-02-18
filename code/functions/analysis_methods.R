@@ -371,7 +371,7 @@ find_opt_vra_SE <- function(x_vars, train_data, eval_data, yield_pred = TRUE) {
     formula()
 
   #--- weight matrix ---#
-  Wls <- gen_weight_matrix(train_data)
+  Wls <- suppressWarnings(gen_weight_matrix(train_data))
 
   # === spatial error model ===#
   # ser_trained <- spatialreg::errorsarlm(reg_formula, data = scaled_data, listw = Wls)

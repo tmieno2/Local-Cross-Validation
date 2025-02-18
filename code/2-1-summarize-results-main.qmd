@@ -1,7 +1,5 @@
 ---
-title: "Summarize Results"
-date: "2023-02-07"
-output: html_document
+title: "Summarize the results"
 ---
 
 # Objective 
@@ -9,14 +7,6 @@ output: html_document
 + Summarize the results
 
 # Preparation
-
-## Packages and functions 
-```{r}
-library(tidyverse)
-library(pasim)
-list.files(here::here("GitControlled/Codes/functions/"), full.names = TRUE) %>%
-  lapply(., source)
-```
 
 ## Parameters
 ```{r}
@@ -26,7 +16,7 @@ pN <- 1 / 0.453592 # $/kg
 
 ## Data
 ```{r}
-raw_data <- readRDS(here::here("Shared/Data/raw_sim_data.rds"))
+raw_data <- readRDS(here::here("data/main/raw_sim_data.rds"))
 
 #--- data for profit calculation ---#
 all_reg_data <-
@@ -43,7 +33,7 @@ all_reg_data <-
 ```{r}
 results_whole <-
   list.files(
-    here::here("Shared/Results/WholeField"),
+    here::here("results/main/true-best-model"),
     full.names = TRUE
   ) %>%
   purrr::map(readRDS) %>%
@@ -59,7 +49,8 @@ results_whole <-
 
 ## Summarize the results by sim and method
 
-Find averate RMSE of EONR and $\pi_{deficit}$ and rank methods by sim based on RMSE of EONR.
+Find average RMSE of EONR and $\pi_{deficit}$ and rank methods by sim based on RMSE of EONR.
+
 ```{r}
 sum_results_whole <-
   results_whole %>%
@@ -85,7 +76,7 @@ sum_results_whole <-
 #   geom_histogram(aes(x = pi_deficit)) +
 #   facet_grid(method ~ .)
 
-saveRDS(sum_results_whole, here::here("Shared/Results/sum_results_whole.rds"))
+saveRDS(sum_results_whole, here::here("results/main/sum_results_whole.rds"))
 ```
 
 ## Ranking visualization

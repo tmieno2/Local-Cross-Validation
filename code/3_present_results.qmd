@@ -6,38 +6,6 @@ output: html_document
 
 # Preparation
 
-## Packages
-
-```{r}
-library(dplyr)
-library(data.table)
-library(ggplot2)
-library(flextable)
-library(sf)
-library(officedown)
-```
-
-## Load results
-
-```{r}
-sum_results_whole <-
-  readRDS(here::here("Shared/Results/sum_results_whole.rds")) %>%
-  .[, method := case_when(
-    method == "S-learner (SE)" ~ "SE",
-    method == "R-learner (CF)" ~ "CF",
-    method == "S-learner (BRF)" ~ "BRF",
-    method == "S-learner (Linear)" ~ "LM",
-    method == "S-learner (RF)" ~ "RF"
-  )] %>%
-  .[, method := factor(method, levels = c("LM", "SE", "RF", "BRF", "CF"))]
-
-comp_results <-
-  readRDS(here::here("Shared/Results/comp_results.rds")) %>%
-  data.table()
-
-sum_results_gam <- readRDS(here::here("Shared/Results/sum_results_gam.rds"))
-```
-
 ## Set up a ggplot theme
 
 ```{r}
@@ -88,7 +56,30 @@ theme_fig <-
   )
 ```
 
-# Performance of candidate models: true, yield-based, EONR-based
+# Main simulation results
+
+## Load the main results
+
+```{r}
+sum_results_whole <-
+  readRDS(here::here("results/main/sum_results_whole.rds")) %>%
+  .[, method := case_when(
+    method == "S-learner (SE)" ~ "SE",
+    method == "R-learner (CF)" ~ "CF",
+    method == "S-learner (BRF)" ~ "BRF",
+    method == "S-learner (Linear)" ~ "LM",
+    method == "S-learner (RF)" ~ "RF"
+  )] %>%
+  .[, method := factor(method, levels = c("LM", "SE", "RF", "BRF", "CF"))]
+
+comp_results_main <-
+  readRDS(here::here("results/main/comp_results.rds")) %>%
+  data.table()
+
+sum_results_gam <- readRDS(here::here("results/main/sum_results_gam.rds"))
+```
+
+## Performance of candidate models: true, yield-based, EONR-based
 
 ```{r}
 true_rank <-
@@ -96,7 +87,7 @@ true_rank <-
   .[, type := "True"]
 
 model_selection_ranks <-
-  readRDS(here::here("Shared/Results/selection_ranks.rds")) %>%
+  readRDS(here::here("results/main/selection_ranks.rds")) %>%
   .[, .(N_LE = sum(eonr_selected_gam), N_Y = sum(yield_selected)), by = method] %>%
   melt(id.var = "method", value.name = "N") %>%
   .[, type := case_when(
@@ -134,7 +125,7 @@ g_ranking <-
   )
 
 ggsave(
-  "GitControlled/Writing/FiguresTables/g_ranking.png",
+  "writing/FiguresTables/g_ranking.png",
   g_ranking,
   width = 6,
   height = 3.5,
@@ -146,7 +137,7 @@ ggsave(
 
 ```{r}
 accuracy_table <-
-  comp_results %>%
+  comp_results_main %>%
   .[, .(num_folds, num_repeats, comp_summary)] %>%
   tidyr::unnest() %>%
   data.table() %>%
@@ -191,17 +182,16 @@ main_accuracy_table <-
   ) %>%
   autofit()
 
-saveRDS(main_accuracy_table, here::here("GitControlled/Writing/FiguresTables/main_selection_accuracy_table.rds"))
+saveRDS(main_accuracy_table, here::here("writing/FiguresTables/main_selection_accuracy_table.rds"))
 
-saveRDS(accuracy_table, here::here("GitControlled/Writing/FiguresTables/selection_accuracy_table.rds"))
+saveRDS(accuracy_table, here::here("writing/FiguresTables/selection_accuracy_table.rds"))
 ```
 
-
-# Profit loss
+## Profit loss
 
 ```{r}
 profit_loss_data <-
-  comp_results[, .(num_folds, num_repeats, loss_data)] %>%
+  comp_results_main[, .(num_folds, num_repeats, loss_data)] %>%
   tidyr::unnest() %>%
   data.table() %>%
   .[, .(sim, num_folds, num_repeats, e_pi_loss, y_pi_loss)] %>%
@@ -212,7 +202,7 @@ profit_loss_data <-
   )]
 ```
 
-## Main case
+### Main case
 
 ```{r}
 g_pi_loss <-
@@ -233,7 +223,7 @@ g_pi_loss <-
   theme_bw()
 
 ggsave(
-  here::here("GitControlled/Writing/FiguresTables/g_pi_loss.png"),
+  here::here("writing/FiguresTables/g_pi_loss.png"),
   g_pi_loss,
   dpi = 300,
   width = 6,
@@ -241,7 +231,7 @@ ggsave(
 )
 ```
 
-## All cases for LEONR-based selection (Table)
+### All cases for LEONR-based selection (Table)
 
 ```{r}
 
@@ -255,9 +245,9 @@ profit_loss_data[, .(mean = mean(value), sd = sd(value)), by = .(num_folds, num_
 #   geom_boxplot(aes(y = value, x = factor(num_folds), fill = factor(num_repeats)))
 ```
 
-# Correlation Between GAM-Estimated EONR and True EONR
+## Correlation Between GAM-Estimated EONR and True EONR
 
-## All cases
+### All cases
 
 ```{r}
 gam_leonr_fit_all <-
@@ -290,7 +280,7 @@ gam_leonr_fit_all <-
   )
 ```
 
-## Main case
+### Main case
 
 ```{r}
 gam_leonr_fit_main <-
@@ -315,20 +305,19 @@ gam_leonr_fit_main <-
   )
 ```
 
-
-# The impact of different fold repeat combination on local EONR selection and yield selection method
+## The impact of different fold repeat combination on local EONR selection and yield selection method
 
 ```{r}
 #--- ranking based on LEONR ---#
 perf_ranking_e <-
-  comp_results[, .(num_folds, num_repeats, selection_perf_rank_LE)] %>%
+  comp_results_main[, .(num_folds, num_repeats, selection_perf_rank_LE)] %>%
   tidyr::unnest(selection_perf_rank_LE) %>%
   data.table() %>%
   .[, selection_method := "Based on Local EONR"]
 
 #--- ranking based on Yield ---#
 perf_ranking_y <-
-  comp_results[, .(num_folds, num_repeats, selection_perf_rank_Y)] %>%
+  comp_results_main[, .(num_folds, num_repeats, selection_perf_rank_Y)] %>%
   tidyr::unnest(selection_perf_rank_Y) %>%
   data.table() %>%
   .[, selection_method := "Based on Yield"]
@@ -365,7 +354,7 @@ g_sensitivity_fold_repeat <-
   theme(axis.title = element_text(size = 12))
 
 ggsave(
-  here::here("GitControlled/Writing/FiguresTables/g_sensitivity_fold_repeat.png"),
+  here::here("writing/FiguresTables/g_sensitivity_fold_repeat.png"),
   g_sensitivity_fold_repeat,
   width = 6,
   height = 6,
@@ -373,15 +362,14 @@ ggsave(
 )
 ```
 
+## Average GAM EONR vs. Average Local EONR
 
-# Average GAM EONR vs. Average Local EONR
-
-Illustrate bias in estimating EONR
+Illustrates bias in estimating EONR:
 
 ```{r}
-sum_results_gam <- readRDS(here::here("Shared/Results/Mona_results/sum_results_gam.rds"))
+sum_results_gam <- readRDS(here::here("results/main/Mona_results/sum_results_gam.rds"))
 
-main_sum_results <- readRDS(here::here("Shared/Results/Mona_results/main_sum_results.rds"))
+main_sum_results <- readRDS(here::here("results/main/Mona_results/main_sum_results.rds"))
 
 # combined results other version
 combined_results_other_v <-
@@ -421,7 +409,7 @@ g_leonr_comp <-
   theme(axis.title = element_text(size = 12, family = "Times"))
 
 ggsave(
-  here::here("GitControlled/Writing/FiguresTables/g_leonr_comp.png"),
+  here::here("writing/FiguresTables/g_leonr_comp.png"),
   g_leonr_comp,
   dpi = 300,
   height = 5,
@@ -429,7 +417,7 @@ ggsave(
 )
 ```
 
-# Accuracy of GAM-estimated LEONR
+## Accuracy of GAM-estimated LEONR
 
 ```{r}
 g_gam_leonr <-
@@ -442,7 +430,7 @@ g_gam_leonr <-
   xlab("Estimated (by GAM) Optimal LEONR (lb/acre)")
 
 ggsave(
-  here::here("GitControlled/Writing/FiguresTables/g_gam_leonr.png"),
+  here::here("writing/FiguresTables/g_gam_leonr.png"),
   g_gam_leonr,
   dpi = 300,
   height = 3.5,
@@ -452,7 +440,82 @@ ggsave(
 
 
 
-# spatial cross validation (example of a fold with train and test data)
+# Simulation results with data with no spatial correlation
+
+## Load the main results
+
+```{r}
+sum_results_whole <-
+  readRDS(here::here("results/no-sp/sum_results_whole.rds")) %>%
+  .[, method := case_when(
+    method == "S-learner (SE)" ~ "SE",
+    method == "R-learner (CF)" ~ "CF",
+    method == "S-learner (BRF)" ~ "BRF",
+    method == "S-learner (Linear)" ~ "LM",
+    method == "S-learner (RF)" ~ "RF"
+  )] %>%
+  .[, method := factor(method, levels = c("LM", "SE", "RF", "BRF", "CF"))]
+
+comp_results_nosp <-
+  readRDS(here::here("results/no-sp/comp_results.rds")) %>%
+  data.table()
+```
+
+## Selection accuracy table 
+
+```{r}
+accuracy_table <-
+  comp_results_nosp %>%
+  .[, .(num_folds, num_repeats, comp_summary)] %>%
+  tidyr::unnest() %>%
+  data.table() %>%
+  # .[eonr_selected_true == 1, ] %>%
+  .[, .(
+    num_selected_true = sum(eonr_selected_true),
+    #--- number of times eonr-based selection correctly chose the best model by model ---#
+    num_selected_leonr_correct = sum(eonr_selected_true == 1 & eonr_selected_gam),
+    num_selected_leonr = sum(eonr_selected_gam),
+    #--- number of times yield-based selection correctly chose the best model by model ---#
+    num_selected_yield_correct = sum(eonr_selected_true == 1 & yield_selected),
+    num_selected_yield = sum(yield_selected)
+  ),
+  by = .(method, num_folds, num_repeats)
+  ] %>%
+  .[, method := case_when(
+    method == "S-learner (SE)" ~ "SE",
+    method == "R-learner (CF)" ~ "CF",
+    method == "S-learner (BRF)" ~ "BRF",
+    method == "S-learner (Linear)" ~ "LM",
+    method == "S-learner (RF)" ~ "RF"
+  )] %>%
+  .[, method := factor(method, levels = c("LM", "SE", "RF", "BRF", "CF"))] %>%
+  .[order(method), ]
+
+main_accuracy_data <-
+  accuracy_table[num_folds == 10 & num_repeats == 5, ] %>%
+  .[, leonr_based := paste0(num_selected_leonr_correct, " (", num_selected_leonr, ")")] %>%
+  .[, yield_based := paste0(num_selected_yield_correct, " (", num_selected_yield, ")")] %>%
+  .[, .(method, num_selected_true, leonr_based, yield_based)]
+
+main_accuracy_table <-
+  flextable(main_accuracy_data) %>%
+  align(j = 2:4, align = "center") %>%
+  set_header_labels(
+    values = list(
+      method = "Method",
+      num_selected_true = "True optimal",
+      leonr_based = "LEONR-based selection",
+      yield_based = "Yield-based selection"
+    )
+  ) %>%
+  autofit()
+
+saveRDS(accuracy_table, here::here("writing/FiguresTables/selection_accuracy_table_no_sp.rds"))
+```
+
+# Misc
+
+## Spatial cross validation (example of a fold with train and test data)
 
 ```{r}
 #--- first simulation ---#
@@ -462,7 +525,7 @@ whole_data <-
 
 #--- train or test ---#
 train_test_split_q <-
-  readRDS(here::here("Shared/Results/sim_results_num_repeats_1_num_folds_5/train_test_split.rds"))
+  readRDS(here::here("results/main/sim_results_num_repeats_1_num_folds_5/train_test_split.rds"))
 
 spatial_folds_q <-
   train_test_split_q %>%
@@ -501,10 +564,11 @@ g_split_example <-
   )
 
 ggplot2::ggsave(
-  here::here("GitControlled/Writing/FiguresTables/g_split_example.png"),
+  here::here("writing/FiguresTables/g_split_example.png"),
   g_split_example,
   dpi = 300,
   height = 6,
   width = 6
 )
 ```
+

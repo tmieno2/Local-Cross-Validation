@@ -14,18 +14,20 @@ model_selection_sim <- function(data_files, field_sf, models, num_repeats, num_f
   #++++++++++++++++++++++++++++++++++++
   #+ create a directory to store the results
   #++++++++++++++++++++++++++++++++++++
-  print("Creating a directory to store the results.")
 
   results_dir <-
-    paste0(
+    file.path(
       results_root_dir,
-      "sim_results_num_repeats_", num_repeats,
-      "_num_folds_", num_folds
+      paste0(
+        "sim_results_num_repeats_", num_repeats,
+        "_num_folds_", num_folds
+      )
     )
 
   if (file.exists(results_dir) & force == FALSE) {
-    return(NULL)
-  } else {
+    stop("The results seem to exist. If you would like to force running model selection simulations, please set force == TRUE")
+  } else if (!file.exists(results_dir)) {
+    print("Creating a directory to store the results.")
     dir.create(results_dir)
   }
 
@@ -154,7 +156,7 @@ model_selection_sim_single_field <- function(file_path, models, results_dir, tra
 #' @param models collection of models applied
 #' @returns
 analyze_single_fold <- function(n, spatial_folds, models) {
-  print(n)
+  print(paste0("Fold: ", n))
 
   temp_fold <- spatial_folds[n, ]
 

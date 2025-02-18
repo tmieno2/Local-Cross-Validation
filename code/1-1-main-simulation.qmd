@@ -42,7 +42,7 @@ pN <- 1 / 0.453592 # $/kg
 
 # VRA for the whole field by method
 ```{r, eval = FALSE}
-models <- c("brf", "rf", "lm", "se", "cf")
+set.seed(835402)
 
 pbmclapply(
   1:length(sim_raw_data_files),
@@ -51,7 +51,7 @@ pbmclapply(
     find_vra_single_whole_field(
       data_file_path = sim_raw_data_files[x],
       x_vars = x_vars,
-      models = models,
+      models = c("brf", "rf", "lm", "se", "cf"),
       results_path = "results/main/true-best-model"
     )
   },
