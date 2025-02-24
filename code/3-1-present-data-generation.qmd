@@ -1,0 +1,9 @@
+---
+title: Generate figures that help explain the data generating process
+---
+
+# Field layout
+
+# Field parameters
+
+# Experimental design

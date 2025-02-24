@@ -1,0 +1,97 @@
+# Objective
+
+What difference does `sp_range` make in true optimal N rate?
+
+# 
+
+```{r}
+field_sf <-
+  pasim::gen_fields(
+    plot_length = 12, # the length of a plot (in number of cells)
+    plot_width = 3, # the width of a plot (in number of cells)
+    cell_buffer = 1,
+    aunit_length = 2, # the length of an analysis unit (in number of cells)
+    aunit_width = 3, # the width of an analysis unit (in number of cells)
+    cell = 6, # the length of a cell in meter
+    #* how wide the field is
+    # field_col = c(36, 72, 144), # the number of cell columns
+    field_col = 144, # the number of cell columns
+    #* how tall the field is
+    field_row = 72 # the number of row columns
+  ) %>%
+  .$field_sf %>%
+  .[[1]]
+```
+
+```{r}
+pCorn <- 6.25 / 25.4 # $/kg
+pN <- 1 / 0.453592 # $/kg
+
+temp_1 <-
+  gen_field_parameters(
+    field_sf,
+    sp_range = 600,
+    gstat_model = "Sph",
+    nsim = 1
+  ) %>%
+  .[, opt_N := (pN / pCorn - b1) / (2 * b2)] %>%
+  .[, opt_N := pmin(Nk, opt_N)] %>%
+  .[, opt_N := pmax(0, opt_N)]
+
+temp_1$opt_N %>% sd()
+temp_1$opt_N %>% mean()
+# temp_1$opt_N %>% hist()
+
+temp_2 <-
+  gen_field_parameters(
+    field_sf, 
+    sp_range = 200,
+    gstat_model = "Sph",
+    nsim = 1
+  ) %>%
+  .[, opt_N := (pN / pCorn - b1) / (2 * b2)] %>%
+  .[, opt_N := pmin(Nk, opt_N)] %>%
+  .[, opt_N := pmax(0, opt_N)]
+
+temp_2$opt_N %>% min()
+temp_2$opt_N %>% max()
+
+field_sf <- sim_data_no_sp$field_sf[[1]]
+
+temp <- 
+sim_data_no_sp$reg_data[[1]]$data[[1]]  %>%
+  .[, opt_N := (pN / pCorn - b1) / (2 * b2)] %>%
+  .[, opt_N := pmin(Nk, opt_N)] %>%
+  .[, opt_N := pmax(0, opt_N)]
+
+temp$opt_N %>% min()
+temp$opt_N %>% max()
+
+sim_data_no_sp$reg_data[[1]]$data[[1]] %>%
+  st_as_sf() %>%
+  ggplot() +
+    geom_sf(aes(fill = Nk))
+
+```
+
+# 
+
+```{r}
+sim_raw_data_files <-
+  list.files(
+    here::here("data/no-sp/individual-fields"),
+    full.names = TRUE
+  )
+
+lapply(
+  1:length(sim_raw_data_files),
+  \(x) {
+    data <-
+      reg_data_all[x, ]$data[[1]] %>%
+      .[, opt_N := (pN / pCorn - b1) / (2 * b2)] %>%
+      .[, opt_N := pmin(Nk, opt_N)] %>%
+      .[, opt_N := pmax(0, opt_N)]
+    data[, max(opt_N) - min(opt_N)]
+  }
+)
+```

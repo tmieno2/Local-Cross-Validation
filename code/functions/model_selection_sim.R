@@ -31,6 +31,8 @@ model_selection_sim <- function(data_files, field_sf, models, num_repeats, num_f
     dir.create(results_dir)
   }
 
+
+
   #++++++++++++++++++++++++++++++++++++
   #+ create seed for spatial cross-validation
   #++++++++++++++++++++++++++++++++++++
@@ -56,12 +58,24 @@ model_selection_sim <- function(data_files, field_sf, models, num_repeats, num_f
   pbmclapply(
     1:length(data_files),
     function(x) {
-      model_selection_sim_single_field(
-        file_path = data_files[x],
-        models = models,
-        results_dir = results_dir,
-        train_test_split = train_test_split
-      )
+
+      sim_done <-
+        paste0(models, "_sim_", x, ".rds") %>%
+        file.path(results_dir, .) %>%
+        file.exists() %>%
+        all()
+
+      if (sim_done) {
+        print("Simulation for this parameter set is complete. Moving to the next iteration.")
+        next
+      } else {
+        model_selection_sim_single_field(
+          file_path = data_files[x],
+          models = models,
+          results_dir = results_dir,
+          train_test_split = train_test_split
+        )
+      }
     },
     mc.cores = num_cores,
     mc.preschedule = FALSE

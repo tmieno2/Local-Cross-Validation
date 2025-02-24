@@ -4,58 +4,6 @@ date: "2023-02-07"
 output: html_document
 ---
 
-# Preparation
-
-## Set up a ggplot theme
-
-```{r}
-theme_fig <-
-  theme_bw() +
-  theme(
-    axis.title.x =
-      element_text(
-        size = 12, angle = 0, hjust = .5, vjust = -0.3, family = "Helvetica"
-      ),
-    axis.title.y =
-      element_text(
-        size = 12, angle = 90, hjust = .5, vjust = .9, family = "Helvetica"
-      ),
-    axis.text.x =
-      element_text(
-        size = 9, angle = 0, hjust = .5, vjust = 1.5, family = "Helvetica"
-      ),
-    axis.text.y =
-      element_text(
-        size = 9, angle = 0, hjust = 1, vjust = 0, family = "Helvetica"
-      ),
-    axis.ticks =
-      element_line(
-        linewidth = 0.3, linetype = "solid"
-      ),
-    axis.ticks.length = unit(.15, "cm"),
-    #--- legend ---#
-    legend.text =
-      element_text(
-        size = 12, angle = 0, hjust = 0, vjust = 0.5, family = "Helvetica"
-      ),
-    legend.title =
-      element_text(
-        size = 12, angle = 0, hjust = 0, vjust = 0, family = "Helvetica"
-      ),
-    legend.key.size = unit(0.5, "cm"),
-    #--- strip (for faceting) ---#
-    strip.text = element_text(size = 9, family = "Helvetica"),
-    #--- plot title ---#
-    plot.title = element_text(face = "bold", size = 12),
-    #--- margin ---#
-    # plot.margin = margin(0, 0, 0, 0, "cm"),
-    #--- panel ---#
-    panel.grid.minor = element_blank(),
-    panel.background = element_blank(),
-    panel.border = element_rect(fill = NA)
-  )
-```
-
 # Main simulation results
 
 ## Load the main results
@@ -118,14 +66,13 @@ g_ranking <-
   scale_fill_viridis_d() +
   # Add labels and titles
   labs(x = "Model", y = "Count", fill = "Selection Type") +
-  theme_fig +
   theme(
     legend.position = "bottom",
     legend.title = element_text(vjust = 0.5)
   )
 
 ggsave(
-  "writing/FiguresTables/g_ranking.png",
+  "writing/figures-tables/g_ranking.png",
   g_ranking,
   width = 6,
   height = 3.5,
@@ -182,9 +129,9 @@ main_accuracy_table <-
   ) %>%
   autofit()
 
-saveRDS(main_accuracy_table, here::here("writing/FiguresTables/main_selection_accuracy_table.rds"))
+saveRDS(main_accuracy_table, here::here("writing/figures-tables/main_selection_accuracy_table.rds"))
 
-saveRDS(accuracy_table, here::here("writing/FiguresTables/selection_accuracy_table.rds"))
+saveRDS(accuracy_table, here::here("writing/figures-tables/selection_accuracy_table.rds"))
 ```
 
 ## Profit loss
@@ -223,7 +170,7 @@ g_pi_loss <-
   theme_bw()
 
 ggsave(
-  here::here("writing/FiguresTables/g_pi_loss.png"),
+  here::here("writing/figures-tables/g_pi_loss.png"),
   g_pi_loss,
   dpi = 300,
   width = 6,
@@ -237,7 +184,7 @@ ggsave(
 
 profit_loss_data[, .(mean = mean(value), sd = sd(value)), by = .(num_folds, num_repeats, selection)] %>%
   .[selection == "LEONR-based Selection", ] %>%
-  .[, mean_sd := paste0(round(mean, digits = 2), "(", round(sd, digits = 2), ")")] %>%
+  .[, mean_sd := paste0(round(mean, digits = 2), " (", round(sd, digits = 2), ")")] %>%
   .[, .(num_folds, num_repeats, mean_sd)] %>%
   dcast(num_repeats ~ num_folds, value.var = "mean_sd")
 
@@ -246,6 +193,39 @@ profit_loss_data[, .(mean = mean(value), sd = sd(value)), by = .(num_folds, num_
 ```
 
 ## Correlation Between GAM-Estimated EONR and True EONR
+
+### Main case
+
+```{r}
+gam_leonr_fit_main <-
+  ggplot(sum_results_gam[num_folds == 10 & num_repeats == 5, ]) +
+  geom_point(
+    aes(x = opt_N, y = opt_N_gam),
+    size = 0.5
+  ) +
+  geom_abline(
+    slope = 1,
+    intercept = 0,
+    linetype = "dashed",
+    color = "red"
+  ) +
+  xlim(50, 300) +
+  ylim(50, 300) +
+  ylab("True optimal Local EONR (lb/acre)") +
+  xlab("GAM-estimated optimal Local EONR (lb/acre)") +
+  theme_bw() +
+  theme(
+    legend.position = "bottom"
+  )
+
+ggsave(
+  "writing/figures-tables/g_gam_leonr.png",
+  gam_leonr_fit_main,
+  width = 5,
+  height = 3.5,
+  dpi = 300
+)
+```
 
 ### All cases
 
@@ -272,33 +252,8 @@ gam_leonr_fit_all <-
       `Number of Repeats` = label_both
     )
   ) +
-  xlab("True Local EONR") +
-  ylab("GAM-Estimated Local EONR") +
-  theme_bw() +
-  theme(
-    legend.position = "bottom"
-  )
-```
-
-### Main case
-
-```{r}
-gam_leonr_fit_main <-
-  ggplot(sum_results_gam[num_folds == 10 & num_repeats == 5, ]) +
-  geom_point(
-    aes(x = opt_N, y = opt_N_gam),
-    size = 0.5
-  ) +
-  geom_abline(
-    slope = 1,
-    intercept = 0,
-    linetype = "dashed",
-    color = "red"
-  ) +
-  xlim(50, 300) +
-  ylim(50, 300) +
-  xlab("True Local EONR") +
-  ylab("GAM-Estimated Local EONR") +
+  ylab("True optimal Local EONR (lb/acre)") +
+  xlab("GAM-estimated optimal Local EONR (lb/acre)")
   theme_bw() +
   theme(
     legend.position = "bottom"
@@ -354,7 +309,7 @@ g_sensitivity_fold_repeat <-
   theme(axis.title = element_text(size = 12))
 
 ggsave(
-  here::here("writing/FiguresTables/g_sensitivity_fold_repeat.png"),
+  here::here("writing/figures-tables/g_sensitivity_fold_repeat.png"),
   g_sensitivity_fold_repeat,
   width = 6,
   height = 6,
@@ -409,36 +364,13 @@ g_leonr_comp <-
   theme(axis.title = element_text(size = 12, family = "Times"))
 
 ggsave(
-  here::here("writing/FiguresTables/g_leonr_comp.png"),
+  here::here("writing/figures-tables/g_leonr_comp.png"),
   g_leonr_comp,
   dpi = 300,
   height = 5,
   width = 6
 )
 ```
-
-## Accuracy of GAM-estimated LEONR
-
-```{r}
-g_gam_leonr <-
-  sum_results_gam[, .(opt_N_gam = mean(opt_N_gam), opt_N = mean(opt_N)), by = sim] %>%
-  ggplot(data = .) +
-  geom_point(aes(y = opt_N, x = opt_N_gam)) +
-  geom_abline(slope = 1, color = "red") +
-  theme_fig +
-  ylab("True Optimal LEONR (lb/acre)") +
-  xlab("Estimated (by GAM) Optimal LEONR (lb/acre)")
-
-ggsave(
-  here::here("writing/FiguresTables/g_gam_leonr.png"),
-  g_gam_leonr,
-  dpi = 300,
-  height = 3.5,
-  width = 6
-)
-```
-
-
 
 # Simulation results with data with no spatial correlation
 
@@ -464,7 +396,7 @@ comp_results_nosp <-
 ## Selection accuracy table 
 
 ```{r}
-accuracy_table <-
+accuracy_table_nosp <-
   comp_results_nosp %>%
   .[, .(num_folds, num_repeats, comp_summary)] %>%
   tidyr::unnest() %>%
@@ -492,12 +424,12 @@ accuracy_table <-
   .[order(method), ]
 
 main_accuracy_data <-
-  accuracy_table[num_folds == 10 & num_repeats == 5, ] %>%
+  accuracy_table_nosp[num_folds == 10 & num_repeats == 5, ] %>%
   .[, leonr_based := paste0(num_selected_leonr_correct, " (", num_selected_leonr, ")")] %>%
   .[, yield_based := paste0(num_selected_yield_correct, " (", num_selected_yield, ")")] %>%
   .[, .(method, num_selected_true, leonr_based, yield_based)]
 
-main_accuracy_table <-
+main_accuracy_table_nosp <-
   flextable(main_accuracy_data) %>%
   align(j = 2:4, align = "center") %>%
   set_header_labels(
@@ -510,8 +442,56 @@ main_accuracy_table <-
   ) %>%
   autofit()
 
-saveRDS(accuracy_table, here::here("writing/FiguresTables/selection_accuracy_table_no_sp.rds"))
+saveRDS(main_accuracy_table_nosp, here::here("writing/figures-tables/selection_accuracy_table_no_sp_ft.rds"))
+
+saveRDS(accuracy_table_nosp, here::here("writing/figures-tables/selection_accuracy_table_no_sp.rds"))
 ```
+
+## Profit loss
+
+```{r}
+profit_loss_data_nosp <-
+  comp_results_nosp[, .(num_folds, num_repeats, loss_data)] %>%
+  tidyr::unnest() %>%
+  data.table() %>%
+  .[, .(sim, num_folds, num_repeats, e_pi_loss, y_pi_loss)] %>%
+  melt(id.var = c("sim", "num_folds", "num_repeats")) %>%
+  .[, selection := case_when(
+    variable == "e_pi_loss" ~ "LEONR-based Selection",
+    variable == "y_pi_loss" ~ "Yield-based Selection"
+  )]
+```
+
+### Main case
+
+```{r}
+g_pi_loss_nosp <-
+  ggplot(profit_loss_data_nosp) +
+  geom_histogram(
+    aes(
+      x = value,
+      y = ifelse(
+        after_stat(count) > 0, after_stat(count), NA
+      )
+    ),
+    color = "blue",
+    fill = "white"
+  ) +
+  facet_wrap(selection ~ ., ncol = 1) +
+  ylab("Number of iterations") +
+  xlab("Profit loss relative to the true best model ($/acre)") +
+  theme_bw()
+
+ggsave(
+  here::here("writing/figures-tables/g_pi_loss_nosp.png"),
+  g_pi_loss_nosp,
+  dpi = 300,
+  width = 6,
+  height = 3.5
+)
+```
+
+
 
 # Misc
 
@@ -564,7 +544,7 @@ g_split_example <-
   )
 
 ggplot2::ggsave(
-  here::here("writing/FiguresTables/g_split_example.png"),
+  here::here("writing/figures-tables/g_split_example.png"),
   g_split_example,
   dpi = 300,
   height = 6,
@@ -572,22 +552,17 @@ ggplot2::ggsave(
 )
 ```
 
-<<<<<<< HEAD:code/3_present_results.qmd
-=======
-
 # spatial cross validation (example: 10 fold) 
 
 ```{r}
-### code for 10 folds ########$$$$$$$%^&*(*&&&&&&&&&&&&&)
-
 #--- first simulation ---#
 whole_data <-
-  readRDS(here::here("Shared/Data/SimData/sim_data_1.rds"))$data[[1]] %>%
+  readRDS(here::here("data/main/sim_data_1.rds"))$data[[1]] %>%
   data.table()
 
 #--- train or test ---#
 train_test_split_q <-
-  readRDS(here::here("Shared/Results/sim_results_num_repeats_1_num_folds_10/train_test_split.rds"))
+  readRDS(here::here("results/main/sim_results_num_repeats_1_num_folds_10/train_test_split.rds"))
 
 spatial_folds_q <-
   train_test_split_q %>%
@@ -632,7 +607,7 @@ g_split_example_10_folds <-
   )
 
 ggplot2::ggsave(
-  here::here("GitControlled/Writing/FiguresTables/g_split_example_10_folds.png"),
+  here::here("GitControlled/Writing/figures-tables/g_split_example_10_folds.png"),
   g_split_example_10_folds,
   dpi = 300,
   height = 6,
@@ -640,4 +615,3 @@ ggplot2::ggsave(
 )
 
 ```
->>>>>>> Local-Cross-Validation/main:Codes/3_present_results.qmd

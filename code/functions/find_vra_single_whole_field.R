@@ -21,12 +21,6 @@ find_vra_single_whole_field <- function(x_vars, models = c("brf", "rf", "lm", "s
   #* Site-specific EONR for the entire field
   #* +++++++++++++++++++++++++++++++++++
 
-  # cor(vra_eonr$data[[1]]$opt_N_hat, vra_eonr$data[[5]]$opt_N)
-  # cor(vra_eonr$data[[2]]$opt_N_hat, vra_eonr$data[[5]]$opt_N)
-  # cor(vra_eonr$data[[3]]$opt_N_hat, vra_eonr$data[[5]]$opt_N)
-  # cor(vra_eonr$data[[4]]$opt_N_hat, vra_eonr$data[[5]]$opt_N)
-  # cor(vra_eonr$data[[5]]$opt_N_hat, vra_eonr$data[[5]]$opt_N)
-
   vra_eonr <-
     data.table(model = models) %>%
     rowwise() %>%

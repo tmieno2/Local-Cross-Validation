@@ -93,14 +93,18 @@ saveRDS(sum_results_whole, here::here("results/main/sum_results_whole.rds"))
 # Model selection simulation results
 
 ```{r}
-sim_cases <- readRDS(here::here("Shared/Results/sim_cases.rds"))
+sim_cases <- readRDS(here::here("results/main/sim_cases.rds"))
 
 comp_results <-
   #--- specify the combination of num_folds and num_repeats ---#
   sim_cases %>%
   rowwise() %>%
   mutate(comp_summary = list(
-    process_model_selection_results(num_folds, num_repeats)
+    process_model_selection_results(
+      num_folds, 
+      num_repeats,
+      results_root_dir = "results/main"
+    )
   )) %>%
   #--- create a table of selection performance based on local EONR prediction ---#
   mutate(selection_perf_rank_LE = list(
@@ -122,7 +126,7 @@ comp_results <-
     find_loss_from_selection(comp_summary)
   ))
 
-saveRDS(comp_results, here::here("Shared/Results/comp_results.rds"))
+saveRDS(comp_results, here::here("results/main/comp_results.rds"))
 ```
 
 # GAM results
@@ -134,7 +138,7 @@ gam_results <-
   rowwise() %>%
   dplyr::mutate(gam_results = list(
    list.files(
-    paste0("Shared/Results/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds),
+    paste0("results/main/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds),
     full.names = TRUE
   ) %>%
   .[str_detect(., "gam")] %>%
@@ -154,5 +158,5 @@ sum_results_gam <-
   .[, rmse_local_eonr := sqrt(mean(opt_N_dif^2)), by = sim] %>%
   .[order(num_folds, num_repeats, sim), ]
 
-saveRDS(sum_results_gam, here::here("Shared/Results/sum_results_gam.rds"))
+saveRDS(sum_results_gam, here::here("results/main/sum_results_gam.rds"))
 ```

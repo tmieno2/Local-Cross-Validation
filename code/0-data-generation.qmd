@@ -113,7 +113,7 @@ sim_data$reg_data[[1]]$data[[1]] %>%
   scale_fill_viridis_c()
 ```
 
-# Data for testing the impact of the spatial correlation of the datga
+# Data for testing the impact of the spatial correlation of the data
 
 ## Objective
 
@@ -124,7 +124,7 @@ The data generated here is used to examine how our selection approach performs i
 ```{r}
 #| eval: false
  
-set.seed(78347465)
+set.seed(4503543)
 
 sim_data_no_sp <-
   pasim::gen_fields(
@@ -148,7 +148,7 @@ sim_data_no_sp <-
   mutate(field_pars = list(
     pasim::gen_field_parameters(
       field_sf,
-      sp_range = 0.01,
+      sp_range = 30,
       gstat_model = "Sph",
       nsim = 500
     )

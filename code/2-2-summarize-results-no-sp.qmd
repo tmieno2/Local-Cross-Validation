@@ -39,14 +39,7 @@ results_whole <-
     full.names = TRUE
   ) %>%
   purrr::map(readRDS) %>%
-  rbindlist() %>%
-  all_reg_data[., on = c("aunit_id", "sim")] %>%
-  .[, yield_opt := gen_yield_QP(b0, b1, b2, Nk, opt_N)] %>%
-  .[, yield_opt_hat := gen_yield_QP(b0, b1, b2, Nk, opt_N_hat)] %>%
-  .[, pi_opt := pCorn * yield_opt - pN * opt_N] %>%
-  .[, pi_opt_hat := pCorn * yield_opt_hat - pN * opt_N_hat] %>%
-  .[, pi_deficit := pi_opt_hat - pi_opt] %>%
-  .[order(sim), ]
+  rbindlist()
 ```
 
 ## Summarize the results by sim and method
