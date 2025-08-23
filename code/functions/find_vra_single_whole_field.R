@@ -1,8 +1,39 @@
-find_vra_single_whole_field <- function(x_vars, models = c("brf", "rf", "lm", "se", "cf"), data_file_path, results_path) {
+#' Find site-specific EONR for a single whole field
+#'
+#' This function finds site-specific EONR for a single whole field using various models.
+#'
+#' @param x_vars variables used for model fitting
+#' @param models collection of models applied
+#' @param data_file_path path to the data file
+#' @param results_path path to save the results
+#' @param force if TRUE, the function will recompute the results even if they already
+#' @export
+find_vra_single_whole_field <- function(x_vars, models = c("brf", "rf", "lm", "se", "cf"), data_file_path, results_path, force = FALSE) {
+
+  
   #--- load the data ---#
   w_data <- readRDS(data_file_path)
   train_data <- copy(w_data$data[[1]])
   eval_data <- copy(train_data) # since finding eonr for the training data
+
+  #++++++++++++++++++++++++++++++++++++
+  #+ Check if the results already exist
+  #++++++++++++++++++++++++++++++++++++
+  results_exist <-
+    lapply(
+      1:length(models),
+      function(i) {
+        model <- models[i]
+        file.exists(here::here(results_path, paste0(model, "_sim_", w_data$sim, ".rds")))
+      }
+    ) %>%
+    unlist() %>%
+    all()
+  
+  if (results_exist & !force) {
+    message("Results already exist for all models. Skipping computation.")
+    return(invisible(NULL))
+  }
 
   #* +++++++++++++++++++++++++++++++++++
   #* True EONR

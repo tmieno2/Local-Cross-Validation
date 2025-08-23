@@ -9,33 +9,23 @@ title: "Run Simulations"
 + How do we check whether our method is working or not (comparing with true EONR) 
 + How does the number of folds and repeats affect the usefulness of our cross-validation approach?
 
-
 # Simulation setup
 
 ## Data
 
 ```{r}
-sim_raw_data_files <- 
-  list.files(
-    here::here("data/main/individual-fields"), 
-    full.names = TRUE
-  )
+sim_raw_data_files <- readRDS(here::here("data/main/sim_data_file_path.rds"))
 
 field_au_sf <-
   readRDS(here::here("data/main/field_au_sf.rds")) %>%
   st_as_sf()
 ```
 
+
+
 ## Set up simulations (global variables)
 
 ```{r}
-# x_vars <-
-#   c(
-#     "theta_b2_2", "theta_b1_2",
-#     "Nk_2_1", "Nk_2_2", "Nk_1_1", "Nk_1_2",
-#     "plateau_2_1", "plateau_2_2", "plateau_1_1", "plateau_1_2"
-#   )
-
 x_vars <-
   c(
     "b1_1_1", "b1_1_2", "b1_2_1", "b1_2_2",
@@ -49,12 +39,14 @@ pN <- 1 / 0.453592 # $/kg
 
 # VRA for the whole field by method
 ```{r, eval = FALSE}
-set.seed(835402)
+#| eval: false
 
 pbmclapply(
   1:length(sim_raw_data_files),
   #--- loop over fields (sim) ---#
   function(x) {
+    print(paste0("Working on ", x, "/", length(sim_raw_data_files)))
+    set.seed(835402)
     find_vra_single_whole_field(
       data_file_path = sim_raw_data_files[x],
       x_vars = x_vars,
@@ -62,7 +54,7 @@ pbmclapply(
       results_path = "results/main/true-best-model"
     )
   },
-  mc.cores = parallel::detectCores() - 4,
+  mc.cores = min(parallel::detectCores() - 4, 8),
   mc.preschedule = FALSE
 )
 ```
@@ -80,7 +72,7 @@ saveRDS(sim_cases, here::here("results/main/sim_cases.rds"))
 ```
 
 ```{r}
-set.seed(974345)
+#| eval: false
 
 lapply(
   1:nrow(sim_cases),
@@ -91,8 +83,9 @@ lapply(
       models = c("lm", "se", "rf", "brf", "cf", "gam"),
       num_repeats = sim_cases[x, num_repeats],
       num_folds = sim_cases[x, num_folds],
-      num_cores = parallel::detectCores() - 4,
-      results_root_dir = "results/main"
+      num_cores = min(parallel::detectCores() - 4, 16),
+      results_root_dir = "results/main",
+      seed = 974345
     )
   }
 )

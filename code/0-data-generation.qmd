@@ -88,17 +88,26 @@ saveRDS(sim_data$field_au_sf[[1]], here::here("data/main/field_au_sf.rds"))
 Simulation data:
 
 ```{r}
-reg_data_all <- sim_data$reg_data[[1]]
+reg_data_all <- 
+  sim_data$reg_data[[1]] %>%
+  .[, file_path := paste0("data/main/individual-fields/sim_data_", sim, ".rds")]  
 
 lapply(
   1:nrow(reg_data_all),
   function(x) {
     saveRDS(
-      reg_data_all[x, ],
-      here::here(paste0("data/main/individual-fields/sim_data_", reg_data_all[x, sim], ".rds"))
+      reg_data_all[x, .(sim, data)],
+      here::here(reg_data_all[x, file_path])
     )
   }
 )
+```
+
+Save file path data:
+
+```{r}
+sim_data_file_path <- reg_data_all[, .(sim, file_path)]
+saveRDS(sim_data_file_path, here::here("data/main/sim_data_file_path.rds"))
 ```
 
 Single file contains simulation data for single iteration. This is more memory efficient than loading a single file that contains all the simulation data and filter for a particular simulation in the simulation loop later.
@@ -193,17 +202,26 @@ saveRDS(sim_data_no_sp$field_au_sf[[1]], here::here("data/no-sp/field_au_sf.rds"
 Simulation data:
 
 ```{r}
-reg_data_all <- sim_data_no_sp$reg_data[[1]]
+reg_data_all <- 
+  sim_data_no_sp$reg_data[[1]] %>%
+  .[, file_path := paste0("data/no-sp/individual-fields/sim_data_no_sp_", sim, "_.rds")]
 
 lapply(
   1:nrow(reg_data_all),
   function(x) {
     saveRDS(
-      reg_data_all[x, ],
-      here::here(paste0("data/no-sp/individual-fields/sim_data_", reg_data_all[x, sim], ".rds"))
+      reg_data_all[x, .(sim, data)],
+      here::here(reg_data_all[x, file_path])
     )
   }
 )
+```
+
+Save file path data:
+
+```{r}
+sim_data_file_path <- reg_data_all[, .(sim, file_path)]
+saveRDS(sim_data_file_path, here::here("data/no-sp/sim_data_file_path.rds"))
 ```
 
 Single file contains simulation data for single iteration. This is more memory efficient than loading a single file that contains all the simulation data and filter for a particular simulation in the simulation loop later.

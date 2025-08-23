@@ -14,6 +14,10 @@ pCorn <- 6.25 / 25.4 # $/kg
 pN <- 1 / 0.453592 # $/kg
 ```
 
+```{r}
+results_folder <- here::here("results/main")
+```
+
 ## Data
 ```{r}
 raw_data <- readRDS(here::here("data/main/raw_sim_data.rds"))
@@ -28,12 +32,12 @@ all_reg_data <-
 
 # Whole-field analysis
 
-## Combine the results and calcualte profit deficit
+## Combine the results and calculate profit deficit
 
 ```{r}
 results_whole <-
   list.files(
-    here::here("results/main/true-best-model"),
+    file.path(results_folder, "true-best-model"),
     full.names = TRUE
   ) %>%
   purrr::map(readRDS) %>%
@@ -76,7 +80,7 @@ sum_results_whole <-
 #   geom_histogram(aes(x = pi_deficit)) +
 #   facet_grid(method ~ .)
 
-saveRDS(sum_results_whole, here::here("results/main/sum_results_whole.rds"))
+saveRDS(sum_results_whole, file.path(results_folder, "sum_results_whole.rds"))
 ```
 
 ## Ranking visualization
@@ -93,7 +97,7 @@ saveRDS(sum_results_whole, here::here("results/main/sum_results_whole.rds"))
 # Model selection simulation results
 
 ```{r}
-sim_cases <- readRDS(here::here("results/main/sim_cases.rds"))
+sim_cases <- readRDS(file.path(results_folder, "sim_cases.rds"))
 
 comp_results <-
   #--- specify the combination of num_folds and num_repeats ---#
@@ -103,7 +107,7 @@ comp_results <-
     process_model_selection_results(
       num_folds, 
       num_repeats,
-      results_root_dir = "results/main"
+      results_root_dir = results_folder
     )
   )) %>%
   #--- create a table of selection performance based on local EONR prediction ---#
@@ -124,9 +128,9 @@ comp_results <-
   )) %>%
   mutate(loss_data = list(
     find_loss_from_selection(comp_summary)
-  ))
+  )) 
 
-saveRDS(comp_results, here::here("results/main/comp_results.rds"))
+saveRDS(comp_results, file.path(results_folder, "comp_results.rds"))
 ```
 
 # GAM results
@@ -138,7 +142,7 @@ gam_results <-
   rowwise() %>%
   dplyr::mutate(gam_results = list(
    list.files(
-    paste0("results/main/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds),
+    paste0(results_folder, "/sim_results_num_repeats_", num_repeats, "_num_folds_", num_folds),
     full.names = TRUE
   ) %>%
   .[str_detect(., "gam")] %>%
@@ -158,5 +162,5 @@ sum_results_gam <-
   .[, rmse_local_eonr := sqrt(mean(opt_N_dif^2)), by = sim] %>%
   .[order(num_folds, num_repeats, sim), ]
 
-saveRDS(sum_results_gam, here::here("results/main/sum_results_gam.rds"))
+saveRDS(sum_results_gam, file.path(results_folder, "sum_results_gam.rds"))
 ```

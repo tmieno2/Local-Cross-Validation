@@ -11,3 +11,6 @@ Writing/manuscript_files/*
 Writing/method_data_generation_files/*
 data/*
 results/*
+*/*_files/*
+*.rds
+*.png

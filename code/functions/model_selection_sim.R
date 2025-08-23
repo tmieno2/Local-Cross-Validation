@@ -9,8 +9,11 @@
 #' @param num_folds number of folds
 #' @param num_cores number of cores used for parallelized computation
 #' @param results_root_dir root directory where the model selection results are saved
-#' @returns
-model_selection_sim <- function(data_files, field_sf, models, num_repeats, num_folds, num_cores, results_root_dir, force = FALSE) {
+#' @param seed seed for random number generation 
+#' @param force if TRUE, the function will recompute the results even if they already exist
+#' @param reverse if TRUE, the function will process the data in reverse order
+#' @export
+model_selection_sim <- function(data_files, field_sf, models, num_repeats, num_folds, num_cores, results_root_dir, seed, force = FALSE, reverse = FALSE) {
   #++++++++++++++++++++++++++++++++++++
   #+ create a directory to store the results
   #++++++++++++++++++++++++++++++++++++
@@ -24,14 +27,10 @@ model_selection_sim <- function(data_files, field_sf, models, num_repeats, num_f
       )
     )
 
-  if (file.exists(results_dir) & force == FALSE) {
-    stop("The results seem to exist. If you would like to force running model selection simulations, please set force == TRUE")
-  } else if (!file.exists(results_dir)) {
+  if (!file.exists(results_dir)) {
     print("Creating a directory to store the results.")
     dir.create(results_dir)
   }
-
-
 
   #++++++++++++++++++++++++++++++++++++
   #+ create seed for spatial cross-validation
@@ -55,12 +54,21 @@ model_selection_sim <- function(data_files, field_sf, models, num_repeats, num_f
   #+ Model selection
   #++++++++++++++++++++++++++++++++++++
   print("Implementing model selection")
+
+  if(reverse) {
+    i_seq <- rev(1:nrow(data_files))
+  } else {
+    i_seq <- 1:nrow(data_files)
+  }
+
   pbmclapply(
-    1:length(data_files),
-    function(x) {
+    i_seq,
+    function(i) {
+      # load the data
+      sim_data <- readRDS(here::here(data_files[i, file_path]))
 
       sim_done <-
-        paste0(models, "_sim_", x, ".rds") %>%
+        paste0(models, "_sim_", sim_data$sim, ".rds") %>%
         file.path(results_dir, .) %>%
         file.exists() %>%
         all()
@@ -69,8 +77,9 @@ model_selection_sim <- function(data_files, field_sf, models, num_repeats, num_f
         print("Simulation for this parameter set is complete. Moving to the next iteration.")
         next
       } else {
+        set.seed(seed)
         model_selection_sim_single_field(
-          file_path = data_files[x],
+          sim_data = sim_data,
           models = models,
           results_dir = results_dir,
           train_test_split = train_test_split
@@ -86,17 +95,16 @@ model_selection_sim <- function(data_files, field_sf, models, num_repeats, num_f
 #'
 #' Conduct model selection based on yield and local EONR for a single fold-repeat combination. It uses analyze_single_fold() internally.
 #'
-#' @param file_path file path to the file that holds the simualtion data for the field
+#' @param sim_data data for a single field, which is a list containing the simulation data
 #' @param models vector of models
 #' @param results_dir root directory where the model selection results are saved
 #' @param train_test_split observation IDs for the train and test data
-model_selection_sim_single_field <- function(file_path, models, results_dir, train_test_split) {
-  print(paste0("Working on ", file_path))
-  # load the data
-  w_data <- readRDS(file_path)
+model_selection_sim_single_field <- function(sim_data, models, results_dir, train_test_split) {
+
+  print(paste0("Working on simulation: ", sim_data$sim))
 
   whole_data <-
-    w_data$data[[1]] %>%
+    sim_data$data[[1]] %>%
     # find true EONR
     .[, opt_N := (pN / pCorn - b1) / (2 * b2)] %>%
     .[, opt_N := pmin(Nk, opt_N)] %>%
@@ -135,7 +143,7 @@ model_selection_sim_single_field <- function(file_path, models, results_dir, tra
     unnest(results) %>%
     #--- add true opt N ---#
     left_join(., whole_data[, .(aunit_id, opt_N)], by = "aunit_id") %>%
-    mutate(sim = w_data$sim) %>%
+    mutate(sim = sim_data$sim) %>%
     nest_by(model) %>%
     mutate(data = list(
       data.table(data)
@@ -150,7 +158,7 @@ model_selection_sim_single_field <- function(file_path, models, results_dir, tra
     1:nrow(analysis_results_all_folds),
     function(x) {
       model <- analysis_results_all_folds[x, model]
-      file_name <- paste0(model, "_sim_", w_data$sim, ".rds")
+      file_name <- paste0(model, "_sim_", sim_data$sim, ".rds")
       saveRDS(
         analysis_results_all_folds[x, data][[1]],
         here::here(results_dir, file_name)

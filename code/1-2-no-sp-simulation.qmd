@@ -15,11 +15,7 @@ Our procedure is not as effective.
 ## Data
 
 ```{r}
-sim_raw_data_files <-
-  list.files(
-    here::here("data/no-sp/individual-fields"),
-    full.names = TRUE
-  )
+sim_raw_data_files <- readRDS(here::here("data/no-sp/sim_data_file_path.rds"))
 
 field_au_sf <-
   readRDS(here::here("data/no-sp/field_au_sf.rds")) %>%
@@ -31,7 +27,7 @@ field_au_sf <-
 ```{r}
 x_vars <-
   c(
-    "theta_b2_2", "theta_b1_2",
+    "b1_1_1", "b1_1_2", "b1_2_1", "b1_2_2",
     "Nk_2_1", "Nk_2_2", "Nk_1_1", "Nk_1_2",
     "plateau_2_1", "plateau_2_2", "plateau_1_1", "plateau_1_2"
   )
@@ -42,19 +38,22 @@ pN <- 1 / 0.453592 # $/kg
 
 # VRA for the whole field by method
 ```{r, eval = FALSE}
-parallel::mclapply(
-  1:length(sim_raw_data_files),
+#| eval: false
+
+pbmclapply(
+  1:nrow(sim_raw_data_files),
   #--- loop over fields (sim) ---#
   function(x) {
-    print(x)
+    print(paste0("Working on ", x, "/", nrow(sim_raw_data_files)))
+    set.seed(835402)
     find_vra_single_whole_field(
-      data_file_path = sim_raw_data_files[x],
+      data_file_path = sim_raw_data_files[x, file_path],
       x_vars = x_vars,
       models = c("brf", "rf", "lm", "se", "cf"),
       results_path = "results/no-sp/true-best-model"
     )
   },
-  mc.cores = parallel::detectCores() - 4,
+  mc.cores = min(parallel::detectCores() - 4, 8),
   mc.preschedule = FALSE
 )
 ```
@@ -73,16 +72,21 @@ saveRDS(sim_cases, here::here("results/no-sp/sim_cases.rds"))
 
 
 ```{r}
-set.seed(974345)
+#| eval: false
 
-model_selection_sim(
-  data_files = sim_raw_data_files,
-  field_sf = field_au_sf,
-  models = c("lm", "se", "rf", "brf", "cf", "gam"),
-  num_repeats = 5,
-  num_folds = 10,
-  num_cores = parallel::detectCores() - 4,
-  results_root_dir = "results/no-sp",
-  force = TRUE
+lapply(
+  rev(1:nrow(sim_cases)),
+  \(x) {
+    model_selection_sim(
+      data_files = sim_raw_data_files,
+      field_sf = field_au_sf,
+      models = c("lm", "se", "rf", "brf", "cf", "gam"),
+      num_repeats = sim_cases[x, num_repeats],
+      num_folds = sim_cases[x, num_folds],
+      num_cores = min(parallel::detectCores() - 4, 16),
+      results_root_dir = "results/no-sp",
+      seed = 974345
+    )
+  }
 )
 ```

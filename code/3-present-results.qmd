@@ -6,11 +6,15 @@ output: html_document
 
 # Main simulation results
 
+```{r}
+results_folder <- "results/main"
+```
+
 ## Load the main results
 
 ```{r}
 sum_results_whole <-
-  readRDS(here::here("results/main/sum_results_whole.rds")) %>%
+  readRDS(file.path(results_folder, "sum_results_whole.rds")) %>%
   .[, method := case_when(
     method == "S-learner (SE)" ~ "SE",
     method == "R-learner (CF)" ~ "CF",
@@ -21,63 +25,10 @@ sum_results_whole <-
   .[, method := factor(method, levels = c("LM", "SE", "RF", "BRF", "CF"))]
 
 comp_results_main <-
-  readRDS(here::here("results/main/comp_results.rds")) %>%
+  readRDS(file.path(results_folder, "comp_results.rds")) %>%
   data.table()
 
-sum_results_gam <- readRDS(here::here("results/main/sum_results_gam.rds"))
-```
-
-## Performance of candidate models: true, yield-based, EONR-based
-
-```{r}
-true_rank <-
-  sum_results_whole[, .(N = sum(eonr_selected_true)), by = method] %>%
-  .[, type := "True"]
-
-model_selection_ranks <-
-  readRDS(here::here("results/main/selection_ranks.rds")) %>%
-  .[, .(N_LE = sum(eonr_selected_gam), N_Y = sum(yield_selected)), by = method] %>%
-  melt(id.var = "method", value.name = "N") %>%
-  .[, type := case_when(
-    variable == "N_LE" ~ "Local EONR",
-    variable == "N_Y" ~ "Yield"
-  )] %>%
-  .[, variable := NULL] %>%
-  .[, method := case_when(
-    method == "S-learner (SE)" ~ "SE",
-    method == "R-learner (CF)" ~ "CF",
-    method == "S-learner (BRF)" ~ "BRF",
-    method == "S-learner (Linear)" ~ "LM",
-    method == "S-learner (RF)" ~ "RF"
-  )] %>%
-  .[, method := factor(method, levels = c("LM", "SE", "RF", "BRF", "CF"))]
-
-all_ranks <-
-  rbind(true_rank, model_selection_ranks) %>%
-  .[, type := factor(type, levels = c("True", "Local EONR", "Yield"))]
-
-g_ranking <-
-  ggplot(all_ranks) +
-  geom_bar(
-    aes(y = N, x = method, fill = type),
-    stat = "identity",
-    position = "dodge"
-  ) +
-  scale_fill_viridis_d() +
-  # Add labels and titles
-  labs(x = "Model", y = "Count", fill = "Selection Type") +
-  theme(
-    legend.position = "bottom",
-    legend.title = element_text(vjust = 0.5)
-  )
-
-ggsave(
-  "writing/figures-tables/g_ranking.png",
-  g_ranking,
-  width = 6,
-  height = 3.5,
-  dpi = 400
-)
+sum_results_gam <- readRDS(file.path(results_folder, "sum_results_gam.rds"))
 ```
 
 ## Selection accuracy table
@@ -134,6 +85,42 @@ saveRDS(main_accuracy_table, here::here("writing/figures-tables/main_selection_a
 saveRDS(accuracy_table, here::here("writing/figures-tables/selection_accuracy_table.rds"))
 ```
 
+## Performance of candidate models: true, yield-based, EONR-based
+
+```{r}
+g_ranking <-
+  accuracy_table[num_folds == 10 & num_repeats == 5, ] %>%
+  .[, .(method, num_selected_true, num_selected_leonr, num_selected_yield)] %>%
+  melt(id.vars = "method") %>%
+  .[, select_type := case_when(
+    variable == "num_selected_true" ~ "True",
+    variable == "num_selected_leonr" ~ "Local EONR",
+    variable == "num_selected_yield" ~ "Yield"
+  )] %>%
+  .[, select_type := factor(select_type, levels = c("True", "Local EONR", "Yield"))] %>%
+  ggplot(.) +
+  geom_bar(
+    aes(y = value, x = method, fill = select_type),
+    stat = "identity",
+    position = "dodge"
+  ) +
+  scale_fill_viridis_d() +
+  theme_bw() +
+  labs(x = "Model", y = "Count", fill = "Selection Type") +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(vjust = 0.5)
+  )
+
+ggsave(
+  "writing/figures-tables/g_ranking.png",
+  g_ranking,
+  width = 6,
+  height = 3.5,
+  dpi = 400
+)
+```
+
 ## Profit loss
 
 ```{r}
@@ -152,6 +139,7 @@ profit_loss_data <-
 ### Main case
 
 ```{r}
+(
 g_pi_loss <-
   ggplot(profit_loss_data[num_folds == 10 & num_repeats == 5, ]) +
   geom_histogram(
@@ -168,6 +156,7 @@ g_pi_loss <-
   ylab("Number of iterations") +
   xlab("Profit loss relative to the true best model ($/acre)") +
   theme_bw()
+)
 
 ggsave(
   here::here("writing/figures-tables/g_pi_loss.png"),
@@ -178,25 +167,12 @@ ggsave(
 )
 ```
 
-### All cases for LEONR-based selection (Table)
-
-```{r}
-
-profit_loss_data[, .(mean = mean(value), sd = sd(value)), by = .(num_folds, num_repeats, selection)] %>%
-  .[selection == "LEONR-based Selection", ] %>%
-  .[, mean_sd := paste0(round(mean, digits = 2), " (", round(sd, digits = 2), ")")] %>%
-  .[, .(num_folds, num_repeats, mean_sd)] %>%
-  dcast(num_repeats ~ num_folds, value.var = "mean_sd")
-
-# ggplot(profit_loss_data[selection == "LEONR-based Selection", ]) +
-#   geom_boxplot(aes(y = value, x = factor(num_folds), fill = factor(num_repeats)))
-```
-
 ## Correlation Between GAM-Estimated EONR and True EONR
 
 ### Main case
 
 ```{r}
+(
 gam_leonr_fit_main <-
   ggplot(sum_results_gam[num_folds == 10 & num_repeats == 5, ]) +
   geom_point(
@@ -217,6 +193,7 @@ gam_leonr_fit_main <-
   theme(
     legend.position = "bottom"
   )
+)
 
 ggsave(
   "writing/figures-tables/g_gam_leonr.png",
@@ -230,6 +207,7 @@ ggsave(
 ### All cases
 
 ```{r}
+(
 gam_leonr_fit_all <-
   ggplot(sum_results_gam) +
   geom_point(
@@ -253,11 +231,12 @@ gam_leonr_fit_all <-
     )
   ) +
   ylab("True optimal Local EONR (lb/acre)") +
-  xlab("GAM-estimated optimal Local EONR (lb/acre)")
+  xlab("GAM-estimated optimal Local EONR (lb/acre)") +
   theme_bw() +
   theme(
     legend.position = "bottom"
   )
+)
 ```
 
 ## The impact of different fold repeat combination on local EONR selection and yield selection method
@@ -281,6 +260,7 @@ perf_ranking_y <-
 perf_ranking_combined <- rbind(perf_ranking_e, perf_ranking_y)
 
 # Plot the combined data using dodge position and refined colors
+(
 g_sensitivity_fold_repeat <-
   ggplot(perf_ranking_combined) +
   geom_bar(aes(y = N, x = eonr_rank_true, fill = selection_method), stat = "identity", position = "dodge") +
@@ -307,6 +287,8 @@ g_sensitivity_fold_repeat <-
     legend.text = element_text(size = 9) # Legend text appearance
   ) +
   theme(axis.title = element_text(size = 12))
+)
+
 
 ggsave(
   here::here("writing/figures-tables/g_sensitivity_fold_repeat.png"),
@@ -314,61 +296,6 @@ ggsave(
   width = 6,
   height = 6,
   dpi = 300
-)
-```
-
-## Average GAM EONR vs. Average Local EONR
-
-Illustrates bias in estimating EONR:
-
-```{r}
-sum_results_gam <- readRDS(here::here("results/main/Mona_results/sum_results_gam.rds"))
-
-main_sum_results <- readRDS(here::here("results/main/Mona_results/main_sum_results.rds"))
-
-# combined results other version
-combined_results_other_v <-
-  sum_results_gam[main_sum_results, on = c("sim", "split_id")] %>%
-  .[, opt_N_dif_select := opt_N_hat - opt_N_gam]
-
-# Group the data by "sim" and "method" columns, and calculate the average of "opt_N_hat" and "opt_N"
-averaged_df <-
-  combined_results_other_v %>%
-  .[, .(
-    avg_opt_N_hat = mean(opt_N_hat),
-    avg_opt_N_gam = mean(opt_N_gam)
-  ),
-  by = .(sim, method)
-  ]
-
-# Create separate graphs by method using facet_wrap
-g_leonr_comp <-
-  ggplot(averaged_df, aes(x = avg_opt_N_gam, y = avg_opt_N_hat)) +
-  geom_point(colour = "black", size = 0.5) +
-  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black") +
-  scale_x_continuous(limits = c(100, 180)) +
-  scale_y_continuous(limits = c(100, 180)) +
-  labs(x = "Average GAM EONR", y = "Average Local EONR") +
-  facet_wrap(~method, ncol = 2) +
-  theme(strip.text = element_text(size = 6.5)) +
-  theme_bw() +
-  theme(
-    legend.position = "bottom",
-    # plot.title = element_text(size = 10, face = "bold"),  # Title appearance
-    # plot.subtitle = element_text(size = 12),
-    axis.title.x = element_text(size = 10), # X-axis label appearance
-    axis.title.y = element_text(size = 10), # Y-axis label appearance
-    legend.title = element_text(size = 11), # Legend title appearance
-    legend.text = element_text(size = 10) # Legend text appearance
-  ) +
-  theme(axis.title = element_text(size = 12, family = "Times"))
-
-ggsave(
-  here::here("writing/figures-tables/g_leonr_comp.png"),
-  g_leonr_comp,
-  dpi = 300,
-  height = 5,
-  width = 6
 )
 ```
 
@@ -429,6 +356,7 @@ main_accuracy_data <-
   .[, yield_based := paste0(num_selected_yield_correct, " (", num_selected_yield, ")")] %>%
   .[, .(method, num_selected_true, leonr_based, yield_based)]
 
+(
 main_accuracy_table_nosp <-
   flextable(main_accuracy_data) %>%
   align(j = 2:4, align = "center") %>%
@@ -441,6 +369,7 @@ main_accuracy_table_nosp <-
     )
   ) %>%
   autofit()
+)
 
 saveRDS(main_accuracy_table_nosp, here::here("writing/figures-tables/selection_accuracy_table_no_sp_ft.rds"))
 
@@ -465,7 +394,8 @@ profit_loss_data_nosp <-
 ### Main case
 
 ```{r}
-g_pi_loss_nosp <-
+(
+ g_pi_loss_nosp <-
   ggplot(profit_loss_data_nosp) +
   geom_histogram(
     aes(
@@ -480,7 +410,9 @@ g_pi_loss_nosp <-
   facet_wrap(selection ~ ., ncol = 1) +
   ylab("Number of iterations") +
   xlab("Profit loss relative to the true best model ($/acre)") +
-  theme_bw()
+  theme_bw() 
+)
+
 
 ggsave(
   here::here("writing/figures-tables/g_pi_loss_nosp.png"),
@@ -490,7 +422,6 @@ ggsave(
   height = 3.5
 )
 ```
-
 
 
 # Misc
@@ -505,7 +436,7 @@ whole_data <-
 
 #--- train or test ---#
 train_test_split_q <-
-  readRDS(here::here("results/main/sim_results_num_repeats_1_num_folds_5/train_test_split.rds"))
+  readRDS(file.path(results_folder, "sim_results_num_repeats_1_num_folds_5/train_test_split.rds"))
 
 spatial_folds_q <-
   train_test_split_q %>%
@@ -526,6 +457,7 @@ spatial_folds_q <-
   sf::st_as_sf() %>%
   dplyr::mutate(split_txt := paste0("Fold ", split_id))
 
+(
 g_split_example <-
   ggplot(spatial_folds_q) +
   geom_sf(aes(fill = type), color = NA) +
@@ -542,6 +474,7 @@ g_split_example <-
     legend.text = element_text(size = 12),
     legend.title = element_text(size = 12)
   )
+)
 
 ggplot2::ggsave(
   here::here("writing/figures-tables/g_split_example.png"),
@@ -552,7 +485,7 @@ ggplot2::ggsave(
 )
 ```
 
-# spatial cross validation (example: 10 fold) 
+# Spatial cross validation (example: 10 fold) 
 
 ```{r}
 #--- first simulation ---#
@@ -562,7 +495,7 @@ whole_data <-
 
 #--- train or test ---#
 train_test_split_q <-
-  readRDS(here::here("results/main/sim_results_num_repeats_1_num_folds_10/train_test_split.rds"))
+  readRDS(file.path(results_folder, "sim_results_num_repeats_1_num_folds_10/train_test_split.rds"))
 
 spatial_folds_q <-
   train_test_split_q %>%
@@ -587,7 +520,7 @@ spatial_folds_q <- spatial_folds_q %>%
   arrange(split_id) %>%  #  correct order in dataset
   mutate(split_txt = factor(split_txt, levels = unique(split_txt)))  # convert to ordered factor
 
-
+(
 g_split_example_10_folds <-
   ggplot(spatial_folds_q) +
   geom_sf(aes(fill = type), color = NA) +
@@ -605,6 +538,7 @@ g_split_example_10_folds <-
     legend.text = element_text(size = 12),
     legend.title = element_text(size = 12)
   )
+)
 
 ggplot2::ggsave(
   here::here("GitControlled/Writing/figures-tables/g_split_example_10_folds.png"),
@@ -613,5 +547,4 @@ ggplot2::ggsave(
   height = 6,
   width = 6
 )
-
 ```
