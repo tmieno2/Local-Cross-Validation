@@ -13,7 +13,6 @@ data/*
 results/*
 */*_files/*
 *.rds
-*.png
 *.tex
 *.log
 *.aux
