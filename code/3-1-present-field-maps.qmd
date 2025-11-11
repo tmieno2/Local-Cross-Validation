@@ -1,0 +1,365 @@
+---
+title: "Make figures for field, N rate, and yield maps"
+---
+
+# Preparation
+
+## Packages
+
+```{r}
+library(cowplot)
+```
+
+## Set default figure font to serif
+
+```{r}
+theme_set(theme_void(base_family = "serif"))
+update_geom_defaults("text", list(family = "serif"))
+update_geom_defaults("label", list(family = "serif"))
+```
+
+## Load the field data and simulation results
+
+```{r}
+# 500 rounds of simulated field data
+raw_sim_data <- readRDS(here::here("data/main/raw_sim_data.rds"))
+
+# field spatial sf data
+field_sf <- raw_sim_data$field_sf[[1]]
+
+# randomly choose one simulation round
+i_sim <- 2
+
+# true field parameters
+field_pars <- raw_sim_data$field_pars[[1]] %>% .[sim == i_sim, ]
+
+# experimental results data
+exp_data <- readRDS(here::here("data/main/individual-fields", paste0("sim_data_", i_sim, ".rds")))$data[[1]]
+```
+
+# Illustration of spatial units of the simulated on-farm precision experiment (OFPE) field
+
+## field parameter map
+```{r}
+gdata <-
+  field_pars %>%
+  #--- merge pars data to field sf ---
+  left_join(field_sf, ., by = c("cell_id"))
+
+# spatial bounding of the sf
+fbox <- st_bbox(field_sf)
+
+# field map
+g_field_map <-
+  ggplot() +
+  geom_sf(data = gdata, aes(fill = b0), color = gray(0.5), linewidth = 0.1) +
+  scale_fill_gradientn(colours = rev(terrain.colors(100))) +
+  #--- add arrows and text on fields ---
+  geom_segment(
+    aes(
+      x = fbox["xmin"],
+      y = fbox["ymax"] + 12,
+      xend = fbox["xmax"],
+      yend = fbox["ymax"] + 12
+    ),
+    arrow = arrow(
+      length = unit(0.2, "cm"),
+      ends = "both",
+      type = "closed"
+    ),
+    linewidth = 0.5,
+    lineend = "butt",
+    linejoin = "mitre"
+  ) +
+  annotate("text", x = 430, y = fbox["ymax"] + 24, label = "864m", hjust = 0, size = 5) +
+  geom_segment(
+    aes(
+      x = fbox["xmin"] - 12,
+      y = fbox["ymin"],
+      xend = fbox["xmin"] - 12,
+      yend = fbox["ymax"]
+    ),
+    arrow = arrow(length = unit(0.2, "cm"), ends = "both", type = "closed"),
+    linewidth = 0.5,
+    lineend = "butt",
+    linejoin = "mitre"
+  ) +
+  annotate(
+    "text",
+    x = fbox["xmin"] - 24,
+    y = 220,
+    label = "432m",
+    hjust = 0,
+    size = 5,
+    angle = 90
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 24),
+    legend.position = "none"
+  ) +
+  guides(
+    fill = guide_colorbar(
+      barwidth = 1,
+      barheight = 12,
+      title = "",
+      title.position = "top",
+      title.vjust = 1
+    )
+  )
+
+# example cell
+cell_sf <- gdata %>%
+  data.table() %>%
+  .[col_id == 50 & row_id == 67, ] %>%
+  st_as_sf() %>%
+  st_union()
+
+# example subplot
+subplot_sf <- gdata %>%
+  data.table() %>%
+  .[col_id >= 82 & col_id <= 83 & row_id >= 67 & row_id <= 69, ] %>%
+  st_as_sf() %>%
+  st_union()
+
+# example plot
+plot_sf <-
+  gdata %>%
+  data.table() %>%
+  .[col_id >= 120 & col_id <= 132 & row_id >= 67 & row_id <= 69, ] %>%
+  st_as_sf() %>%
+  st_union()
+
+# add example spatial units to field map
+
+(
+  g_field_map <-
+    g_field_map +
+    geom_sf(data = cell_sf, fill = NA, color = "black", linewidth = 0.8) +
+    annotate("text",
+      x = st_bbox(cell_sf)["xmin"] - 18, y = st_bbox(cell_sf)["ymax"] + 30,
+      label = "Basic unit: \u201Ccell\u201D\n(6m × 6m)", lineheight = 0.9,
+      hjust = 0, size = 5, fontface = "bold"
+    ) +
+    geom_sf(data = subplot_sf, fill = NA, color = "black", linewidth = 0.8) +
+    annotate("text",
+      x = st_bbox(subplot_sf)["xmin"] - 18, y = st_bbox(subplot_sf)["ymax"] + 30,
+      label = "Yield unit: \u201Csubplot\u201D\n(18m × 12m)", lineheight = 0.9,
+      hjust = 0, size = 5, fontface = "bold"
+    ) +
+    geom_sf(data = plot_sf, fill = NA, color = "black", linewidth = 0.8) +
+    annotate("text",
+      x = st_bbox(plot_sf)["xmin"] - 18, y = st_bbox(plot_sf)["ymax"] + 30,
+      label = "N rate unit: \u201Cplot\u201D\n(18m × 72m)", lineheight = 0.9,
+      hjust = 0, size = 5, fontface = "bold"
+    )
+)
+```
+
+## zoomed N plot
+```{r}
+# select one plot
+select_plot_sf <- dplyr::filter(field_sf, plot_id == 1)
+
+# spatial bounding of the plot
+pbox <- st_bbox(select_plot_sf)
+
+# example cell unit in the zoomed plot
+zoom_cell_sf <- select_plot_sf[28, ]
+zoom_cell_text <- st_centroid(zoom_cell_sf)
+# example subplot units in the zoomed plot
+zoom_subplot_sf <- select_plot_sf %>%
+  dplyr::filter(buffer == 0) %>%
+  group_by(aunit_id) %>%
+  summarise(geometry = st_union(geometry), .groups = "drop")
+zoom_subplot_text <- st_centroid(zoom_subplot_sf)
+# buffer zones in the zoomed plot
+zoom_buffer_sf <- select_plot_sf %>%
+  dplyr::filter(buffer == 1) %>%
+  group_by(aunit_id) %>%
+  summarise(geometry = st_union(geometry), .groups = "drop")
+
+# zoomed N plot map
+g_zoomed_N_plot <-
+  ggplot() +
+  geom_sf(data = zoom_cell_sf, fill = "red", color = NA, linewidth = 1.2) +
+  geom_sf(data = zoom_buffer_sf, fill = "yellow", color = "black", linewidth = 1.2) +
+  geom_sf(data = select_plot_sf, fill = NA, color = "black", linewidth = 0.2) +
+  geom_sf(data = zoom_subplot_sf, fill = NA, color = "black", linewidth = 1.2) +
+  geom_sf_text(
+    data = zoom_subplot_text, aes(label = paste0("subplot \n", aunit_id - 1)),
+    size = 5, fontface = "bold", lineheight = 0.9
+  ) +
+  geom_sf_text(
+    data = zoom_cell_text, aes(label = "cell"),
+    size = 5, fontface = "bold"
+  ) +
+  #--- add arrows for plot dimensions ---
+  geom_segment(
+    aes(x = pbox["xmin"] + 0.2, y = pbox["ymax"] + 2, xend = pbox["xmax"] - 0.2, yend = pbox["ymax"] + 2),
+    arrow = arrow(length = unit(0.2, "cm"), ends = "both", type = "closed"),
+    linewidth = 0.5, lineend = "butt", linejoin = "mitre"
+  ) +
+  annotate("text",
+    x = pbox["xmin"] + 33, y = pbox["ymax"] + 4,
+    label = "72m", hjust = 0, size = 5
+  ) +
+  geom_segment(
+    aes(x = pbox["xmin"] - 2, y = pbox["ymax"] - 0.2, xend = pbox["xmin"] - 2, yend = pbox["ymax"] - 17.8),
+    arrow = arrow(length = unit(0.2, "cm"), ends = "both", type = "closed"),
+    linewidth = 0.5, lineend = "butt", linejoin = "mitre"
+  ) +
+  annotate("text",
+    x = pbox["xmin"] - 8, y = pbox["ymax"] - 9,
+    label = "18m", hjust = 0, size = 5
+  ) +
+  #--- add arrows to example cell ---
+  geom_segment(
+    aes(x = pbox["xmin"] + 18.2, y = pbox["ymax"] - 19, xend = pbox["xmin"] + 23.8, yend = pbox["ymax"] - 19),
+    arrow = arrow(length = unit(0.2, "cm"), ends = "both", type = "closed"),
+    linewidth = 0.5, lineend = "butt", linejoin = "mitre"
+  ) +
+  annotate("text",
+    x = pbox["xmin"] + 20, y = pbox["ymax"] - 20.5,
+    label = "6m", hjust = 0, size = 5
+  ) +
+  geom_segment(
+    aes(x = pbox["xmin"] + 25, y = pbox["ymax"] - 17.8, xend = pbox["xmin"] + 25, yend = pbox["ymax"] - 12.2),
+    arrow = arrow(length = unit(0.2, "cm"), ends = "both", type = "closed"),
+    linewidth = 0.5, lineend = "butt", linejoin = "mitre"
+  ) +
+  annotate("text",
+    x = pbox["xmin"] + 26, y = pbox["ymax"] - 15,
+    label = "6m", hjust = 0, size = 5
+  ) +
+  #--- add arrows to transition area ---
+  geom_segment(
+    aes(x = pbox["xmin"] + 24, y = pbox["ymax"] - 30, xend = pbox["xmin"] + 3, yend = pbox["ymax"] - 20),
+    arrow = arrow(length = unit(0.2, "cm"), ends = "last", type = "closed"),
+    linewidth = 1, lineend = "butt", linejoin = "mitre"
+  ) +
+  geom_segment(
+    aes(x = pbox["xmax"] - 24, y = pbox["ymax"] - 30, xend = pbox["xmax"] - 3, yend = pbox["ymax"] - 20),
+    arrow = arrow(length = unit(0.2, "cm"), ends = "last", type = "closed"),
+    linewidth = 1, lineend = "butt", linejoin = "mitre"
+  ) +
+  annotate("text",
+    x = pbox["xmin"] + 27, y = pbox["ymax"] - 30,
+    label = "transition area",
+    hjust = 0, size = 5, fontface = "bold"
+  )
+```
+
+## Combine two graphs
+
+```{r}
+g_field <-
+  ggdraw() +
+  #--- stack field and plot maps vertically ---
+  draw_plot(g_field_map, x = 0, y = 0.35, width = 1, height = 0.65) +
+  draw_plot(g_zoomed_N_plot, x = 0.3, y = 0.0, width = 0.7, height = 0.35) +
+  #--- add arrow connecting them ---
+  draw_line(
+    x = c(0.84, 0.78), y = c(0.41, 0.33),
+    arrow = arrow(length = unit(0.2, "cm"), ends = "last", type = "closed"),
+    linewidth = 1, lineend = "butt", linejoin = "mitre"
+  )
+
+# save the final map
+ggsave(
+  file = here::here("writing/figures-tables/g_field_map.png"),
+  g_field,
+  height = 7, 
+  width = 6.5, 
+  bg = "white"
+)
+```
+
+# N experimental design rate and observed yield maps
+
+Prepare data:
+
+```{r}
+gdata <-
+  exp_data[, .(aunit_id, N_tgt, yield)] %>%
+  #--- merge result data to field sf ---
+  left_join(field_sf, ., by = c("aunit_id"))
+```
+
+##  N trial rates map
+
+```{r}
+# target N rate data
+new_levels <- c("transition", levels(gdata$N_tgt %>% factor()))
+
+gdata <-
+  gdata %>%
+  data.table() %>%
+  .[, N_tgt := factor(N_tgt)] %>%
+  .[is.na(N_tgt), N_tgt := "transition"] %>%
+  .[, N_tgt := factor(N_tgt, levels = new_levels)] %>%
+  st_as_sf()
+
+g_N <-
+  ggplot() +
+  geom_sf(data = gdata, aes(fill = (N_tgt)), color = "grey10", linewidth = 0.1) +
+  scale_fill_manual(
+    name = "(kg/ha)",
+    values = c("grey100", "grey80", "grey50", "grey35", "grey20", "grey0")
+  ) +
+  labs(title = "(a) N trial rate") +
+  theme_void() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 20, family = "serif"),
+    legend.position = "right",
+    legend.title = element_text(size = 18, face = "bold", family = "serif"),
+    legend.key.size = unit(1.2, "cm"),
+    legend.text = element_text(size = 18, family = "serif")
+  )
+```
+
+## Observed yield map
+
+```{r}
+#--- aggregate yield to subplot level ---#
+gdata_y <-
+  aggregate(gdata, by = list(gdata$aunit_id), FUN = mean)
+
+g_y <-
+  ggplot() +
+  geom_sf(data = gdata_y, aes(fill = yield), color = NA) +
+  scale_fill_gradientn(colors = c("red2", "yellow", "green4"), na.value = "white") +
+  labs(title = "(b) Observed yield") +
+  theme_void() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 20, family = "serif"),
+    legend.position = "right",
+    legend.title = element_text(size = 18, face = "bold", family = "serif"),
+    legend.key.size = unit(0.8, "cm"),
+    legend.text = element_text(size = 18, family = "serif")
+  ) +
+  guides(fill = guide_colorbar(
+    barwidth = 1, barheight = 12,
+    title = "(kg/ha)",
+    title.position = "top", title.vjust = 2
+  ))
+```
+
+
+## Vertically stack the two maps
+
+```{r}
+g_yield_N <-
+  ggdraw() +
+  draw_plot(g_N, x = 0, y = 0.5, width = 1, height = 0.5) +
+  draw_plot(g_y, x = 0, y = 0.0, width = 0.95, height = 0.5)
+
+# save the final map
+ggsave(
+  file = here::here("Writing/figures-tables/g_Nrate_yield.png"),
+  g_yield_N,
+  height = 6,
+  width = 6,
+  bg = "white"
+)
+```

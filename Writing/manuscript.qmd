@@ -25,6 +25,9 @@ format:
   html: 
     number-sections: true
     number-depth: 3
+  pdf: 
+    number-sections: true
+    number-depth: 3
   docx: 
     number-sections: true
     number-depth: 3
@@ -72,7 +75,7 @@ This article proposes an alternative to conventional yield-based model selection
 
 # Method
 
-To test the effectiveness of our proposed model selection approach against the traditional yield-based model selection approach, we conduct Monte Carlo simulations of 1000 iterations.
+To test the effectiveness of our proposed model selection approach against the traditional yield-based model selection approach, we conduct Monte Carlo simulations with 500 iterations.
 
 A single iteration of our simulation follows the following steps:
 
@@ -91,16 +94,16 @@ Steps 2-1 and 2-2 use data generated in Step 1, but are implemented independentl
 
 ### Simulated experimental field
 
-The data for this study was generated from a simulated corn production field with spatially varying field characteristics. The field was 432m wide and 864m long, making about 37.3 hectares in total area. Figure @field-map illustrated one possible scenario of the spatial variability in the field characteristics, where the spatial resolution of the variability is the basic unit of the 6m × 6m "cell".
+The data for this study was generated from a simulated corn production field with spatially varying field characteristics. The field was 432m wide and 864m long, making about 37.3 hectares in total area. @fig-field-map illustrated one possible scenario of the spatial variability in the field characteristics, where the spatial resolution of the variability is the basic unit of the 6m × 6m "cell".
 
 ```{r}
-#| label: field-map
+#| label: fig-field-map
 #| fig-cap: "Illustration of the simulated on-farm precision experiment (OFPE) field."
 
-knitr::include_graphics("figures-tables/field_map.png")
+knitr::include_graphics(here::here("writing/figures-tables/g_field_map.png"))
 ```
 
-An on-farm precision experiment (OFPE) of corn yield response to N rates was conducted in this simulated field. The spatial unit of the N trial rates application was, however, much larger than the basic cell unit. It was assumed to be 18m wide and 72m long (or 3 cells × 12 cells), referred to as a "plot." The choice of this plot dimension was to accommodate the width and application accuracy of the commercial variable-rate applicators currently used on the market. The true yield data varied at the basic cell resolution, but in practice the yield monitoring system can hardly achieve that accuracy level. This study assumed the yield data were collected at the 18m × 12m (3 cells × 2 cells) unit, referred to as a "subplot." The selection of 18m as the width of yield data unit, which equals the width of the N rate plot, is mainly for the convenience of data generating process. The selection of 12m length of yield data unit is based on the fact that the current yield monitoring system usually required the harvester to run about 12m to ensure accurate yield data. In addition, a 12m "transition zone" was put between two adjacent N plots, giving the harvester sufficient time to adapt the N trial rate change between plots. After excluding the transition zones, each N plot consisted five effective yield subplots for data analysis. A detailed layout map of the field that illustrated the spatial units of "cell", "subplot", and "plot" was displayed in Figure @field-map. In total, the effective experimental data generated from the simulated OFPE field included 288 N plots, 1440 yield subplots, and 8640 cells.
+An on-farm precision experiment (OFPE) of corn yield response to N rates was conducted in this simulated field. The spatial unit of the N trial rates application was, however, much larger than the basic cell unit. It was assumed to be 18m wide and 72m long (or 3 cells × 12 cells), referred to as a "plot." The choice of this plot dimension was to accommodate the width and application accuracy of the commercial variable-rate applicators currently used on the market. The true yield data varied at the basic cell resolution, but in practice the yield monitoring system can hardly achieve that accuracy level. This study assumed the yield data were collected at the 18m × 12m (3 cells × 2 cells) unit, referred to as a "subplot." The selection of 18m as the width of yield data unit, which equals the width of the N rate plot, is mainly for the convenience of data generating process. The selection of 12m length of yield data unit is based on the fact that the current yield monitoring system usually required the harvester to run about 12m to ensure accurate yield data. In addition, a 12m "transition zone" was put between two adjacent N plots, giving the harvester sufficient time to adapt the N trial rate change between plots. After excluding the transition zones, each N plot consisted five effective yield subplots for data analysis. A detailed layout map of the field that illustrated the spatial units of "cell", "subplot", and "plot" was displayed in @fig-field-map. In total, the effective experimental data generated from the simulated OFPE field included 288 N plots, 1440 yield subplots, and 8640 cells.
 
 ### True yield responses
 
@@ -119,27 +122,26 @@ $$ {#eq-true-eonr}
 
 where $p$ denoted the crop price, $w$ denoted the nitrogen fertilizer price, and $f_{j, i}(N)$ was the previously defined true yield response function for the specific cell. 
 
-Let $\mathbf{\theta}_{j,i}$ denote the set of cell-specific response parameters $\left(\alpha_{j, i}, \beta_{j, i}, \gamma_{j, i}, \tau_{j, i}, \eta_{j,i}\right)$^[Note that although there appeared five parameters $\left(\alpha_{j, i}, \beta_{j, i}, \gamma_{j, i}, \tau_{j, i}, \eta_{j,i}\right)$ in the response function, the "free" parameters were only three due to the two inherent restrictions between parameters as mentioned above.]. Note that $\mathbf{\theta}_{j,i}$ can be regarded as a representation of all soil, water and other field properties influencing yield response to N rates. The within-field spatial variability of those response parameters, as illustrated by Figure @field-map, were generated through Gaussian geo-statistical simulations using unconditional random fields. A total of 500 simulated fields were implemented using the R gstat [@graler2016spatio] package based on selected variogram parameters [@dietrich1996fast; @wood1994simulation]. 
+Let $\mathbf{\theta}_{j,i}$ denote the set of cell-specific response parameters $\left(\alpha_{j, i}, \beta_{j, i}, \gamma_{j, i}, \tau_{j, i}, \eta_{j,i}\right)$^[Note that although there appeared five parameters $\left(\alpha_{j, i}, \beta_{j, i}, \gamma_{j, i}, \tau_{j, i}, \eta_{j,i}\right)$ in the response function, the "free" parameters were only three due to the two inherent restrictions between parameters as mentioned above.]. Note that $\mathbf{\theta}_{j,i}$ can be regarded as a representation of all soil, water and other field properties influencing yield response to N rates. The within-field spatial variability of those response parameters, as illustrated by @fig-field-map, were generated through Gaussian geo-statistical simulations using unconditional random fields. A total of 500 simulated fields were implemented using the R gstat [@graler2016spatio] package based on selected variogram parameters [@dietrich1996fast; @wood1994simulation]. 
 
 The spherical variogram model was used in the geo-statistical simulations where the range was 600m and nugget was zero. The range value implied the cells' values were still spatially dependent within 600m, or in other words, cells' value would not differ abruptly over distance shorter than 600m. Zero nugget value indicated zero covariance when two cells distance approached zero. The sill of each response parameter was set accordingly such that the true economically optimal N rates ranged from 113 kg/ha to 273 kg/ha across simulations, the average of the simulated yield was 11,416 kg/ha, and the mean value of simulation yield error terms ($\varepsilon_{j, i}$) was 1,370 kg/ha. Those results were comparable with the empirical data collected from on-farm precision experiments from eight corn production fields conducted by the Data-Intensive Farm Management Project (DIFM) in 2018 [@bullock2019data], which justified the simulated data were roughly realistic.
-
 
 ### Experimental design
 
 Six trial N rates are used in each simulated on-farm experiment. In a given iteration, the $0\%$, 20\%$, 40\%$, 60\%$, $80\%$, and $100 \%$ quantiles of the true cell-specific plateau N rates ($\tau_{j, i}$) are obtained. Letting $Q(x)$ denote the $x\%$ quantile, the six N rates are set to be $\{Q(0) - 20, Q(20), Q(40), Q(60), Q(80), Q(100) + 20\}$. Note that 20 kg/ha was substracted from $Q(0)$ and 20 kg/ha was added to $Q(100)$. This ensures the minimum and maximum trial N rates would fully cover the true plateau points of all the cells. Each simulation's trial N rates differ slightly across iterations as each iteration has differing range of true optimal N rates. The average trial N rates across 500 simulations are approximately $\{80, 130, 154, 184, 219, 270\}$ kg/ha.
 
-The spatial allocation of the six N trial rates followed a 6 × 6 Latin square design. The whole experimental field was into 8 (= 4 × 2) blocks, each block including 36 (= 6 × 6) N plots to establish the Latin square design. Each of the six N rates was assigned to one plot in every row and column of the Latin square. Specifically, the N rate allocation followed a distinctive pattern [@li2023economic] such that any large, abrupt changes in N rates between adjacent plots were avoided along the row direction (i.e., the direction of N fertilizer application). This trial design accommodated the accuracy limitations of N application equipment commonly observed in real-world production, and also had superior economic performances compared to other trial designs [@li2023economic]. The experimental design from one example simulation is shown in Figure @Nrate-yield (left panel). 
+The spatial allocation of the six N trial rates followed a 6 × 6 Latin square design. The whole experimental field was into 8 (= 4 × 2) blocks, each block including 36 (= 6 × 6) N plots to establish the Latin square design. Each of the six N rates was assigned to one plot in every row and column of the Latin square. Specifically, the N rate allocation followed a distinctive pattern [@li2023economic] such that any large, abrupt changes in N rates between adjacent plots were avoided along the row direction (i.e., the direction of N fertilizer application). This trial design accommodated the accuracy limitations of N application equipment commonly observed in real-world production, and also had superior economic performances compared to other trial designs [@li2023economic]. The experimental design from one example simulation is shown in @fig-Nrate-yield (top panel). 
 
 ```{r}
-#| label: Nrate-yield
+#| label: fig-Nrate-yield
 #| fig-cap: "Experimental design of six nitrogen rates (left) and observed yield data (right)."
 
-knitr::include_graphics("figures-tables/Nrate_yield.png")
+knitr::include_graphics(here::here("writing/figures-tables/g_Nrate_yield.png"))
 ```
 
 ### Yield data
 
-Based on the experimental design, response parameters ($\mathbf{\theta}_{j,i}$), and error term $\varepsilon_{j,i}$, the yield $y_{j, i}$ for each cell $(j, i)$ was generated following the true response function in Equation eq-yield-response. However, as mentioned earlier, the harvesting equipment was assumed to be able to accurately collect yield data only at the 18m $\times$ 12m (subplot) resolution. Therefore, the observed yield data were at the resolution of subplot level, denoted as $y_j$ ($j=1, \ldots, 1440$). Here we assumed $y_j$ is the average yield for the six cells within the subplot $j$. The observed yield map for the 1440 subplots in one example simulation was displayed in Figure @Nrate-yield (right panel).
+Based on the experimental design, response parameters ($\mathbf{\theta}_{j,i}$), and error term $\varepsilon_{j,i}$, the yield $y_{j, i}$ for each cell $(j, i)$ was generated following the true response function in Equation eq-yield-response. However, as mentioned earlier, the harvesting equipment was assumed to be able to accurately collect yield data only at the 18m $\times$ 12m (subplot) resolution. Therefore, the observed yield data were at the resolution of subplot level, denoted as $y_j$ ($j=1, \ldots, 1440$). Here we assumed $y_j$ is the average yield for the six cells within the subplot $j$. The observed yield map for the 1440 subplots in one example simulation was displayed in @fig-Nrate-yield (bottom panel).
 
 Note that N trial rate was applied at the much larger plot unit, and therefore each subplot $j$'s N rate was simply the N rate of the applied plot that subplot $j$ fell into, which can be denoted as $N_j$. In each simulation, the 1440 subplot-level observed yield and N rate data $\left(y_j, N_j\right)$ were used for data analysis. 
 
@@ -151,54 +153,45 @@ It is important to note that the true response parameters ($\mathbf{\theta}_{j,i
 Yield-maximizing N rate ($\tau$) was split additively into $\tau^1$ and $\tau^2$ in random and spatially correlated manner:
 
 
-```{=tex}
-\begin{align}
-\tau_{j,i} = \tau_{j,i}^1 + \tau_{j,i}^2 \label{eq-tau-additive}
-\end{align}
-```
+$$
+\tau_{j,i} = \tau_{j,i}^1 + \tau_{j,i}^2
+$$ {#eq-tau-additive}
 
 Furthermore, $\tau_{j,i}^1$ and $\tau_{j,i}^2$ are further decomposed in the same additive, random, and spatially correlated manner. 
 
-```{=tex}
-\begin{align}
+$$
 \tau_{j,i}^1 = \tau_{j,i}^{1,1} + \tau_{j,i}^{1,2}, \hspace{0.5cm} \tau_{j,i}^2 = \tau_{j,i}^{2,1} + \tau_{j,i}^{2,2} \label{eq-tau-additive-second}
-\end{align}
-```
+$$
 
 Models are asked to discover the additive structure based on the four independent variables $\tau_{j,i}^{1,1}$, $\tau_{j,i}^{1,2}$, $\tau_{j,i}^{2,1}$, and $\tau_{j,i}^{2,2}$ to recover or approximate $\tau_{j,i}$ along with other parameters while recovering the true yield response function.
 
 The coefficient on $N$ ($\beta$) was split in the same manner as $tau$.
 
-```{=tex}
-\begin{align*}
-\beta = \beta^1 + \beta^2, \hspace{0.5cm} 
-\beta^1 = \beta^{1,1} + \beta^{1,2}, \hspace{0.5cm} \beta^2 = \beta^{2,1} + \beta^{2,2} \label{eq-beta-split}
-\end{align*}
-```
+$$
+\beta = \beta^1 + \beta^2, \;\;
+\beta^1 = \beta^{1,1} + \beta^{1,2}, \;\;\beta^2 = \beta^{2,1} + \beta^{2,2} 
+$$ {#eq-beta-split}
 
 Yield plateau ($\eta$) were decomposed in a different way: 
 
-```{=tex}
-\begin{align*}
-\eta = min(\eta^1, \eta^2), \hspace{0.5cm} 
-\eta^1 = min(\eta^{1,1}, \eta^{1,2}), \hspace{0.5cm} \eta^2 = min(\eta^{2,1} + \eta^{2,2}) \label{eq-eta-min}
-\end{align*}
-```
+$$
+\eta = min(\eta^1, \eta^2), \;\;
+\eta^1 = min(\eta^{1,1}, \eta^{1,2}), \;\;\eta^2 = min(\eta^{2,1} + \eta^{2,2}) 
+$$ {#eq-eta-min}
 
 The four independent variables ($\eta^{1,1}_j$, $\eta^{1,2}_j$, $\eta^{2,1}_j$, $\eta^{2,2}_j$) are spatially correlated. This decomposition is highly non-linear unlike the decomposition of $\tau$ and it is likely harder for linear models to discover $\eta$ than the non-parametric ML models.
 
-Those covariates were first generated in the cell unit, and then aggregated to the subplot unit to serve as the observed "field characteristics" data, denoted as $X_j = \left(\beta^{1,1}_j, \beta^{1,2}_j, \beta^{2,1}_j, \beta^{2,2}_j, \tau^{1,1}_j, \tau^{1,2}_j, \tau^{2,1}_j, \tau^{2,2}_j, \eta^{1,1}_j, \eta^{1,2}_j, \eta^{2,1}_j, \eta^{2,2}_j \right)$. $X_j$ is used as the covariates in yield response estimation. Note that $X_j$ contained sufficient information to estimate the true yield response function even though $X_j$ does not include $\alpha$ and $\gamma$. The following two equations hold for the five parameters:
+Those covariates were first generated in the cell unit, and then aggregated to the subplot unit to serve as the observed "field characteristics" data, denoted as $X_j = \left(\beta^{1,1}_j, \beta^{1,2}_j, \beta^{2,1}_j, \beta^{2,2}_j, \tau^{1,1}_j, \tau^{1,2}_j, \tau^{2,1}_j, \tau^{2,2}_j, \eta^{1,1}_j, \eta^{1,2}_j, \eta^{2,1}_j, \eta^{2,2}_j \right)$. $X_j$ is used as the covariates in yield response estimation. Note that $X_j$ contains sufficient information to estimate the true yield response function even though $X_j$ does not include $\alpha$ and $\gamma$. The following two equations hold for the five parameters:
 
-```{=tex}
-\begin{align*}
+$$
+\begin{align}
 \tau_{j, i} & =-\beta_{j, i}/(2\gamma_{j, i}) \\
 \eta_{j,i} & = \alpha_{j, i}+\beta_{j, i} \tau_{j, i}+\gamma_{j, i} \tau_{j, i}^2
-\end{align*}
-```
-
-Consequently, the degrees of freedom of the true yield response function is three (5 parameters, two equations). Therefore, once three of the five parameters are known, then the rest will be automatically known.
+\end{align}
+$$ {#eq-par-relationship}
 
 
+Consequently, the true yield response function has three degrees of freedom (five parameters across two equations). This implies that once three of the five parameters are identified, the remaining two are automatically determined. Naturally, none of the candidate models are explicitly aware of this structural relationship. It is their task to uncover it during the training process, except in the case of linear models that impose a specific functional form by assumption.
 
 ## Identify the true best model among the five candidate models (Step 2-1)
 
@@ -216,11 +209,11 @@ For all the models, the same set of independent variables are used to train them
 
 Yield response function is parametrically estimated for linear model (LM) and spatial error model (SE). The LM approach estimates the following quadratic model:
 
-```{=tex}
-\begin{align*}
+$$
+\begin{align}
 y_i = \alpha + \lambda_1 N_i +  NX_i \lambda_2 + \lambda_3 N^2_i + N^2X_i\lambda_4  + X_i\lambda_5 + v_i
-\end{align*}
-```
+\end{align}
+$$
 
 In this model, $NX_i$ is a vector of the interaction of $N$ and $X$ (i.e., $N_i\tau^{1,1}_i$, $N_i\tau^{1,2}_i$, ..,) and $\lambda_2$ are their respective coefficients. $N^2X_i$ is a vector of the interaction of $N^2$ and $X$ (i.e., $N^2_i\tau^{1,1}_i$, $N^2_i\tau^{1,2}_i$, ..,) and $\lambda_4$ are their respective coefficients. There interaction terms allow the marginal impact of $N$ to vary based on the observed characteristics $X$. Note that the model is intentionally misspecified. While we could have used the quadratic-plateau model, its estimation is highly numerically unstable with the number of independent variables. Also note that our objective is to test our model selection approach. The use of a suboptimal model as one of the candidates models do not compromise this objective. 
 
@@ -253,9 +246,9 @@ Causal forest focuses on identifying the causal heterogeneous impacts of a treat
 Let, $N_k$ indicate $k$ th lowest N experimental rates ($N_1$ is the lowest, and $N_5$ is the highest). In the CF approach, four treatments are defined where the lowest rate (N_1) serves as the base line: $N_2$ vs $N_1$, $N_3$ vs $N_1$, $N_4$ vs $N_1$, and $N_5$ vs $N_1$. Let $T_k$ indicate the treatment of $N_k$ vs $N_1$. Then the multia-arm^[This simply means that multiple heterogeneous treatment effects are estimated in a single model.] CF model is written as follows:
 
 ```{=tex}
-\begin{align*}
+\begin{align}
 y_i = \sum_{i=2}^5 \theta_k(X_i)\cdot T_k + g(X_i)
-\end{align*}
+\end{align}
 ```
 
 In this equation, $\theta_k(\alpha_i, \beta_i)$ represents the heterogenous treatment effect of $T_k$ as a function of site-specific characteristics $\alpha_i$ and $\beta_i$. For example, $\theta_2(\alpha_i, \beta_i)$ represents the impact of increasing N level from $N_1$ to $N_2$ at the observed soil characteristic values. The final term, $g(\alpha_i, \beta_i)$, represents the direct impact of $\alpha_i$ and $\beta_i$ (not through a change in N rate).
@@ -263,17 +256,17 @@ In this equation, $\theta_k(\alpha_i, \beta_i)$ represents the heterogenous trea
 Unlike the rest of the approaches, the estimated CF model cannot predict yield levels, rather it predicts the impact of treatments (changes in N rate). 
 
 ```{=tex}
-\begin{align*}
+\begin{align}
 y_i|_{N_k} - y_i|_{N_1} = \theta_k(X_i)
-\end{align*}
+\end{align}
 ```
 
 Then, the change in profit from increasing N rate from $N_1$ to $N_k$ for site $i$ is
 
 ```{=tex}
-\begin{align*}
+\begin{align}
 P_C\cdot \theta_k(X_i) + P_N \cdot (N_k - N_1)
-\end{align*}
+\end{align}
 ```
 
 The EONR for site $i$ is $N_k$ that produces the highest positive profit differential unless all the profit differentials are negative, in which case, $N_1$ is the EONR.
@@ -283,9 +276,9 @@ The EONR for site $i$ is $N_k$ that produces the highest positive profit differe
 We use profit loss relative to the true site-specific EONR as the criteria for model performance as that is farmers' ultimate objective. The average per-acre profit from true site-specific EONR (denoted as $\pi_{true}$) is
 
 ```{=tex}
-\begin{align*}
+\begin{align}
 \pi_{true}  = \frac{1}{N}\cdot \sum_{i=1}^{N} [P_c \cdot f(N^*_i, X_i) - P_N \cdot N^*_i]
-\end{align*}
+\end{align}
 ```
 
 This represents the maximum profit achievable average per-acre profit if you were to know the true site-specific EONR.
@@ -293,17 +286,17 @@ This represents the maximum profit achievable average per-acre profit if you wer
 The average profit per acre associate with the site-specific N prescription by model $m$ (denoted as $\pi_m$), which is defined as
 
 ```{=tex}
-\begin{align*}
+\begin{align}
 \pi_m  = \frac{1}{N}\cdot \sum_{i=1}^{N} [P_c \cdot f(\widehat{N}^*_{m}(X_i), X_i) - P_N \cdot \widehat{N}^*_{m}(X_i)]
-\end{align*}
+\end{align}
 ```
 
 Then the profit loss of model $m$ relative to the true maximum profit achievable (denoted as $\pi-loss_{m}$) is then defined as
 
 ```{=tex}
-\begin{align*}
+\begin{align}
 \Delta\pi_m  = \pi_{true} - \pi_m
-\end{align*}
+\end{align}
 ```
 
 The lower the value of $\Delta\pi_m$, the better. We would like a model selection approach that is capable of selecting the true best model identified here. 
@@ -350,6 +343,7 @@ data.table::CJ(
   autofit()
 ```
 
+
 ### Model selection based on yield level prediction
 
 Let $f$ and $F$ indicates a fold and the total number of folds, respectively. For each of the candidate models, the following steps are implemented for each fold:
@@ -389,9 +383,9 @@ RMSE-LE_{m} = \sqrt{\sum_{f=1}^F (\hat{N}^*_{f,m} - \hat{N}^*_{f,gam})^2 / F}
 In step 1, the following GAM model is estimated:
 
 ```{=tex}
-\begin{align*}
+\begin{align}
 y_i = \sum_{j=1}^J \delta_j \phi_j(N_i)+ \varepsilon_i
-\end{align*}
+\end{align}
 ```
 
 where $\phi_j(N_i)$ is $j$ th spline basis and $\delta_j$ is its coefficient. Collectively, $\sum_{j=1}^J \delta_j \phi_j(N_i)$ represents the the impact of N on corn yield. The model does not assume any functional form for the relationship between corn yield and N. Please note that neither $\alpha_i$ or $\beta_i$ are included as independent variables. It makes no attempt to identify interactive impact of N with $\alpha_i$ or $\beta_i$. It is important to keep the model simple to make the estimation task light-weighted so that it can estimate yield response function reasonably well with relatively small sample size of the test data.
@@ -408,17 +402,17 @@ Let $m^*$ denote the true best model for a given simulation iteration identified
 
 
 ```{=tex}
-\begin{align*}
+\begin{align}
 \pi_{m^*}  = \frac{1}{N}\cdot \sum_{i=1}^{N} [P_c \cdot f(\widehat{N}^*_{m^*}(X_i), X_i) - P_N \cdot \widehat{N}^*_{m^*}(X_i)]
-\end{align*}
+\end{align}
 ```
 
 Now let $m^{s}$ and $\widehat{N}^*_{m^s}(X_i)$ denote the model selected by model selection approach $s$ and the EONR for cell $i$ estimated based on the model. Then the profit achieved by this model is:
 
 ```{=tex}
-\begin{align*}
+\begin{align}
 \pi_{m^s}  = \frac{1}{N}\cdot \sum_{i=1}^{N} [P_c \cdot f(\widehat{N}^*_{m^s}(X_i), X_i) - P_N \cdot \widehat{N}^*_{m^s}(X_i)]
-\end{align*}
+\end{align}
 ```
 
 Their difference, $\pi_{m^*}$ - $\pi_{m^s}$, measures the economic performance of the model selection approach. The difference is always positive by construction. The smaller the difference is, the better the model selection approach has performed. For example if the model selection approach picks the same model as the true best model, then the profit difference is zero. 
