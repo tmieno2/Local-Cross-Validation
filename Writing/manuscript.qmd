@@ -160,8 +160,8 @@ $$ {#eq-tau-additive}
 Furthermore, $\tau_{j,i}^1$ and $\tau_{j,i}^2$ are further decomposed in the same additive, random, and spatially correlated manner. 
 
 $$
-\tau_{j,i}^1 = \tau_{j,i}^{1,1} + \tau_{j,i}^{1,2}, \hspace{0.5cm} \tau_{j,i}^2 = \tau_{j,i}^{2,1} + \tau_{j,i}^{2,2} \label{eq-tau-additive-second}
-$$
+\tau_{j,i}^1 = \tau_{j,i}^{1,1} + \tau_{j,i}^{1,2}, \hspace{0.5cm} \tau_{j,i}^2 = \tau_{j,i}^{2,1} + \tau_{j,i}^{2,2} 
+$$ {#eq-tau-additive-second}
 
 Models are asked to discover the additive structure based on the four independent variables $\tau_{j,i}^{1,1}$, $\tau_{j,i}^{1,2}$, $\tau_{j,i}^{2,1}$, and $\tau_{j,i}^{2,2}$ to recover or approximate $\tau_{j,i}$ along with other parameters while recovering the true yield response function.
 
