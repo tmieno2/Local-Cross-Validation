@@ -160,7 +160,8 @@ $$ {#eq-tau-additive}
 Furthermore, $\tau_{j,i}^1$ and $\tau_{j,i}^2$ are further decomposed in the same additive, random, and spatially correlated manner. 
 
 $$
-\tau_{j,i}^1 = \tau_{j,i}^{1,1} + \tau_{j,i}^{1,2}, \hspace{0.5cm} \tau_{j,i}^2 = \tau_{j,i}^{2,1} + \tau_{j,i}^{2,2} 
+\tau_{j,i}^1 = \tau_{j,i}^{1,1} + \tau_{j,i}^{1,2}, \qquad
+\tau_{j,i}^2 = \tau_{j,i}^{2,1} + \tau_{j,i}^{2,2}
 $$ {#eq-tau-additive-second}
 
 Models are asked to discover the additive structure based on the four independent variables $\tau_{j,i}^{1,1}$, $\tau_{j,i}^{1,2}$, $\tau_{j,i}^{2,1}$, and $\tau_{j,i}^{2,2}$ to recover or approximate $\tau_{j,i}$ along with other parameters while recovering the true yield response function.
@@ -527,6 +528,17 @@ knitr::include_graphics("figures-tables/g_pi_loss_nosp.png")
 
 # Conclusion
 
+This study proposed an alternative to conventional yield-based model selection for estimating site-specific yield response functions. While previous studies have selected models based on their ability to predict yield levels, we argued that this approach is misaligned with the ultimate objective of variable-rate input management, which is to estimate yield response and determine economically optimal input rates.
+
+To address this issue, we introduced a model selection approach based on the ability to predict local economically optimal nitrogen rates, implemented through spatial cross-validation. Using a Monte Carlo simulation framework, we compared the proposed approach with the standard yield-based selection method across multiple candidate models.
+
+Our results show that selecting models based on yield prediction accuracy does not necessarily lead to accurate estimation of yield response or EONR. In fact, the yield-based approach consistently selected models that performed poorly in identifying economically optimal input rates, resulting in substantial profit loss. In contrast, the proposed local-EONR-based approach was substantially more effective at identifying models that generate more profitable variable-rate nitrogen recommendation maps.
+
+We also showed that the proposed approach performs well even when the true best model is not selected, as long as the selected model produces similar EONR estimates and thus similar economic outcomes. The effectiveness of the approach depends on the accuracy of local EONR estimation, and our findings suggest that flexible methods such as GAM can provide a useful proxy for unobservable true EONRs. In addition, increasing the number of folds and repeats in spatial cross-validation improves the performance of the proposed approach, while having little effect on the yield-based method.
+
+Our findings highlight that model selection should be aligned with the ultimate decision objective rather than the prediction tasks. When the goal is to provide profitable input recommendations, evaluating models based on their ability to estimate economically relevant outcomes is more appropriate than evaluating them based on yield prediction accuracy.
+
+Future research may extend this framework by exploring alternative methods for estimating local EONR, incorporating additional sources of uncertainty, and applying the approach to real world on-farm precision experiment data.
 
 \newpage
 
