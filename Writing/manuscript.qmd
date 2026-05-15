@@ -141,7 +141,7 @@ knitr::include_graphics(here::here("writing/figures-tables/g_Nrate_yield.png"))
 
 ### Yield data
 
-Based on the experimental design, response parameters ($\mathbf{\theta}_{j,i}$), and error term $\varepsilon_{j,i}$, the yield $y_{j, i}$ for each cell $(j, i)$ was generated following the true response function in Equation eq-yield-response. However, as mentioned earlier, the harvesting equipment was assumed to be able to accurately collect yield data only at the 18m $\times$ 12m (subplot) resolution. Therefore, the observed yield data were at the resolution of subplot level, denoted as $y_j$ ($j=1, \ldots, 1440$). Here we assumed $y_j$ is the average yield for the six cells within the subplot $j$. The observed yield map for the 1440 subplots in one example simulation was displayed in @fig-Nrate-yield (bottom panel).
+Based on the experimental design, response parameters ($\mathbf{\theta}_{j,i}$), and error term $\varepsilon_{j,i}$, the yield $y_{j, i}$ for each cell $(j, i)$ was generated following the true response function in @eq-yield-response. However, as mentioned earlier, the harvesting equipment was assumed to be able to accurately collect yield data only at the 18m $\times$ 12m (subplot) resolution. Therefore, the observed yield data were at the resolution of subplot level, denoted as $y_j$ ($j=1, \ldots, 1440$). Here we assumed $y_j$ is the average yield for the six cells within the subplot $j$. The observed yield map for the 1440 subplots in one example simulation was displayed in @fig-Nrate-yield (bottom panel).
 
 Note that N trial rate was applied at the much larger plot unit, and therefore each subplot $j$'s N rate was simply the N rate of the applied plot that subplot $j$ fell into, which can be denoted as $N_j$. In each simulation, the 1440 subplot-level observed yield and N rate data $\left(y_j, N_j\right)$ were used for data analysis. 
 
@@ -228,6 +228,12 @@ Once the model is trained, site-specific EONR can be found by the following clos
 \end{equation}
 ```
 
+$$
+\begin{align}
+\hat{N}^*_i = (\frac{P_N}{P_C} - \lambda_1 - X_i\lambda_2)/2(\lambda_3+X_i\lambda_4)
+\end{align}
+$$
+
 where, $P_C$ and $P_N$ represent corn and nitrogen prices, respectively. 
 
 #### Random Forest (RF) and Boosted Regression Forest (BRF)
@@ -252,6 +258,12 @@ y_i = \sum_{i=2}^5 \theta_k(X_i)\cdot T_k + g(X_i)
 \end{align}
 ```
 
+$$
+\begin{align}
+y_i = \sum_{i=2}^5 \theta_k(X_i)\cdot T_k + g(X_i)
+\end{align}
+$$
+
 In this equation, $\theta_k(\alpha_i, \beta_i)$ represents the heterogenous treatment effect of $T_k$ as a function of site-specific characteristics $\alpha_i$ and $\beta_i$. For example, $\theta_2(\alpha_i, \beta_i)$ represents the impact of increasing N level from $N_1$ to $N_2$ at the observed soil characteristic values. The final term, $g(\alpha_i, \beta_i)$, represents the direct impact of $\alpha_i$ and $\beta_i$ (not through a change in N rate).
 
 Unlike the rest of the approaches, the estimated CF model cannot predict yield levels, rather it predicts the impact of treatments (changes in N rate). 
@@ -262,6 +274,12 @@ y_i|_{N_k} - y_i|_{N_1} = \theta_k(X_i)
 \end{align}
 ```
 
+$$
+\begin{align}
+y_i|_{N_k} - y_i|_{N_1} = \theta_k(X_i)
+\end{align}
+$$
+
 Then, the change in profit from increasing N rate from $N_1$ to $N_k$ for site $i$ is
 
 ```{=tex}
@@ -269,6 +287,12 @@ Then, the change in profit from increasing N rate from $N_1$ to $N_k$ for site $
 P_C\cdot \theta_k(X_i) + P_N \cdot (N_k - N_1)
 \end{align}
 ```
+
+$$
+\begin{align}
+P_C\cdot \theta_k(X_i) + P_N \cdot (N_k - N_1)
+\end{align}
+$$
 
 The EONR for site $i$ is $N_k$ that produces the highest positive profit differential unless all the profit differentials are negative, in which case, $N_1$ is the EONR.
 
@@ -282,23 +306,30 @@ We use profit loss relative to the true site-specific EONR as the criteria for m
 \end{align}
 ```
 
+$$
+\begin{align}
+\pi_{true}  = \frac{1}{N}\cdot \sum_{i=1}^{N} [P_c \cdot f(N^*_i, X_i) - P_N \cdot N^*_i]
+\end{align}
+$$
+
+
 This represents the maximum profit achievable average per-acre profit if you were to know the true site-specific EONR.
 
 The average profit per acre associate with the site-specific N prescription by model $m$ (denoted as $\pi_m$), which is defined as
 
-```{=tex}
+$$
 \begin{align}
 \pi_m  = \frac{1}{N}\cdot \sum_{i=1}^{N} [P_c \cdot f(\widehat{N}^*_{m}(X_i), X_i) - P_N \cdot \widehat{N}^*_{m}(X_i)]
 \end{align}
-```
+$$
 
 Then the profit loss of model $m$ relative to the true maximum profit achievable (denoted as $\pi-loss_{m}$) is then defined as
 
-```{=tex}
+$$
 \begin{align}
 \Delta\pi_m  = \pi_{true} - \pi_m
 \end{align}
-```
+$$
 
 The lower the value of $\Delta\pi_m$, the better. We would like a model selection approach that is capable of selecting the true best model identified here. 
 
@@ -355,9 +386,9 @@ Let $f$ and $F$ indicates a fold and the total number of folds, respectively. Fo
 
 Once this process is completed for all folds, the average RMSE for yield prediction is calculated for the model. 
 
-```{=tex}
+$$
 RMSE-Yield_{m} = \sum_{f=1}^F RMSE-Yield_{m, f}
-```
+$$
 
 This process is repeated for all the models, and the model with the lowest average RMSE is selected.
 
@@ -375,23 +406,21 @@ For each fold and a given candidate model, the following steps are performed:
 
 Once the above processes are completed for all folds, then the RMSE of estimating local EONR is calculated for the as follows:
 
-```{=tex}
+$$
 \begin{align}
 RMSE-LE_{m} = \sqrt{\sum_{f=1}^F (\hat{N}^*_{f,m} - \hat{N}^*_{f,gam})^2 / F}
 \end{align}
-```
+$$
 
 In step 1, the following GAM model is estimated:
 
-```{=tex}
+$$
 \begin{align}
 y_i = \sum_{j=1}^J \delta_j \phi_j(N_i)+ \varepsilon_i
 \end{align}
-```
+$$
 
 where $\phi_j(N_i)$ is $j$ th spline basis and $\delta_j$ is its coefficient. Collectively, $\sum_{j=1}^J \delta_j \phi_j(N_i)$ represents the the impact of N on corn yield. The model does not assume any functional form for the relationship between corn yield and N. Please note that neither $\alpha_i$ or $\beta_i$ are included as independent variables. It makes no attempt to identify interactive impact of N with $\alpha_i$ or $\beta_i$. It is important to keep the model simple to make the estimation task light-weighted so that it can estimate yield response function reasonably well with relatively small sample size of the test data.
-
-Once the GAM model is trained, unfiorm (not variable) EONR is obtained by numerically solving the profit mamization problem. We call the estimated EONR "local EONR" because it is local to the test data. While the GAM model does not consider $\alpha_i$ or $\beta_i$ explicitly, the estimated yield response function embeds their information. For example, if the test data of a fold is located in a part of the field where soil characteristics are such that yield responds strongly to N, then that is reflected in the GAM's estimation of yield response in that area, and so are the estimated Local EONR.
 
 Once the GAM model is trained, a uniform (not variable) EONR is obtained by numerically solving the profit maximization problem. We refer to the estimated EONR as "local EONR" because it is specific to the location of the test data. While the GAM model does not explicitly account for $\alpha_i$ or $\beta_i$, the estimated yield response function inherently captures their effects. For instance, if the test data for a given fold corresponds to a region of the field where soil characteristics lead to a strong yield response to nitrogen, this influence is embedded in the GAM’s estimation of the yield response for that area and, consequently, in the estimated local EONR. If a candidate model that explicitly accounts for the interaction between nitrogen and soil characteristics produces a similar local EONR, it indicates the model’s ability to statistically identify these interactive effects.
 
@@ -402,19 +431,19 @@ Steps 3 and 4 are exactly the same as Step 2-1 except that the candidate models 
 Let $m^*$ denote the true best model for a given simulation iteration identified as explained in @sec-true-model. Further, let $\widehat{N}^*_{m^*}(X_i)$ denote the EONR for cell $i$ estimated based on the best model ($m^*$). Then the highest profit that could be achieved for this field is:
 
 
-```{=tex}
+$$
 \begin{align}
 \pi_{m^*}  = \frac{1}{N}\cdot \sum_{i=1}^{N} [P_c \cdot f(\widehat{N}^*_{m^*}(X_i), X_i) - P_N \cdot \widehat{N}^*_{m^*}(X_i)]
 \end{align}
-```
+$$
 
 Now let $m^{s}$ and $\widehat{N}^*_{m^s}(X_i)$ denote the model selected by model selection approach $s$ and the EONR for cell $i$ estimated based on the model. Then the profit achieved by this model is:
 
-```{=tex}
+$$
 \begin{align}
 \pi_{m^s}  = \frac{1}{N}\cdot \sum_{i=1}^{N} [P_c \cdot f(\widehat{N}^*_{m^s}(X_i), X_i) - P_N \cdot \widehat{N}^*_{m^s}(X_i)]
 \end{align}
-```
+$$
 
 Their difference, $\pi_{m^*}$ - $\pi_{m^s}$, measures the economic performance of the model selection approach. The difference is always positive by construction. The smaller the difference is, the better the model selection approach has performed. For example if the model selection approach picks the same model as the true best model, then the profit difference is zero. 
 
