@@ -4,6 +4,8 @@
 **Manuscript:** "A New Approach to Model Selection Based on Local Economically Optimal Input Application Rates" (target journal: AJAE)
 **What to open first:** `writing/manuscript.html` (the freshly rendered paper). A clean text version is at `writing/manuscript.md`.
 
+> **Note (merge):** your pushed changes have been merged in, your bibliography update (which added the three references that were previously missing) and your updated `g_Nrate_yield.png` and `g_field_map.png` figures. The manuscript now renders with **no broken citations**, and the experimental-design figure you see is your own latest version.
+
 ---
 
 ## 1. What happened, in plain terms
@@ -110,13 +112,13 @@ Please confirm each of these. Where it says "confirm number," check it against w
    - **Figure 6 (GAM vs true EONR):** look at the axes — x should be "GAM-estimated," y "true," both in kg/ha. Does the cloud look right?
    - The accuracy **Tables 2 and 3**: in the HTML these should render. Confirm the numbers in the tables look sensible.
 7. **Conclusion:** read the new **limitations paragraph** — is it accurate and not over-conceding anything you disagree with?
-8. **Broken references (known):** three citations will appear as red/question-mark placeholders in the HTML — `dietrich1996fast`, `wood1994simulation`, `zhao2021causal`. These are genuinely missing from `PA.bib`. **Please find the correct references** (you cited them originally, so you know what they were) and send them, or add them to `PA.bib` yourself.
+8. **References:** all citations now resolve, there are **no** broken/placeholder references in the HTML. The three that were previously missing (`dietrich1996fast`, `wood1994simulation`, `zhao2021causal`) arrived in your bibliography update and have been merged in. Still worth a quick scan of the reference list at the end of the HTML to confirm the entries look correct.
 
 ---
 
 ## 6. Open items still needing a decision (not yet done)
 
-- **a. The three missing citations** above.
+- **a. The three missing citations — resolved** (they came in with your bibliography update and are merged; nothing further needed unless the entries themselves need correcting).
 - **b. "True best model" definition.** The selection-frequency results (Fig. 4 / Table 2) define the "best" model as the one with the lowest **EONR RMSE**, while the profit-loss figure (Fig. 5) measures loss relative to the **most profitable** model. These are two slightly different baselines. We added a sentence explaining both, but you may want to pick one consistent definition. Flag for Taro.
 - **c. Price-ratio robustness.** A referee asked whether the conclusion holds across different corn:N price ratios. This needs re-running the simulation, so it is noted as a possible robustness check rather than done.
 
