@@ -25,6 +25,7 @@ format:
   html: 
     number-sections: true
     number-depth: 3
+    embed-resources: true
   pdf: 
     number-sections: true
     number-depth: 3
@@ -33,7 +34,8 @@ format:
     number-depth: 3
 bibliography: PA.bib
 csl: american-journal-of-agricultural-economics.csl
-abstract: ""
+abstract: |
+  Selecting models for site-specific nitrogen management is commonly based on yield prediction accuracy, even though the ultimate goal is to estimate economically optimal nitrogen rates (EONR) and improve profitability. This study proposes an alternative model selection approach based on local EONR prediction rather than yield-level prediction. Using Monte Carlo simulations of on-farm precision experimentation data, we compare the proposed local-EONR-based approach with the conventional yield-based approach across five candidate models: linear model, spatial error model, random forest, boosted regression forest, and causal forest. The proposed method uses spatial cross-validation and generalized additive models to estimate local EONR as a proxy for the unobservable true local optimum. Results show that yield-based selection consistently favors models with strong yield prediction performance but poor EONR performance, leading to substantial profit losses. In contrast, the local-EONR-based approach more frequently identifies models that generate profitable variable-rate nitrogen recommendations and substantially reduces profit loss relative to the true best model. The results highlight the importance of aligning model selection criteria with the final decision objective. When the goal is profitable input recommendation, models should be evaluated based on economically relevant outcomes rather than yield prediction accuracy alone.
 ---
 
 
@@ -63,10 +65,22 @@ library(sf)
 library(flextable)
 ```
 
+```{r}
+#| label: setup-calibration
+#| include: false
 
-Abstract
+#--- calibration summary for Section 2.1 (produced by code/2-3-calibration-summary.R) ---#
+calib <- readRDS("figures-tables/calibration_summary.rds")
 
-Selecting models for site-specific nitrogen management is commonly based on yield prediction accuracy, even though the ultimate goal is to estimate economically optimal nitrogen rates (EONR) and improve profitability. This study proposes an alternative model selection approach based on local EONR prediction rather than yield-level prediction. Using Monte Carlo simulations of on-farm precision experimentation data, we compare the proposed local-EONR-based approach with the conventional yield-based approach across five candidate models: linear model, spatial error model, random forest, boosted regression forest, and causal forest. The proposed method uses spatial cross-validation and generalized additive models to estimate local EONR as a proxy for the unobservable true local optimum. Results show that yield-based selection consistently favors models with strong yield prediction performance but poor EONR performance, leading to substantial profit losses. In contrast, the local-EONR-based approach more frequently identifies models that generate profitable variable-rate nitrogen recommendations and substantially reduces profit loss relative to the true best model. The results highlight the importance of aligning model selection criteria with the final decision objective. When the goal is profitable input recommendation, models should be evaluated based on economically relevant outcomes rather than yield prediction accuracy alone.
+#--- review-round analyses: inference + uniform-vs-VR baseline (code/2-4-review-analyses.R) ---#
+rstat <- readRDS("figures-tables/review_stats.rds")
+
+#--- prices (identical to code/2-1-summarize-results-main.qmd) ---#
+pCorn_bu <- 6.25             # corn price, $/bushel
+pN_lb    <- 1.00             # nitrogen price, $/lb
+pCorn    <- pCorn_bu / 25.4  # $/kg
+pN       <- pN_lb / 0.453592 # $/kg
+```
 
 
 # Introduction
@@ -76,6 +90,8 @@ Uniform input management strategies, such as applying the same nitrogen rate acr
 In recent years, machine learning approaches are increasingly used for estimating site-specific yield response functions [@barbosa2020risk; @barbosa2020modeling; @krause2020random; @gardner2021economic]. A key part of the process is identifying the best model among several candidate ML approaches and also tuning hyper parameters via cross-validation. In all of the previous studies, the best model was selected based its abilities to predict yield level at the observation points (which we term as the yield-based model selection). However, the ultimate goal is not to predict yield levels, but to estimate yield response (causal marginal impact of nitrogen on crop yield). Indeed, @kakimoto2022causal shows that achieving high accuracy in yield prediction does not necessarily imply accurate yield response or EONR. Empirical evidence further supports this idea, as studies have found that the correlation between EONR and the corresponding yield at EONR is weak [@morris2018strengths; @sawyer2006concepts; @vanotti1994alternative]. Therefore, it seems questionable to select the best model based on its ability to predict yield level instead of yield response when the ultimate goal is to provide most profitable variable rate input recommendation.
 
 This article proposes an alternative to conventional yield-based model selection. Specifically, we select models based on their ability to predict local EONR using spatial cross-validation. To evaluate this approach, we conduct Monte Carlo simulations in the context of nitrogen rate application and compare its performance against the standard yield-based selection method. Our results show that the proposed approach is substantially more effective at identifying models that generate more profitable variable-rate nitrogen recommendation maps.
+
+This idea is an instance of a broad principle in economics and statistics: when a model's output feeds a downstream decision, the model should be evaluated against the decision-relevant objective rather than a generic measure of predictive fit. The principle appears in work on prediction policy problems [@kleinberg2015prediction], on decision-focused and "predict-then-optimize" learning [@elmachtoub2022smart; @bertsimas2020predictive], and in the long-standing econometric distinction between estimating a model to fit data and estimating it to support a decision. Our contribution is not this general insight but its operationalization in a setting where the decision target is itself unobservable. Standard decision-focused selection presumes the decision-relevant outcome can be measured on held-out data; here it cannot, because the true EONR is never observed, even after the fact. The methodological problem we address is how to select models by EONR accuracy when EONR is never observed, which we do by constructing an observable, model-independent proxy for the local EONR under spatial cross-validation.
 
 
 # Method
@@ -118,30 +134,30 @@ $$
 y_{j, i}=f_{j, i}(N)= \begin{cases}\alpha_{j, i}+\beta_{j, i} N+\gamma_{j, i} N^2+\varepsilon_{j, i}, & N<\tau_{j, i} \\ \eta_{j,i}+\varepsilon_{j, i}, & N \geq \tau_{j, i}\end{cases},
 $$ {#eq-yield-response}
 
-with $j \in{1,\ 2,\ 3,...,1440}$ being the subplot index and, $i \in{1,\ ...,6}$ being the index of cells within a subplot. The index couplet $(j, i)$ identifies each of the field’s cells. The response parameters $\alpha_{j, i}$, $\beta_{j, i}$ and $\gamma_{j, i}$ represented the intercept (i.e., zero-N yield), linear, and quadratic coefficients of the yield responses. The parameter $\tau_{j, i}$ represents the minimum N rate at which the yield reaches its plateau. Parameter $\eta_{j,i}$ denotes the plateau yield. The stochastic error term $\varepsilon_{j, i}$ follows a normal distribution and exhibits spatial autocorrelation. The quadratic-plateau functional form implies a diminishing marginal return of N until a yield plateau is reached, a common pattern of corn yield response observed in agronomic studies @frank1990comparison. The true economically optimal N rate for each cell $(j, i)$ was then determined by:
+with $j \in{1,\ 2,\ 3,...,1440}$ being the subplot index and, $i \in{1,\ ...,6}$ being the index of cells within a subplot. The index couplet $(j, i)$ identifies each of the field’s cells. The response parameters $\alpha_{j, i}$, $\beta_{j, i}$ and $\gamma_{j, i}$ represented the intercept (i.e., zero-N yield), linear, and quadratic coefficients of the yield responses. The parameter $\tau_{j, i}$ represents the minimum N rate at which the yield reaches its plateau. Parameter $\eta_{j,i}$ denotes the plateau yield. The stochastic error term $\varepsilon_{j, i}$ follows a normal distribution and exhibits spatial autocorrelation. The quadratic-plateau functional form implies a diminishing marginal return of N until a yield plateau is reached, a common pattern of corn yield response observed in agronomic studies @frank1990. The true economically optimal N rate for each cell $(j, i)$ was then determined by:
 
 
 $$
 N_{j, i}^* \equiv \operatorname{argmax}_N\left[p \cdot f_{j, i}(N)-w \cdot N\right],
 $$ {#eq-true-eonr}
 
-where $p$ denoted the crop price, $w$ denoted the nitrogen fertilizer price, and $f_{j, i}(N)$ is the previously defined true yield response function for the specific cell. 
+where $p$ denoted the crop price, set to \$`r pCorn_bu`/bushel (\$`r round(pCorn, 3)`/kg), $w$ denoted the nitrogen fertilizer price, set to \$`r format(pN_lb, nsmall = 2)`/lb (\$`r round(pN, 3)`/kg), and $f_{j, i}(N)$ is the previously defined true yield response function for the specific cell.
 
-Let $\mathbf{\theta}_{j,i}$ denote the set of cell-specific response parameters $\left(\alpha_{j, i}, \beta_{j, i}, \gamma_{j, i}, \tau_{j, i}, \eta_{j,i}\right)$^[Note that as mentioned above although there appeared five parameters $\left(\alpha_{j, i}, \beta_{j, i}, \gamma_{j, i}, \tau_{j, i}, \eta_{j,i}\right)$ in the response function, only three parameters were "free" due to the two inherent restrictions between parameters.]. Note that $\mathbf{\theta}_{j,i}$ can be regarded as a representation of all soil, water and other field properties influencing yield response to N rates. The within-field spatial variability of those response parameters, as illustrated by @fig-field-map, were generated through Gaussian geo-statistical simulations using unconditional random fields. A total of 500 simulated fields were implemented using the R gstat [@graler2016spatio] package based on selected variogram parameters [@dietrich1996fast; @wood1994simulation]. 
+Let $\mathbf{\theta}_{j,i}$ denote the set of cell-specific response parameters $\left(\alpha_{j, i}, \beta_{j, i}, \gamma_{j, i}, \tau_{j, i}, \eta_{j,i}\right)$^[Note that as mentioned above although there appeared five parameters $\left(\alpha_{j, i}, \beta_{j, i}, \gamma_{j, i}, \tau_{j, i}, \eta_{j,i}\right)$ in the response function, only three parameters were "free" due to the two inherent restrictions between parameters.]. Note that $\mathbf{\theta}_{j,i}$ can be regarded as a representation of all soil, water and other field properties influencing yield response to N rates. The within-field spatial variability of those response parameters, as illustrated by @fig-field-map, were generated through Gaussian geo-statistical simulations using unconditional random fields. A total of 500 simulated fields were implemented using the R gstat [@pebesma2016] package based on selected variogram parameters [@dietrich1996fast; @wood1994simulation]. 
 
-The spherical variogram model with a range of 600m and a nugget of zero was used in the geo-statistical simulations. The range value implied the cells’ values were still spatially dependent within 600m, or in other words, cells’ value would not differ abruptly over distance shorter than 600m.  A Zero nugget value indicated zero covariance when two cells distance approached zero. The sill of each response parameter was set accordingly such that the true economically optimal N rates ranged from 113 kg/ha to 273 kg/ha across simulations, the average of the simulated yield was 11,416 kg/ha, and the mean value of simulation yield error terms  ($\varepsilon_{j, i}$) was 1,370 kg/ha. These results were comparable to the empirical data collected from OFPEs from eight corn production fields conducted by the Data-Intensive Farm Management Project (DIFM) in 2018 [@bullock2019data], which justified the simulated data were roughly realistic.
+The spherical variogram model with a range of 600m and a nugget of zero was used in the geo-statistical simulations. The range value implied the cells’ values were still spatially dependent within 600m, or in other words, cells’ value would not differ abruptly over distance shorter than 600m.  A Zero nugget value indicated zero covariance when two cells distance approached zero. The sill of each response parameter was set accordingly such that, across the `r calib$n_sims` simulated fields, the true cell-level economically optimal N rates ranged from `r calib$eonr_cell_min` kg/ha to `r calib$eonr_cell_max` kg/ha and the average simulated yield was `r format(calib$mean_yield, big.mark = ",")` kg/ha. These values were comparable to the empirical data collected from OFPEs on eight corn production fields conducted by the Data-Intensive Farm Management Project (DIFM) in 2018 [@bullock2019], which indicated the simulated data were roughly realistic.
 
 
 ### Experimental design
 
-Six trial N rates are used in each simulated on-farm experiment. In a given iteration, the $0\%$, $20\%$, $40\%$, $60\%$, $80\%$, and $100 \%$ quantiles of the true cell-specific plateau N rates ($\tau_{j, i}$) are calculated. Letting $Q(x)$ denote the $x\%$ quantile, the six N rates are set to be $\{Q(0) - 20, Q(20), Q(40), Q(60), Q(80), Q(100) + 20\}$. Note that 20 kg/ha was substracted from $Q(0)$ and 20 kg/ha was added to $Q(100)$. This ensures the minimum and maximum trial N rates would fully cover the true plateau points of all the cells. Each simulation's trial N rates differ slightly across iterations as each iteration has differing range of true optimal N rates. The average trial N rates across 500 simulations are approximately $\{80, 130, 154, 184, 219, 270\}$ kg/ha.
+Five trial N rates are used in each simulated on-farm experiment. In a given iteration, the lowest rate is set 40 kg/ha below the minimum and the highest rate 20 kg/ha above the maximum of the true cell-specific plateau N rates ($\tau_{j, i}$), with three intermediate rates spaced between them, so that the trial rates fully bracket the true plateau points of all the cells. Because each iteration draws a different field, the realized trial rates differ slightly across iterations. The average trial N rates across the `r calib$n_sims` simulations are approximately $\{`r paste(calib$avg_trial_rates, collapse = ",\\ ")`\}$ kg/ha.
 
-The spatial allocation of the six N trial rates followed a $6 × 6$ Latin square design. The whole experimental field was into $8 (= 4 × 2)$ blocks, each block including $36 (= 6 × 6)$ N plots to establish the Latin square design. Each of the six N rates was assigned to one plot in every row and column of the Latin square. Specifically, the N rate allocation followed a distinctive pattern [@li2023economic] such that any large, abrupt changes in N rates between adjacent plots were avoided along the row direction (i.e., the direction of N fertilizer application). This trial design accommodated the accuracy limitations of N application equipment commonly observed in real-world production, and also had superior economic performances compared to other trial designs [@li2023economic]. The experimental design from one example simulation is shown in the top panel of @fig-Nrate-yield. 
+The five N trial rates were spatially allocated following a $5 \times 5$ Latin square design [@li2023economic], in which each of the five rates appears exactly once in every row and every column of the $5 \times 5$ square. This $5 \times 5$ pattern is repeated (tiled) across the experimental field, which contains 288 N plots arranged as 12 plots along the length by 24 across the width. Within this design, the N rate allocation followed a distinctive pattern [@li2023economic] such that any large, abrupt changes in N rates between adjacent plots were avoided along the row direction (i.e., the direction of N fertilizer application). This trial design accommodated the accuracy limitations of N application equipment commonly observed in real-world production, and also had superior economic performance compared to other trial designs [@li2023economic]. The experimental design from one example simulation is shown in the top panel of @fig-Nrate-yield. 
 
 
 ```{r}
 #| label: fig-Nrate-yield
-#| fig-cap: "Experimental design of six nitrogen rates (top) and observed yield data (bottom)."
+#| fig-cap: "Experimental design of five nitrogen rates (top) and observed yield data (bottom)."
 
 knitr::include_graphics(here::here("writing/figures-tables/g_Nrate_yield.png"))
 ```
@@ -155,7 +171,7 @@ Note that N trial rate was applied at the much larger plot unit, and therefore t
 
 ### Observed field characteristics (independent variables) 
 
-It is important to note that the true response parameters ($\mathbf{\theta}_{j,i}$) and economically optimal N rates $N_{j, i}^*$ are assumed to not be directly observable by producers or researchers. Instead, we assumed that its was possible to observe that the values of certain field characteristics that help determine the values of the parameters. This study emulated this real-world limitations by creating some covariates to serve as the observable field characteristics. To emulate observable field characteristics, the underlying spatial variation in the true yield response parameters was decomposed into several spatially correlated components that served as covariates.
+It is important to note that the true response parameters ($\mathbf{\theta}_{j,i}$) and economically optimal N rates $N_{j, i}^*$ are assumed to not be directly observable by producers or researchers. Instead, we assumed that it was possible to observe the values of certain field characteristics that help determine the values of the parameters. This study emulated this real-world limitation by creating some covariates to serve as the observable field characteristics. To emulate observable field characteristics, the underlying spatial variation in the true yield response parameters was decomposed into several spatially correlated components that served as covariates.
 
 The yield-maximizing N rate ($\tau$) was split additively into $\tau^1$ and $\tau^2$ in random and spatially correlated manner:
 
@@ -184,7 +200,7 @@ Yield plateau ($\eta$) were decomposed in a different way:
 
 $$
 \eta = min(\eta^1, \eta^2), \;\;
-\eta^1 = min(\eta^{1,1}, \eta^{1,2}), \;\;\eta^2 = min(\eta^{2,1} + \eta^{2,2}). 
+\eta^1 = min(\eta^{1,1}, \eta^{1,2}), \;\;\eta^2 = min(\eta^{2,1}, \eta^{2,2}).
 $$ {#eq-eta-min}
 
 The four independent variables ($\eta^{1,1}_j$, $\eta^{1,2}_j$, $\eta^{2,1}_j$, $\eta^{2,2}_j$) are spatially correlated. This decomposition is highly non-linear unlike the decomposition of $\tau$ and it is likely harder for linear models to discover $\eta$ than the non-parametric ML models.
@@ -207,7 +223,7 @@ In this step, each of the candidate models are trained using the whole experimen
 
 <!-- Both steps 2-1 and 2-2 involves yield response and variable rate EONR estimation for each of the candidate models even though they differ in training data and the target dataset for which site-specific EONR are estimted (hereafter target data).  -->
 
-Next we detail how each of the candidate models is trained and how the site-specific EONRs are subsequently estimated based on the trained model. In all the models, the dependent variable is corn yield ($y_j$) and the same values of  ($N_j$, $\alpha_j$, $\beta_j$) are used as the independent variables.
+Next we detail how each of the candidate models is trained and how the site-specific EONRs are subsequently estimated based on the trained model. In all the models, the dependent variable is corn yield ($y_j$) and the N rate $N_j$ together with the observed field characteristics $X_j$ are used as the independent variables.
 
 ### Model training
 
@@ -240,7 +256,7 @@ where, $P_C$ and $P_N$ represent corn and nitrogen prices.
 
 #### Random Forest (RF) and Boosted Regression Forest (BRF)
 
-Unlike in the LM and SE approaches, in the random forest [@breiman2001random] and boosted regression forest [@friedman2001greedy] approaches, yield response functions are non-parametrically estimated without  functional form assumptions. These approaches are well known to more accurately predict yield **levels** than do traditional linear models, and their ability to estimate the marginal impact of input on crop yield can be questionable [@zhao2021causal].
+Unlike in the LM and SE approaches, in the random forest [@breiman2001random] and boosted regression forest [@friedman2001greedy] approaches, yield response functions are non-parametrically estimated without  functional form assumptions. These approaches are well known to more accurately predict yield **levels** than do traditional linear models, and their ability to estimate the marginal impact of input on crop yield can be questionable [@zhao2021causal]. Both the random forest and the boosted regression forest are estimated with the `grf` package [@tibshirani2018package] using 1,000 trees, with all tuning parameters selected automatically by the package's built-in cross-validation. This tuning relies on the package's internal prediction criterion rather than on the yield- or EONR-based selection losses, so it does not favor either selection approach.
 
 Letting $\widehat{f}(N, X)$) denote the estimated yield response function from either of the approaches, variable rate EONRs are calculated numerically by solving the following profit maximization problem at each site ($j$) of the field:
 
@@ -252,7 +268,7 @@ $$
 
 Unlike RF and BRF, which focus on predicting yield levels, causal forest (CF) focuses on identifying the causal heterogeneous impacts on yield of changes in a treatment level (N rate here). For this reason, CF has been shown to perform better than RF and BRF in estimating site-specific EONR [@kakimoto2022causal].
 
-Let, $N_k$ indicate the $k$^th lowest N experimental rates ($N_1$ is the lowest, and $N_5$ is the highest). In the CF approach, four treatments are defined where the lowest rate $(N_1)$ serves as the comparison base line: $N_2$ vs $N_1$, $N_3$ vs $N_1$, $N_4$ vs $N_1$, and $N_5$ vs $N_1$. Let $T_k$ indicate the treatment of $N_k$ vs $N_1$. Then the multia-arm^[This simply means that multiple heterogeneous treatment effects are estimated in a single model.] CF model is written as follows:
+Let, $N_k$ indicate the $k$^th lowest N experimental rates ($N_1$ is the lowest, and $N_5$ is the highest). In the CF approach, four treatments are defined where the lowest rate $(N_1)$ serves as the comparison base line: $N_2$ vs $N_1$, $N_3$ vs $N_1$, $N_4$ vs $N_1$, and $N_5$ vs $N_1$. Let $T_k$ indicate the treatment of $N_k$ vs $N_1$. Then the multi-arm^[This simply means that multiple heterogeneous treatment effects are estimated in a single model.] CF model is written as follows:
 
 $$
 \begin{align}
@@ -260,29 +276,29 @@ y_j = \sum_{k=2}^5 \theta_k(X_j)\cdot T_k + g(X_j).
 \end{align}
 $$
 
-In this equation, $\theta_k(\alpha_j, \beta_j)$ represents the heterogenous treatment effect of $T_k$ as a function of site-specific characteristics $\alpha_j$ and $\beta_j$. For example, $\theta_2(\alpha_j, \beta_j)$ represents the impact of increasing N level from $N_1$ to $N_2$ at the observed soil characteristic values. The final term, $g(\alpha_j, \beta_j)$, represents the direct impact of $\alpha_j$ and $\beta_j$ that do not come through a change in N rate.
+In this equation, $\theta_k(X_j)$ represents the heterogeneous treatment effect of $T_k$ as a function of the site-specific field characteristics $X_j$. For example, $\theta_2(X_j)$ represents the impact of increasing N level from $N_1$ to $N_2$ at the observed field characteristics. The final term, $g(X_j)$, represents the direct impact of $X_j$ that does not come through a change in N rate.
 
 Unlike the rest of the approaches, the estimated CF model cannot predict yield levels, rather it predicts the impact of treatments (changes in N rate). 
 
 $$
 \begin{align}
-y_j|_{N_k} - y_j|_{N_1} = \theta_k(X_j).
+\mathbb{E}\left[\,y_j|_{N_k} - y_j|_{N_1} \mid X_j\,\right] = \theta_k(X_j).
 \end{align}
 $$
 
-Then, the change in profit from increasing N rate from $N_1$ to $N_k$ for site $j$ is
+Then, the change in profit at site $j$ from increasing the N rate from $N_1$ to $N_k$ is
 
 $$
 \begin{align}
-P_C\cdot \theta_k(X_j) + P_N \cdot (N_k - N_1).
+P_C\cdot \theta_k(X_j) - P_N \cdot (N_k - N_1).
 \end{align}
 $$
 
-The EONR for site $j$ is $N_k$ that produces the highest positive profit differential unless all the profit differentials are negative, in which case, $N_1$ is the EONR.
+To obtain a site-specific EONR that is not restricted to the five experimental rates, we fit a smooth curve (a thin-plate spline) through the estimated treatment effects $\{\theta_k(X_j)\}_{k=1}^5$ as a function of the N rate, with the effect set to zero at the base rate $N_1$, and numerically solve the profit-maximization problem over a fine grid of N using that smoothed profit curve. The resulting EONR is continuous and therefore directly comparable to the EONRs produced by the other candidate models.
 
 ### True model performance {#sec-true-model}
 
-We use profit loss relative to the true site-specific EONR as the criteria for model performance as that is farmers’ ultimate objective. The average per-acre profit from true site-specific EONR (denoted as $\pi_{true}$) is
+We assess each candidate model's performance in two complementary ways. The first is the accuracy of its site-specific EONR, measured by the root mean squared error of the estimated EONR relative to the true site-specific EONR; the model with the lowest such error is the "true best model" referenced in the selection-frequency comparison (@fig-selection-performance and @tbl-accuracy-table). The second, developed in the rest of this section, is the profit loss relative to the true site-specific EONR, the outcome that is ultimately the farmer's objective and that we use in the profit-loss comparison (@fig-profit-loss). The two rankings are closely related but need not coincide exactly. The average per-acre profit from true site-specific EONR (denoted as $\pi_{true}$) is
 
 $$
 \begin{align}
@@ -292,7 +308,7 @@ $$
 
 This represents the maximum profit achievable average per-acre profit if the producer were to know every site-specific EONR.
 
-$\pi_m$ is the average profit per acre associate with the site-specific N prescription by model $m$:
+$\pi_m$ is the average profit per acre associated with the site-specific N prescription by model $m$:
 
 $$
 \begin{align}
@@ -312,7 +328,7 @@ The lower the value of $\Delta\pi_m$, the closer the management strategy has bro
 
 ## Model Selection (Step 2-2)
 
-We implement two model selection approaches: one based on yield prediction accuracy and the other based on local EONR prediction accuracy. Spatial cross-validation is employed with both approaches,. The entire dataset is randomly split into a train and test dataset in a spatially clustered manner, which is repeated to create multiple folds, as depicted in @fig-fold-example.
+We implement two model selection approaches: one based on yield prediction accuracy and the other based on local EONR prediction accuracy. Spatial cross-validation is employed with both approaches. The entire dataset is randomly split into a train and test dataset in a spatially clustered manner, which is repeated to create multiple folds, as depicted in @fig-fold-example.
 
 ```{r}
 #| label: fig-fold-example
@@ -321,7 +337,7 @@ We implement two model selection approaches: one based on yield prediction accur
 knitr::include_graphics("figures-tables/g_split_example.png")
 ```
 
-This process is repeated multiple times to create more folds. @tbl-fold-repeat presents the the complete set of combinations of the number of folds and repeats that are tried in our simulation analysis. As our main results, we present the results with case 5 (# of folds = 10 and # of repeats = 5) in @sec-results-main. Section @sec-results-sensitivity-fold-repeat will discuss how the choice of fold-repeat affects the performances of the model selection approaches.
+This process is repeated multiple times to create more folds. @tbl-fold-repeat presents the complete set of combinations of the number of folds and repeats that are tried in our simulation analysis. As our main results, we present the results with case 5 (# of folds = 10 and # of repeats = 5) in @sec-results-main. Section @sec-results-sensitivity-fold-repeat will discuss how the choice of fold-repeat affects the performances of the model selection approaches.
 
 
 ```{r}
@@ -359,13 +375,13 @@ data.table::CJ(
 Let $f$ index folds and let $F$ denote the total number of folds. For each of the candidate models, the following steps are implemented for each fold:
 
 1. train the model using the train data of the fold
-2. predict yield for each of the observations in the the test data based on the trained model ($\hat{y}_{j,f}$)
+2. predict yield for each of the observations in the test data based on the trained model ($\hat{y}_{j,f}$)
 3. calculate RMSE of yield prediction as $RMSE_{Yield_{m,f}} = \sqrt{\sum_{j=1}^{N_t}(\hat{y}_{j,f} - y_{j, f})^2/N_t}$
 
 Once this process is completed for all folds, the average RMSE for yield prediction is calculated for the model.
 
 $$
-RMSE_{Yield_{m}} = \sum_{f=1}^F RMSE_{Yield_{m, f}}.
+RMSE_{Yield_{m}} = \frac{1}{F}\sum_{f=1}^F RMSE_{Yield_{m, f}}.
 $$
 
 This process is repeated for all the models, and the model with the lowest average RMSE is selected.
@@ -374,13 +390,15 @@ This process is repeated for all the models, and the model with the lowest avera
 
 In selecting a model for EONR prediction, it would be ideal if we could assess models based on their ability to estimate site-specific EONRs rather than yields because our ultimate interests lie in estimating EONRs, not crop yield levels. Of course, this is simply impossible because, unlike crop yield, the true EONRs are never observable in real world settings. Our model selection approach attempts to meet this challenge by validating models on “local uniform EONR” estimated by a statistical model in place of unobservable true EONR. In other words, we treat the estimated local EONR as the proxy for the true local EONR and select models that are capable of best predicting the estimated local EONRs. Clearly, for our approach to perform well, it is vital that the estimation of local EONR is sufficiently accurate. In this study, we will use the GAM model to find local EONR because it can estimate yield response function without making any functional form assumptions. We first lay out the entire process and then provide details of the steps.
 
+Three considerations motivate this design. First, because the true site-specific EONR is never observable, a candidate's site-specific EONR map cannot be validated directly, and validating it against another model's site-specific EONR estimate would merely reward whichever candidate most resembles that benchmark rather than measure accuracy. We therefore validate against a target that is both estimable from data and independent of the candidate models. Second, we estimate that target on spatially clustered folds rather than on the whole field. Because the underlying field parameters are positively spatially correlated, the EONR is relatively homogeneous within a compact fold, so a single local uniform EONR is a faithful summary of the region and, importantly, can be estimated reliably from the fold's limited data. Collapsing the target to a local uniform value is thus a deliberate choice: it sets aside within-fold heterogeneity, which is small by construction, in exchange for a benchmark that can be estimated accurately. Validating each candidate's fold-averaged site-specific EONR against this local uniform EONR is therefore appropriate; it is not an attempt to validate within-fold heterogeneity directly, which no observable benchmark could support. Third, we estimate the local uniform EONR with a GAM that is not among the candidate models and that imposes no functional-form assumption, so agreement between a candidate and the benchmark is not an artifact of shared structure. Because different folds have different field characteristics and therefore different local EONRs, a candidate can track the local uniform EONR across folds only if it has captured how the field characteristics shift the yield response, and hence the EONR, from region to region, which is precisely the heterogeneity that profitable variable-rate management exploits.
+
 For each fold and a given candidate model, the following steps are performed:
 
 1. train the GAM model using the **test** data 
 2. estimate uniform EONR using the **test** data ($\hat{N}^*_{f,gam}$)
 3. train the candidate model using the **train** data 
 4. estimate site-specific EONR for the **test** data based on the trained candidate model ($\hat{N}^*_{j, f,m}$). 
-5. calcurate the average of the site-specific EONR from the step above ($\hat{N}^*_{f,m}$)
+5. calculate the average of the site-specific EONR from the step above ($\hat{N}^*_{f,m}$)
 
 Once the above processes are completed for all folds, then the RMSE of estimating local EONR is calculated as follows:
 
@@ -398,9 +416,9 @@ y_j = \sum_{s=1}^S \delta_s \phi_s(N_j)+ \varepsilon_j,
 \end{align}
 $$
 
-where $\phi_s(N_j)$ is $s^{\mathrm{th}}$ spline basis and $\delta_s$ is its coefficient. Collectively, $\sum_{s=1}^S \delta_s \phi_s(N_j)$ represents the the impact of N on corn yield. The model does not assume any functional form for the relationship between corn yield and N. Please note that neither $\alpha_j$ or $\beta_j$ are included as independent variables. It makes no attempt to identify interactive impact of N with  $\alpha_j$ or$\beta_j$. It is important to keep the model simple to make the estimation task light-weighted so that it can estimate yield response function reasonably well with a relatively small sample size of the test data.
+where $\phi_s(N_j)$ is the $s^{\mathrm{th}}$ spline basis and $\delta_s$ is its coefficient. Collectively, $\sum_{s=1}^S \delta_s \phi_s(N_j)$ represents the impact of N on corn yield. The model does not assume any functional form for the relationship between corn yield and N. Please note that none of the field characteristics $X_j$ are included as independent variables; the model makes no attempt to identify the interaction of N with $X_j$. It is important to keep the model simple so that the estimation task is light enough to recover the yield response function reasonably well with the relatively small sample size of the test data.
 
-Once the GAM model is trained, a uniform (not variable) EONR is obtained by numerically solving the profit maximization problem. We refer to the estimated EONR as “local EONR” because it is specific to the location of the test data. While the GAM model does not explicitly account for α_i or β_i, the estimated yield response function inherently captures their effects. For instance, if the test data for a given fold corresponds to a region of the field where soil characteristics lead to a strong yield response to nitrogen, this influence is embedded in the GAM’s estimation of the yield response for that area and, consequently, in the estimated local EONR. If a candidate model that explicitly accounts for the interaction between nitrogen and soil characteristics produces a similar local EONR, it indicates the model’s ability to statistically identify these interactive effects.
+Once the GAM model is trained, a uniform (not variable) EONR is obtained by numerically solving the profit maximization problem. We refer to the estimated EONR as “local EONR” because it is specific to the location of the test data. While the GAM model does not explicitly account for the field characteristics $X_j$, the estimated yield response function inherently captures their effects. For instance, if the test data for a given fold corresponds to a region of the field where soil characteristics lead to a strong yield response to nitrogen, this influence is embedded in the GAM’s estimation of the yield response for that area and, consequently, in the estimated local EONR. If a candidate model that explicitly accounts for the interaction between nitrogen and soil characteristics produces a similar local EONR, it indicates the model’s ability to statistically identify these interactive effects.
 
 Steps 3 and 4 are exactly the same as Step 2-1 except that the candidate models are trained on the train data of the fold and site-specific EONR are estimated for the test data of the fold.
 
@@ -449,12 +467,16 @@ num_lm_by_lenor_correct <- main_table[method == "LM", num_selected_leonr_correct
 
 num_brf_by_yield_correct <- main_table[method == "BRF", num_selected_yield_correct]
 
+num_brf_by_yield <- main_table[method == "BRF", num_selected_yield]
+
+num_lm_by_yield <- main_table[method == "LM", num_selected_yield]
+
 num_brf_true <- main_table[method == "BRF", num_selected_true]
 ```
 
 ## Performance of the model selection approaches {#sec-results-main}
 
-@fig-selection-performance presents the number of times models were selected by the two model selection approaches and also selected as the actual best performing model. The yield-based model selection approach selected BRF for all the 500 simulation rounds, but BRF was actually the best model in only `r num_brf_true` rounds. Among the candidate models, the linear spatial error model was the best most often at `r num_se_true`. Our model selection approach, on the other hand, selected SE as often as it was selected as the actual best. Our model selection approach tended to select BRF much less than it was chosen as the actual best.
+@fig-selection-performance presents the number of times models were selected by the two model selection approaches and also selected as the actual best performing model. The yield-based model selection approach selected BRF in `r num_brf_by_yield` of the 500 simulation rounds (and the linear model in the remaining `r num_lm_by_yield`), but BRF was actually the best model in only `r num_brf_true` rounds. Among the candidate models, the linear spatial error model was the best most often at `r num_se_true`. Our model selection approach, on the other hand, selected SE almost as often (`r num_se_by_leonr` times) as it was the actual best (`r num_se_true` times). Our model selection approach tended to select BRF much less than it was chosen as the actual best. Random forest is never the true best model and is essentially never selected by either approach (its bars sit at zero in @fig-selection-performance); it predicts yield levels reasonably but does not recover the yield response accurately enough to be competitive on EONR, and we retain it as a representative yield-prediction learner.
 
 ```{r}
 #| label: fig-selection-performance
@@ -462,7 +484,7 @@ num_brf_true <- main_table[method == "BRF", num_selected_true]
 knitr::include_graphics("figures-tables/g_ranking.png")
 ```
 
-@tbl-accuracy-table provides a deeper insights into the performance of the model selection approaches. Numbers in parenthesis indicate the number of times the model is selected. For example, the LEONR-based approach selected the SE model `r num_se_by_leonr` times. Numbers to the left of parenthesis indicate the number of times the model is correctly selected, meaning that a selection approach selected the model that indeed performed best. For example, among the `r num_se_true` times the SE model performed the best, the LEONR-based approach selected the SE model correctly `r num_se_by_leonr_correct` times. The LEONR-based approach selected the liner model `r num_lm_by_lenor` times, but its choice was correct only `r num_lm_by_lenor_correct` times. In total, the LEONR-based approach correctly selected the best model `r num_all_by_lenor_correct` times. The yield-based approach selected the BRF model for all the simulation rounds, while its choice was correct only `r num_brf_by_yield_correct` times. Overall, the LEONR-based approach performed far better than the yield-based approach.
+@tbl-accuracy-table provides a deeper insights into the performance of the model selection approaches. Numbers in parenthesis indicate the number of times the model is selected. For example, the LEONR-based approach selected the SE model `r num_se_by_leonr` times. Numbers to the left of parenthesis indicate the number of times the model is correctly selected, meaning that a selection approach selected the model that indeed performed best. For example, among the `r num_se_true` times the SE model performed the best, the LEONR-based approach selected the SE model correctly `r num_se_by_leonr_correct` times. The LEONR-based approach selected the linear model `r num_lm_by_lenor` times, but its choice was correct only `r num_lm_by_lenor_correct` times. In total, the LEONR-based approach correctly selected the best model `r num_all_by_lenor_correct` times. The yield-based approach selected the BRF model in `r num_brf_by_yield` of the 500 rounds, while its choice was correct only `r num_brf_by_yield_correct` times. Overall, the LEONR-based approach performed far better than the yield-based approach.
 
 
 ```{r}
@@ -471,17 +493,19 @@ knitr::include_graphics("figures-tables/g_ranking.png")
 readRDS("figures-tables/main_selection_accuracy_table.rds")
 ```
 
-Even when a selection approach selects a model that is not best in predicting site-specific EONR, we judge the selection approach as having performed well as long as its site-specific EONR was similar to that of the true model. @fig-profit-loss presents the distribution of the loss in profit relative to the actual best model defined in @sec-selection-performance. For example, if a selection approach correctly selects the best model, then the profit loss for that round would be zero. However, if a selection approach selects a sub-optimal model and its site-specific EONR recommendation made \$10/acre less than the profit generated by the recommendation from the best model, then the profit loss for that round was measured as \$10/acre. Since agricultural producers’ ultimate interest lies in the profitability, this measure is more relevant than the frequency of correctly selecting the best model. The figure shows the LEONR-based selection would result in a much smaller profit loss (much higher profit) compared to the yield-based selection.
+Even when a selection approach selects a model that is not best in predicting site-specific EONR, we judge the selection approach as having performed well as long as its site-specific EONR was similar to that of the true model. @fig-profit-loss presents the distribution of the loss in profit relative to the actual best model defined in @sec-selection-performance. For example, if a selection approach correctly selects the best model, then the profit loss for that round would be zero. However, if a selection approach selects a sub-optimal model and its site-specific EONR recommendation made \$10/acre less than the profit generated by the recommendation from the best model, then the profit loss for that round was measured as \$10/acre. Since agricultural producers’ ultimate interest lies in the profitability, this measure is more relevant than the frequency of correctly selecting the best model. The figure shows the LEONR-based selection would result in a much smaller profit loss (much higher profit) compared to the yield-based selection. To place these losses in economic context, in our simulations the true site-specific EONR earns on average \$`r round(rstat$baseline$vr_premium_mean, 1)`/acre more than the single best uniform N rate; the yield-based selection forfeits about `r round(100 * rstat$inference$yield_mean / rstat$baseline$vr_premium_mean)`% of this variable-rate premium, whereas the LEONR-based selection forfeits only about `r round(100 * rstat$inference$leonr_mean / rstat$baseline$vr_premium_mean)`%.
 
 ```{r}
 #| label: fig-profit-loss
-#| fig-cap: "Distribution of profit loss associated with the seleted models relative to the actual best models"
+#| fig-cap: "Distribution of profit loss associated with the selected models relative to the actual best models"
 knitr::include_graphics("figures-tables/g_pi_loss.png")
 ```
 
+To assess whether this difference reflects more than Monte Carlo variation, we exploit the fact that both selection criteria are evaluated on the same `r rstat$inference$n_sims` simulated fields and treat their per-field profit losses as paired observations. The mean profit loss is \$`r round(rstat$inference$leonr_mean, 2)`/acre for the LEONR-based approach (median \$`r round(rstat$inference$leonr_med, 2)`/acre) versus \$`r round(rstat$inference$yield_mean, 2)`/acre for the yield-based approach (median \$`r round(rstat$inference$yield_med, 2)`/acre). The mean paired difference is \$`r round(rstat$inference$diff_mean, 2)`/acre (95% confidence interval \$`r round(rstat$inference$diff_ci_lo, 2)` to \$`r round(rstat$inference$diff_ci_hi, 2)`/acre; paired $t = `r round(rstat$inference$diff_t, 1)`$), and the LEONR-based approach is no worse than the yield-based approach in `r round(100 * rstat$inference$share_leonr_beats)`% of the simulated fields. Consistently, the LEONR-based approach selects the true best model in `r round(100 * rstat$success$leonr_rate, 1)`% of fields (Monte Carlo standard error `r round(100 * rstat$success$leonr_se, 1)` percentage points) versus `r round(100 * rstat$success$yield_rate, 1)`% (standard error `r round(100 * rstat$success$yield_se, 1)`) for the yield-based approach. The advantage of the LEONR-based criterion is thus well outside Monte Carlo error.
+
 ## Accuracy of Local EONR estimation with GAM
 
-Our selection approach uses GAM-estimated local EONRs as proxies for the true yet unobservable local EONRs. Therefore, it goes without saying that the accuracy of local EONR estimation by GAM is critical for our selection approach. @fig-cor-gam-leonr presents the scatter plots of true LEONR (y-axis) and estimated LEONR (x-axis) for all the folds generated for the 500 simulations. While there are two clusters of GAM-estimated local EONRs that over- and under-estimate the true local EONRs, the vast majority of the data points are located around the 1-to-1 line (red dotted line), indicating the usefulness of GAM-based estimation of local EONR in our model selection approach. Our selection approach used GAM because it is capable of capturing the functional form of yield response to nitrogen without the functional form assumptions typically made in empirical studies. However, our model selection approach is of course not just limited to GAM, and it may be worthwhile to explore other statistical approaches as a way to estimate LEONR in future studies.
+Our selection approach uses GAM-estimated local EONRs as proxies for the true yet unobservable local EONRs, so the accuracy of the GAM-estimated local EONR is important for our approach. @fig-cor-gam-leonr presents the scatter plots of true local EONR (y-axis) and GAM-estimated local EONR (x-axis) for all the folds generated across the 500 simulations. Most points fall near the 1-to-1 line (red dotted line), but the proxy is not unbiased everywhere: a subset of folds forms a lower cluster in which GAM over-estimates the true local EONR, and GAM tends to under-estimate at high true local EONR. What matters for model selection, however, is not that the proxy be unbiased but that it be accurate enough to discriminate among candidate models, and the selection results above indicate that it is: models chosen by their agreement with the GAM proxy deliver substantially smaller profit losses than those chosen by yield accuracy. We use GAM because it captures the functional form of yield response to nitrogen without the assumptions typically made in empirical studies; the approach is not tied to GAM, and exploring alternative estimators of the local EONR (including ones designed to reduce the bias visible here) is a worthwhile direction for future work.
 
 ```{r}
 #| label: fig-cor-gam-leonr
@@ -499,11 +523,34 @@ knitr::include_graphics("figures-tables/g_gam_leonr.png")
 knitr::include_graphics("figures-tables/g_sensitivity_fold_repeat.png")
 ```
 
-@fig-fold-repeat presents a comparison across various combinations of folds and repeats of two model selection criteria: local EONR- and yield-based. The x-axis represents the ranking of the ML models in estimating true site-specific EONRs, with rank 1 indicating the best-performing model in estimating site-specific EONRs compared to true EONRs.
+```{r}
+#| label: fold-repeat-rates
+#| include: false
 
-In the context of local EONR model selection, the y-axis depicts the frequency of selecting the right model. The local EONR criterion consistently demonstrated an increasing trend in accuracy as the number of folds and repeats increased. For example, with 5 folds and 1 repeat, the correct model was selected in approximately 57.2 percent of simulations. This success rate improved to 58.4 percent with 5 repeats, and further to 62.4 percent with 7 folds and 5 repeats. Notably, increasing the number of folds to 10 while maintaining 5 repeats resulted in a substantial improvement, achieving a success rate of 65.8 percent. The pattern continued across different combinations, such as 5 folds and 10 repeats (59.4 percent success) and 10 folds and 10 repeats (65.2 percent success). This consistent improvement in accuracy underscores the positive impact of increasing the number of folds and repeats on the local EONR model selection. In contrast, the yield-based model selection exhibited a lower success rate in identifying the best-performing model for EONR estimation. Across all combinations of folds and repeats, the yield-based method consistently achieved a success rate between 14.2 and 14.4 percent. This low success rate remained largely unaffected by variations in the number of folds and repeats. We infer that altering the fold and repeat parameters did not significantly influence the performance of the yield-based model selection in accurately identifying the optimal model for EONR estimation.
+#--- success rate (fraction of sims selecting the true best model) by fold-repeat combination ---#
+fr_rates <-
+  accuracy_table[, .(
+    n_sims = sum(num_selected_true),
+    leonr_correct = sum(num_selected_leonr_correct),
+    yield_correct = sum(num_selected_yield_correct)
+  ), by = .(num_folds, num_repeats)]
+fr_rates[, leonr_pct := round(100 * leonr_correct / n_sims, 1)]
+fr_rates[, yield_pct := round(100 * yield_correct / n_sims, 1)]
 
-The findings from these two model selection criteria highlight a clear distinction in their responses to different combinations of folds and repeats. While the local EONR criterion exhibited a notable increase in accuracy as folds and repeats were increased, the yield-based model selection method consistently demonstrated limited effectiveness across all scenarios.
+#--- helper to pull a percentage for a given (folds, repeats) ---#
+fr <- function(f, r, col) fr_rates[num_folds == f & num_repeats == r, get(col)]
+
+leonr_pct_min <- fr_rates[, min(leonr_pct)]
+leonr_pct_max <- fr_rates[, max(leonr_pct)]
+yield_pct_min <- fr_rates[, min(yield_pct)]
+yield_pct_max <- fr_rates[, max(yield_pct)]
+```
+
+@fig-fold-repeat presents a comparison across the nine combinations of folds and repeats (folds of 5, 10, and 20; repeats of 1, 5, and 10) for the two model selection criteria: local EONR- and yield-based. The x-axis represents the ranking of the candidate models in estimating true site-specific EONRs, with rank 1 indicating the best-performing model in estimating site-specific EONRs compared to true EONRs.
+
+In the context of local EONR model selection, the y-axis depicts the frequency of selecting the true best model. The local EONR criterion selected the true best model in `r leonr_pct_min` to `r leonr_pct_max` percent of simulations across the nine combinations. Increasing the number of repeats generally improved accuracy: holding the number of folds at 10, the success rate rose from `r fr(10, 1, "leonr_pct")` percent with a single repeat to `r fr(10, 5, "leonr_pct")` percent with five repeats and `r fr(10, 10, "leonr_pct")` percent with ten repeats. Increasing the number of folds, by contrast, did not produce a consistent improvement; for example, with five repeats the success rate was `r fr(5, 5, "leonr_pct")` percent at 5 folds, `r fr(10, 5, "leonr_pct")` percent at 10 folds, and `r fr(20, 5, "leonr_pct")` percent at 20 folds. In contrast, the yield-based model selection identified the best-performing model for EONR estimation far less often. Across all combinations of folds and repeats, the yield-based method achieved a success rate of only `r yield_pct_min` to `r yield_pct_max` percent, and this rate was essentially unaffected by the number of folds and repeats.
+
+The findings from these two model selection criteria highlight a clear distinction in their responses to different combinations of folds and repeats. The local EONR criterion benefits modestly from additional repeats and selected the true best model in roughly two-thirds of iterations, whereas the yield-based method remained near `r round((yield_pct_min + yield_pct_max) / 2)` percent regardless of the cross-validation configuration. In every fold-repeat combination, the local EONR criterion substantially outperformed the yield-based criterion.
 
 ## Was our approach just lucky?
 
@@ -528,7 +575,7 @@ readRDS("figures-tables/selection_accuracy_table_no_sp_ft.rds")
 
 ```{r}
 #| label: fig-economic-loss-no-sp
-#| fig-cap: "Distribution of profit loss associated with the seleted models relative to the actual best models when the field paramters are not highly spatially correlated"
+#| fig-cap: "Distribution of profit loss associated with the selected models relative to the actual best models when the field parameters are not highly spatially correlated"
 
 knitr::include_graphics("figures-tables/g_pi_loss_nosp.png")
 ```
@@ -542,6 +589,8 @@ Our results show that selecting models based on yield prediction accuracy does n
 We also showed that the proposed approach performs well even when the true best model is not selected, as long as the selected model produces similar EONR estimates and thus similar economic outcomes. The effectiveness of the approach depends on the accuracy of local EONR estimation, and our findings suggest that flexible methods such as GAM can provide a useful proxy for unobservable true EONRs. In addition, increasing the number of folds and repeats in spatial cross-validation improves the performance of the proposed approach, while having little effect on the yield-based method.
 
 Our findings highlight that model selection should be aligned with the ultimate decision objective rather than with the tasks performed in the prediction process. When the goal is to provide profitable input recommendations, evaluating models based on their ability to estimate economically relevant outcomes is more appropriate than evaluating them based on yield prediction accuracy.
+
+Several limitations bound these conclusions. The evidence comes from a single simulation design, one crop, one quadratic-plateau yield-response form, one spatial-correlation structure, one corn-to-nitrogen price ratio, and a fixed set of five candidate models, so the magnitudes reported here should be read as specific to that design rather than as general estimates. The external validity of the approach rests on how faithfully the data-generating process represents real fields, and we do not validate it on real on-farm data. The proposed criterion validates each candidate against a regional uniform EONR and so relies on the within-fold homogeneity of EONR induced by spatial correlation; where field parameters are only weakly spatially correlated this assumption is less tenable, although even in that case the proposed approach still outperformed yield-based selection. Finally, the GAM proxy is systematically biased in a subset of folds, and estimators that reduce this bias may further improve selection.
 
 Future research may extend this framework by exploring alternative methods for estimating local EONRs, incorporating additional sources of uncertainty, and applying the approach to real world on-farm precision experiment data.
 

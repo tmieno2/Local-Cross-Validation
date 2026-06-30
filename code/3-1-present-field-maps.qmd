@@ -156,6 +156,82 @@ plot_sf <-
 )
 ```
 
+### Presentation
+
+```{r}
+g_field_map_presentation <-
+  ggplot() +
+  geom_sf(data = gdata, aes(fill = b0), color = gray(0.5), linewidth = 0.1) +
+  scale_fill_gradientn(colours = rev(terrain.colors(100))) +
+  #--- add arrows and text on fields ---
+  geom_segment(
+    aes(
+      x = fbox["xmin"],
+      y = fbox["ymax"] + 12,
+      xend = fbox["xmax"],
+      yend = fbox["ymax"] + 12
+    ),
+    arrow = arrow(
+      length = unit(0.2, "cm"),
+      ends = "both",
+      type = "closed"
+    ),
+    linewidth = 0.5,
+    lineend = "butt",
+    linejoin = "mitre"
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 24),
+    legend.position = "none",
+    plot.margin = margin(0, 0, 0, 0)
+  ) +
+  guides(
+    fill = guide_colorbar(
+      barwidth = 1,
+      barheight = 12,
+      title = "",
+      title.position = "top",
+      title.vjust = 1
+    )
+  ) +
+  annotate("text", x = 430, y = fbox["ymax"] + 24, label = "864m", hjust = 0, size = 5) +
+  geom_segment(
+    aes(
+      x = fbox["xmin"] - 12,
+      y = fbox["ymin"],
+      xend = fbox["xmin"] - 12,
+      yend = fbox["ymax"]
+    ),
+    arrow = arrow(length = unit(0.2, "cm"), ends = "both", type = "closed"),
+    linewidth = 0.5,
+    lineend = "butt",
+    linejoin = "mitre"
+  ) +
+  annotate(
+    "text",
+    x = fbox["xmin"] - 24,
+    y = 220,
+    label = "432m",
+    hjust = 0,
+    size = 5,
+    angle = 90
+  ) +
+  coord_sf(
+    xlim = c(fbox["xmin"] - 32, fbox["xmax"] + 5),
+    ylim = c(fbox["ymin"] - 5, fbox["ymax"] + 32),
+    expand = FALSE
+  )
+
+ggsave(
+  file = here::here("writing/figures-tables/g_field_map_presentation.png"),
+  g_field_map_presentation,
+  width = 7,
+  height = 3.7,
+  bg = "white"
+)
+```
+
 ## zoomed N plot
 ```{r}
 # select one plot
@@ -290,16 +366,19 @@ gdata <-
 
 ```{r}
 # target N rate data
-new_levels <- c("transition", levels(gdata$N_tgt %>% factor()))
+new_levels <- 
+  c("transition", levels(gdata$N_tgt %>% factor())) %>%
+  unique()
 
 gdata <-
-  gdata %>%
+  copy(gdata) %>%
   data.table() %>%
   .[, N_tgt := factor(N_tgt)] %>%
   .[is.na(N_tgt), N_tgt := "transition"] %>%
   .[, N_tgt := factor(N_tgt, levels = new_levels)] %>%
   st_as_sf()
 
+(
 g_N <-
   ggplot() +
   geom_sf(data = gdata, aes(fill = (N_tgt)), color = "grey10", linewidth = 0.1) +
@@ -313,9 +392,43 @@ g_N <-
     plot.title = element_text(hjust = 0.5, size = 20, family = "serif"),
     legend.position = "right",
     legend.title = element_text(size = 18, face = "bold", family = "serif"),
-    legend.key.size = unit(1.2, "cm"),
+    legend.key.size = unit(0.6, "cm"),
     legend.text = element_text(size = 18, family = "serif")
   )
+)
+
+```
+
+### Presentation
+
+```{r}
+(
+g_N_prep <-
+  ggplot() +
+  geom_sf(data = gdata, aes(fill = (N_tgt)), color = "grey10", linewidth = 0.1) +
+  scale_fill_viridis_d(
+    name = "N trial rate (kg/ha)"
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 18),
+    legend.position = "right",
+    legend.title = element_text(size = 18),
+    legend.key.size = unit(0.6, "cm"),
+    legend.text = element_text(size = 18),
+    plot.margin = margin(0, 0, 0, 0)
+  ) +
+  coord_sf(expand = FALSE)
+)
+
+ggsave(
+  here::here("Writing/figures-tables/g_Nrate.png"),
+  g_N_prep,
+  width = 7,
+  height = 3,
+  bg = "white"
+)
+
 ```
 
 ## Observed yield map
@@ -343,6 +456,39 @@ g_y <-
     title = "(kg/ha)",
     title.position = "top", title.vjust = 2
   ))
+
+
+```
+
+### Presentation
+
+```{r}
+g_yield_presentation <-
+  ggplot() +
+  geom_sf(data = gdata_y, aes(fill = yield), color = NA) +
+  scale_fill_gradientn(colors = c("red2", "yellow", "green4"), na.value = "white") +
+  theme_void() +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(size = 16),
+    legend.text = element_text(size = 16),
+    plot.margin = margin(0, 0, 0, 0),
+    legend.box.spacing = unit(12, "pt")
+  ) +
+  guides(fill = guide_colorbar(
+    barwidth = 20, barheight = 1,
+    title = "Observed Corn Yield (kg/ha)",
+    title.position = "top", title.vjust = 2
+  )) +
+  coord_sf(expand = FALSE)
+
+ggsave(
+  here::here("Writing/figures-tables/g_yield_presentation.png"),
+  g_yield_presentation,
+  width = 7,
+  height = 4.5,
+  bg = "white"
+)
 ```
 
 

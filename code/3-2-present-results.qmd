@@ -121,6 +121,43 @@ ggsave(
 )
 ```
 
+```{r}
+g_ranking_presentation <-
+  accuracy_table[num_folds == 10 & num_repeats == 5, ] %>%
+  .[, .(method, num_selected_true, num_selected_leonr, num_selected_yield)] %>%
+  melt(id.vars = "method") %>%
+  .[, select_type := case_when(
+    variable == "num_selected_true" ~ "True",
+    variable == "num_selected_leonr" ~ "Local EONR",
+    variable == "num_selected_yield" ~ "Yield"
+  )] %>%
+  .[, select_type := factor(select_type, levels = c("True", "Local EONR", "Yield"))] %>%
+  ggplot(.) +
+  geom_bar(
+    aes(y = value, x = method, fill = select_type),
+    stat = "identity",
+    position = "dodge"
+  ) +
+  scale_fill_viridis_d() +
+  theme_bw() +
+  labs(x = "Model", y = "Count", fill = "Selection Type") +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(vjust = 0.5, size = 14),
+    legend.text = element_text(size = 13),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 13)
+  )
+
+ggsave(
+  "writing/figures-tables/g_ranking_presentation.png",
+  g_ranking_presentation,
+  width = 6,
+  height = 4,
+  dpi = 400
+)
+```
+
 ## Profit loss
 
 ```{r}
@@ -167,6 +204,38 @@ ggsave(
 )
 ```
 
+```{r}
+g_pi_loss_presentation <-
+  ggplot(profit_loss_data[num_folds == 10 & num_repeats == 5, ]) +
+  geom_histogram(
+    aes(
+      x = value,
+      y = ifelse(
+        after_stat(count) > 0, after_stat(count), NA
+      )
+    ),
+    color = "blue",
+    fill = "white"
+  ) +
+  facet_wrap(selection ~ ., ncol = 1) +
+  ylab("Number of iterations") +
+  xlab("Profit loss relative to the true best model ($/acre)") +
+  theme_bw() +
+  theme(
+    strip.text = element_text(size = 14),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 13)
+  )
+
+ggsave(
+  here::here("writing/figures-tables/g_pi_loss_presentation.png"),
+  g_pi_loss_presentation,
+  dpi = 300,
+  width = 6,
+  height = 4
+)
+```
+
 ## Correlation Between GAM-Estimated EONR and True EONR
 
 ### Main case
@@ -176,7 +245,7 @@ ggsave(
 gam_leonr_fit_main <-
   ggplot(sum_results_gam[num_folds == 10 & num_repeats == 5, ]) +
   geom_point(
-    aes(x = opt_N, y = opt_N_gam),
+    aes(x = opt_N_gam, y = opt_N),
     size = 0.5
   ) +
   geom_abline(
@@ -187,8 +256,8 @@ gam_leonr_fit_main <-
   ) +
   xlim(50, 300) +
   ylim(50, 300) +
-  ylab("True optimal Local EONR (lb/acre)") +
-  xlab("GAM-estimated optimal Local EONR (lb/acre)") +
+  ylab("True optimal Local EONR (kg/ha)") +
+  xlab("GAM-estimated optimal Local EONR (kg/ha)") +
   theme_bw() +
   theme(
     legend.position = "bottom"
@@ -211,7 +280,7 @@ ggsave(
 gam_leonr_fit_all <-
   ggplot(sum_results_gam) +
   geom_point(
-    aes(x = opt_N, y = opt_N_gam),
+    aes(x = opt_N_gam, y = opt_N),
     size = 0.5
   ) +
   geom_abline(
@@ -230,8 +299,8 @@ gam_leonr_fit_all <-
       `Number of Repeats` = label_both
     )
   ) +
-  ylab("True optimal Local EONR (lb/acre)") +
-  xlab("GAM-estimated optimal Local EONR (lb/acre)") +
+  ylab("True optimal Local EONR (kg/ha)") +
+  xlab("GAM-estimated optimal Local EONR (kg/ha)") +
   theme_bw() +
   theme(
     legend.position = "bottom"
@@ -431,12 +500,12 @@ ggsave(
 ```{r}
 #--- first simulation ---#
 whole_data <-
-  readRDS(here::here("Shared/Data/SimData/sim_data_1.rds"))$data[[1]] %>%
+  readRDS(here::here("data/main/individual-fields/sim_data_1.rds"))$data[[1]] %>%
   data.table()
 
 #--- train or test ---#
 train_test_split_q <-
-  readRDS(file.path(results_folder, "sim_results_num_repeats_1_num_folds_5/train_test_split.rds"))
+  readRDS(here::here("results/main/sim_results_num_repeats_1_num_folds_5/train_test_split.rds"))
 
 spatial_folds_q <-
   train_test_split_q %>%
@@ -480,8 +549,37 @@ ggplot2::ggsave(
   here::here("writing/figures-tables/g_split_example.png"),
   g_split_example,
   dpi = 300,
-  height = 6,
-  width = 6
+  width = 6,
+  height = 6
+)
+```
+
+```{r}
+(
+g_split_example_presentation <-
+  ggplot(spatial_folds_q) +
+  geom_sf(aes(fill = type), color = NA) +
+  facet_wrap(split_txt ~ ., ncol = 3) +
+  scale_fill_discrete(
+    name = "Role of the data",
+    guide = guide_legend(title.position = "top", nrow = 1)
+  ) +
+  theme_void() +
+  theme(
+    legend.position = "inside",
+    legend.position.inside = c(0.85, 0.2),
+    strip.text = element_text(size = 14),
+    legend.text = element_text(size = 14),
+    legend.title = element_text(size = 14)
+  )
+)
+
+ggplot2::ggsave(
+  here::here("writing/figures-tables/g_split_example_presentation.png"),
+  g_split_example_presentation,
+  width = 6,
+  height = 3,
+  dpi = 300
 )
 ```
 
@@ -490,7 +588,7 @@ ggplot2::ggsave(
 ```{r}
 #--- first simulation ---#
 whole_data <-
-  readRDS(here::here("data/main/sim_data_1.rds"))$data[[1]] %>%
+  readRDS(here::here("data/main/individual-fields/sim_data_1.rds"))$data[[1]] %>%
   data.table()
 
 #--- train or test ---#
@@ -516,7 +614,8 @@ spatial_folds_q <-
   sf::st_as_sf() %>%
   dplyr::mutate(split_txt := paste0("Fold ", split_id))
 
-spatial_folds_q <- spatial_folds_q %>%
+spatial_folds_q <- 
+  spatial_folds_q %>%
   arrange(split_id) %>%  #  correct order in dataset
   mutate(split_txt = factor(split_txt, levels = unique(split_txt)))  # convert to ordered factor
 
@@ -541,7 +640,7 @@ g_split_example_10_folds <-
 )
 
 ggplot2::ggsave(
-  here::here("GitControlled/Writing/figures-tables/g_split_example_10_folds.png"),
+  here::here("Writing/figures-tables/g_split_example_10_folds.png"),
   g_split_example_10_folds,
   dpi = 300,
   height = 6,
