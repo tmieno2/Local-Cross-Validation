@@ -1,0 +1,103 @@
+---
+title: "Response to Editor"
+format:
+  docx: default
+  pdf: default
+---
+
+**Manuscript ID:** 511720cb-4708-4065-96c3-ff7ddfb3d596  
+**Manuscript title:** *A New Approach to Model Selection Based on Local Economically Optimal Input Application Rates*
+
+Dear Editors,
+
+Thank you for the constructive comments and recommendations. The manuscript has been substantially revised to improve its accessibility and relevance for the multidisciplinary readership of *Precision Agriculture*. The comments are addressed individually below.
+
+## Comment 1
+
+**Editor comment:**  
+*"Explaining that economic criteria for production function selection has a long history in agricultural economics. It is correct that ‘conventional yield-based selection’ is quite common for commercial variable rate nitrogen algorithms, but that can not be said for functional form selection in agricultural economics research."*
+
+**Response:**  
+Thank you. The Introduction has been revised to explicitly acknowledge the long history of using economic criteria to evaluate agricultural production functions, including Heady and Dillon (1961). The contribution is now distinguished from this established principle and framed specifically as the problem of implementing economically relevant model selection for site-specific nitrogen management when the local economic validation target is not directly available. The discussion of yield-based model selection is also limited to modern site-specific crop-management applications rather than functional-form selection in agricultural economics generally.
+
+**Location in revised manuscript:** *Introduction*, third paragraph, beginning “The use of economic criteria to evaluate agricultural production functions is not new.”
+
+## Comment 2
+
+**Editor comment:**  
+*"Explain that site-specific EONRs are unobservable ex ante, but could be estimated with high precision ex post with spatially dense experimental data. Accurate ex post EONRs can't be estimated with conventional yield monitor data because those data points aggregate over the width of the combine head, are affected by combine dynamics and other factors, but they could be quite accurately estimated by hand harvest or by robotic harvest of individual plants. The statement that true EONRs are unobservable should be qualified as unobservable ex ante with combine yield monitors and the kind of experimental design used by Data-Intensive Farm Management (DIFM) team."*
+
+**Response:**  
+The manuscript has been revised to distinguish explicitly between **ex-ante** and **ex-post** EONRs. It now explains that site-specific EONRs are unknown when N-management decisions must be made, but may be estimated ex post when sufficiently dense and precise measurements are available. The limitations of conventional combine yield-monitor data, including cutting width and grain-transport dynamics, are discussed, together with the potential for more direct harvest methods such as hand harvest or plant-level robotic harvest to provide more precise local estimates.
+
+The Discussion also clarifies that the proposed local EONR is an estimated validation target derived from field data rather than a direct observation of the true EONR.
+
+**Location in revised manuscript:** *Introduction*, fourth paragraph, beginning “Ideally, candidate models could be evaluated…”; *Discussion*, paragraph beginning “The results also need to be interpreted in relation to what can actually be observed in an OFPE.”
+
+## Comment 3
+
+**Editor comment:**  
+*"Explain why ex post estimation of EONRs is the best approach to implementing precision nitrogen fertilization. Spatial yield patterns can vary widely from season to season because of temporal and spatial rainfall variability, pest infestation patterns, microclimate shifts and other factors. Even the best ex post EONR is only an approximate guide to nitrogen applications that must be made before complete knowledge of the season's condition."*
+
+**Response:**  
+This limitation is now addressed explicitly. The Introduction explains that even a highly accurate ex-post EONR remains only an approximate guide for future N decisions because spatial yield-response patterns may change between seasons due to rainfall distribution, pest pressure, microclimate, and other growing conditions. The Discussion further identifies transferability across growing seasons as an important limitation and a priority for future field-based evaluation.
+
+**Location in revised manuscript:** *Introduction*, fourth paragraph; *Discussion*, final paragraph.
+
+## Comment 4
+
+**Editor comment:**  
+*"Sections 2 and 3 should be revised with a multidisciplinary readership in mind. The main thrust of the manuscript should be understandable to any agricultural researcher of any discipline, while providing supplementary materials and references for those who want to pursue the topic in more detail. Much of sections 2 and 3 could be in supplementary materials."*
+
+**Response:**  
+The Method and Results have been substantially reorganized and simplified. The Method now begins with a four-step overview separating data generation, identification of the best-performing candidate model, model selection using information available from OFPE data, and evaluation of model-selection performance.
+
+Technical equations and detailed model specifications have been moved to **Online Resource 1**, including the spatial simulation, construction of field-characteristic covariates, candidate-model specifications, performance benchmarks, model-selection criteria, evaluation measures, and weaker-spatial-correlation setting.
+
+**Location in revised manuscript:** *Method*, beginning with the four-step workflow and throughout the Method subsections; *Online Resource 1*, Sections S1–S6.
+
+## Comment 5
+
+**Editor comment:**  
+*"Discussion of the implications of the results is needed."*
+
+**Response:**  
+A separate Discussion section has been added. It interprets the distinction between yield-prediction accuracy and EONR accuracy, the relationship between EONR accuracy and profitability, the role and limitations of the local validation target, sensitivity to cross-validation design and spatial correlation, implications for variable-rate N management, measurement limitations, and the need for validation with real OFPE data.
+
+**Location in revised manuscript:** *Discussion*, entire section.
+
+## Comment 6
+
+**Editor comment:**  
+*"PRAG sections are not numbered."*
+
+**Response:**  
+Section numbering has been removed throughout the revised manuscript. The labels **Step 1**, **Step 2-1**, **Step 2-2**, and **Step 3** have been retained only to identify stages of the analytical workflow.
+
+**Location in revised manuscript:** Throughout the manuscript; all section and subsection headings are now unnumbered.
+
+## Comment 7
+
+**Editor comment:**  
+*"Results and discussion should be separate sections. Discussion of the implications of results are largely lacking in this manuscript."*
+
+**Response:**  
+Results and Discussion are now presented as separate sections. The Results report the model-selection, economic-performance, validation-target, and sensitivity findings, while the Discussion focuses on their interpretation, practical implications, and limitations.
+
+**Location in revised manuscript:** Separate *Results* and *Discussion* sections.
+
+## Comment 8
+
+**Editor comment:**  
+*"Avoid using first person pronouns."*
+
+**Response:**  
+First-person pronouns have been removed throughout the revised manuscript and Online Resource 1, and the affected passages have been rewritten in neutral scientific language.
+
+**Location in revised manuscript:** Throughout the main manuscript and Online Resource 1.
+
+Thank you again for the constructive suggestions. We believe the revisions have substantially improved the clarity, positioning, and relevance of the manuscript for the readership of *Precision Agriculture*.
+
+Sincerely,  
+**Mona Mousavi**  
+on behalf of the authors
