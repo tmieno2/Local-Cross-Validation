@@ -1,0 +1,96 @@
+---
+title: "Editor Comments"
+format:
+  html: default
+  docx: default
+---
+
+
+
+Your manuscript, "A New Approach to Model Selection Based on Local
+Economically Optimal Input Application Rates", has now been assessed.
+
+We invite you to revise your paper, carefully addressing the comments from the
+reviewers and the editor. Please ensure the results are accurately reported,
+any overstated conclusions are rewritten and the limitations of the work fully
+explained. When your revision is ready, please submit the updated manuscript
+and a point-by-point response. This will help us move to a swift decision.
+
+**Editor Comments**
+
+> "This manuscript could be relevant to PRAG readers if it were revised to
+> communicate effectively with those readers who represent a wide range of
+> agricultural disciplines. As submitted the target audience of the manuscript is
+> hard to determine. Selecting production functions based on economic criteria is
+> an old idea in agricultural economics (see for example: Heady and Dillon,
+> Agricultural Production Functions, Iowa State University Press, 1961), so the
+> introduction would be old news to most agricultural economists. But most of the
+> manuscript (from line 114 on) is most likely to be understood by agricultural
+> economists. The rural sociologists, agronomists and agricultural engineers in
+> the PRAG readership are likely to be baffled by the methodology and results
+> sections. It would be hard to justify sending this manuscript out to PRAG
+> reviewers in its current form. Reviewer time is precious and should focused on
+> manuscript that are focused on a PRAG readership. My recommendation is a major
+> revision that would make the manuscript more friendly to PRAG readers. The
+> revision should include:
+>
+> - Explaining that economic criteria for production function selection has a
+>   long history in agricultural economics. It is correct that "conventional
+>   yield-based selection" is quite common for commerical variable rate
+>   nitrogen algorithms, but that can not be said for functional form selection in
+>   agricultural economics research.
+>
+> - Explain the that site-specific EONRs are unobservable ex ante, but could be
+>   estimated with high precision ex post with spatially dense experimental data.
+>   Accurate ex post EONRs can't be estimated with conventional yield monitor data
+>   because those data points aggregate over the width of the combine head, are
+>   affected by combine dynamics and other factors, but they could be quite
+>   accurate estimated by hand harvest or by robotic harvest of individual plants.
+>   The statement that true EONRs are unobservable should be qualified as
+>   unobservable ex ante with combine yield monitors and the kind of experimental
+>   design used by Data-Intensive Farm Management (DIFM) team.
+>
+> - Explain why ex post estimation of EONRs is the best approach to implementing
+>   precision nitrogen fertilization. Spatial yield patterns can vary widely from
+>   season to season because of temporal and spatial rainfall variability, pest
+>   infestation patterns, microclimate shifts and other factors. Even the best ex
+>   post EONR is only an approximate guide to nitrogen applications that must be
+>   made before complete knowledge of the season's condition.
+>
+> - Sections 2 and 3 should be revised with a multidisciplinary readership in
+>   mind. The main thrust of the manuscript should be understandable to any
+>   agricultural researcher of any discipline, while providing supplementary
+>   materials and references for those who want to pursue the topic in more detail.
+>   Much of sections 2 and 3 could be in supplementary materials.
+>
+> - Discussion of the implications of the results is needed.
+>
+> While revising the manuscript should be revised to fit the PRAG format
+> including:
+>
+> - PRAG sections are not numbered (see:
+>   [https://link.springer.com/journal/11119/submission-guidelines#Instructions%20for%20Authors_Text](https://link.springer.com/journal/11119/submission-guidelines#Instructions%20for%20Authors_Text))
+>
+> - Results and discussion should be separate sections. Discussion of the
+>   implications of results are largely lacking in this manuscript.
+>
+> - Avoid using first person pronouns (see:
+>   [https://link.springer.com/journal/11119/submission-guidelines#Instructions%20for%20Authors_Text](https://link.springer.com/journal/11119/submission-guidelines#Instructions%20for%20Authors_Text))
+>
+> "
+
+-J. Lowenberg Deboer
+
+We recommend submitting all revisions within the mentioned deadline.
+
+If you need more time, please contact us and include your submission ID.
+
+Kind regards,
+
+Davide Cammarano  
+Editor  
+*Precision Agriculture*
+
+[Support contact: yasmeen.k@springernature.com](mailto:yasmeen.k@springernature.com?subject=Re%20Submission%20revision:%20511720cb-4708-4065-96c3-ff7ddfb3d596)
+
+**Submission ID:** 511720cb-4708-4065-96c3-ff7ddfb3d596
