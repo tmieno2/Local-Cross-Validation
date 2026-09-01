@@ -73,12 +73,13 @@ main_accuracy_table <-
   set_header_labels(
     values = list(
       method = "Method",
-      num_selected_true = "True optimal",
-      leonr_based = "LEONR-based selection",
-      yield_based = "Yield-based selection"
+      num_selected_true = "Best-performing model",
+      leonr_based = "Local-EONR selection",
+      yield_based = "Yield selection"
     )
   ) %>%
-  autofit()
+  autofit() %>%
+  fit_to_width(max_width = 6.5)
 
 saveRDS(main_accuracy_table, here::here("writing/figures-tables/main_selection_accuracy_table.rds"))
 
@@ -93,11 +94,11 @@ g_ranking <-
   .[, .(method, num_selected_true, num_selected_leonr, num_selected_yield)] %>%
   melt(id.vars = "method") %>%
   .[, select_type := case_when(
-    variable == "num_selected_true" ~ "True",
-    variable == "num_selected_leonr" ~ "Local EONR",
-    variable == "num_selected_yield" ~ "Yield"
+    variable == "num_selected_true" ~ "Best-performing model",
+    variable == "num_selected_leonr" ~ "Local-EONR selection",
+    variable == "num_selected_yield" ~ "Yield selection"
   )] %>%
-  .[, select_type := factor(select_type, levels = c("True", "Local EONR", "Yield"))] %>%
+  .[, select_type := factor(select_type, levels = c("Best-performing model", "Local-EONR selection", "Yield selection"))] %>%
   ggplot(.) +
   geom_bar(
     aes(y = value, x = method, fill = select_type),
@@ -168,7 +169,7 @@ profit_loss_data <-
   .[, .(sim, num_folds, num_repeats, e_pi_loss, y_pi_loss)] %>%
   melt(id.var = c("sim", "num_folds", "num_repeats")) %>%
   .[, selection := case_when(
-    variable == "e_pi_loss" ~ "LEONR-based Selection",
+    variable == "e_pi_loss" ~ "Local-EONR-based Selection",
     variable == "y_pi_loss" ~ "Yield-based Selection"
   )]
 ```
@@ -191,7 +192,7 @@ g_pi_loss <-
   ) +
   facet_wrap(selection ~ ., ncol = 1) +
   ylab("Number of iterations") +
-  xlab("Profit loss relative to the true best model ($/acre)") +
+  xlab("Profit loss relative to the most profitable candidate model ($/acre)") +
   theme_bw()
 )
 
@@ -256,8 +257,8 @@ gam_leonr_fit_main <-
   ) +
   xlim(50, 300) +
   ylim(50, 300) +
-  ylab("True optimal Local EONR (kg/ha)") +
-  xlab("GAM-estimated optimal Local EONR (kg/ha)") +
+  ylab("True Local EONR (kg/ha)") +
+  xlab("GAM-estimated Local EONR (kg/ha)") +
   theme_bw() +
   theme(
     legend.position = "bottom"
@@ -339,7 +340,7 @@ g_sensitivity_fold_repeat <-
     labeller = labeller(`Number of Folds` = label_both, `Number of Repeats` = label_both)
   ) +
   labs(
-    x = "True ranking of the selected model",
+    x = "True ranking of the selected model (1 = best)",
     y = "Number of iterations",
     fill = "Model Selection Approach"
   ) +
@@ -432,12 +433,13 @@ main_accuracy_table_nosp <-
   set_header_labels(
     values = list(
       method = "Method",
-      num_selected_true = "True optimal",
-      leonr_based = "LEONR-based selection",
-      yield_based = "Yield-based selection"
+      num_selected_true = "Best-performing model",
+      leonr_based = "Local-EONR selection",
+      yield_based = "Yield selection"
     )
   ) %>%
-  autofit()
+  autofit() %>%
+  fit_to_width(max_width = 6.5)
 )
 
 saveRDS(main_accuracy_table_nosp, here::here("writing/figures-tables/selection_accuracy_table_no_sp_ft.rds"))
@@ -455,7 +457,7 @@ profit_loss_data_nosp <-
   .[, .(sim, num_folds, num_repeats, e_pi_loss, y_pi_loss)] %>%
   melt(id.var = c("sim", "num_folds", "num_repeats")) %>%
   .[, selection := case_when(
-    variable == "e_pi_loss" ~ "LEONR-based Selection",
+    variable == "e_pi_loss" ~ "Local-EONR-based Selection",
     variable == "y_pi_loss" ~ "Yield-based Selection"
   )]
 ```
@@ -478,7 +480,7 @@ profit_loss_data_nosp <-
   ) +
   facet_wrap(selection ~ ., ncol = 1) +
   ylab("Number of iterations") +
-  xlab("Profit loss relative to the true best model ($/acre)") +
+  xlab("Profit loss relative to the most profitable candidate model ($/acre)") +
   theme_bw() 
 )
 
