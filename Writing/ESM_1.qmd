@@ -1,0 +1,407 @@
+---
+title: "Online Resource 1 — Supplementary Material"
+subtitle: "A New Approach to Model Selection Based on Local Economically Optimal Input Application Rates"
+authors:
+  - name: Mona Mousavi
+    email: mmousavi2@huskers.unl.edu
+    corresponding: true
+    affiliations:
+      - ref: unl
+
+  - name: Taro Mieno
+    email: tmieno2@unl.edu
+    affiliations:
+      - ref: unl
+
+  - name: Xiaofei Li
+    email: xiaofei.li@msstate.edu
+    affiliations:
+      - ref: msu
+
+  - name: David S. Bullock
+    email: dsbulloc@illinois.edu
+    affiliations:
+      - ref: uiuc
+
+affiliations:
+  - id: unl
+    name: "Department of Agricultural Economics, University of Nebraska–Lincoln, Lincoln, NE 68583, USA"
+
+  - id: msu
+    name: "Department of Agricultural Economics, Mississippi State University, Mississippi State, MS 39762, USA"
+
+  - id: uiuc
+    name: "Department of Agricultural and Consumer Economics, University of Illinois Urbana-Champaign, Urbana, IL 61801, USA"
+
+filters:
+  - authors-block
+
+format:
+  html:
+    number-sections: false
+    embed-resources: true
+  pdf:
+    number-sections: false
+  docx:
+    number-sections: false
+
+bibliography: PA.bib
+csl: springer-basic-author-date.csl
+---
+
+**Journal:** *Precision Agriculture*  
+
+This supplementary material provides the technical equations and model specifications supporting the methods summarized in the main manuscript. Notation follows the main manuscript. In particular, $j$ indexes yield subplots, $i$ indexes cells within a subplot, $m$ indexes candidate models, $f$ indexes spatial cross-validation folds, and $X_j$ denotes the observed field characteristics used in model estimation.
+
+# S1. Additional details of simulated data generation
+
+## S1.1 Spatial simulation of yield-response parameters
+
+The field geometry, experimental layout, and quadratic-plateau yield-response function are described in the main manuscript. Within-field variation in the underlying yield-response parameters was generated using spatially correlated Gaussian random fields with a spherical variogram model, implemented with the `gstat`-based simulation framework described in the main manuscript [@pebesma2016]. The main simulation used a spatial range of 600 m and a nugget of zero. Thus, spatial dependence extended over a substantial portion of the simulated field, with no additional nugget variance added to the simulated response-parameter surfaces.
+
+A second simulation setting was used to evaluate performance under weaker spatial correlation. The same field geometry, experimental design, candidate models, model-selection procedures, and number of Monte Carlo simulations were retained, while the spatial range used to generate the field parameters was reduced from 600 m to 30 m. This substantially shortened the spatial range of dependence, so that correlation in the simulated field parameters declined over much shorter distances than in the main simulation setting.
+
+| Simulation setting | Variogram model | Spatial range | Nugget | Number of simulated fields |
+|---|---|---:|---:|---:|
+| Main simulation | Spherical | 600 m | 0 | 500 |
+| Weaker spatial correlation | Spherical | 30 m | 0 | 500 |
+
+## S1.2 Construction of observed field characteristics
+
+The true yield-response parameters and true EONRs were part of the simulation truth and were not supplied directly to the candidate models. Instead, 12 observable field-characteristic covariates were constructed from spatially correlated components associated with three response characteristics: the linear N-response coefficient, the N rate at which the response reaches the plateau, and the plateau yield.
+
+For cell $(j,i)$, the plateau N-rate parameter $\tau_{j,i}$ was generated from four spatially varying components through a two-stage additive construction:
+
+$$
+\tau_{j,i}=\tau^{1}_{j,i}+\tau^{2}_{j,i},
+$$
+
+with
+
+$$
+\tau^{1}_{j,i}=\tau^{1,1}_{j,i}+\tau^{1,2}_{j,i},
+\qquad
+\tau^{2}_{j,i}=\tau^{2,1}_{j,i}+\tau^{2,2}_{j,i}.
+$$
+The linear N-response coefficient $\beta_{j,i}$ was constructed analogously:
+
+$$
+\beta_{j,i}=\beta^{1}_{j,i}+\beta^{2}_{j,i},
+$$
+
+with
+
+$$
+\beta^{1}_{j,i}=\beta^{1,1}_{j,i}+\beta^{1,2}_{j,i},
+\qquad
+\beta^{2}_{j,i}=\beta^{2,1}_{j,i}+\beta^{2,2}_{j,i}.
+$$
+The plateau-yield parameter $\eta_{j,i}$ was constructed using a nonlinear minimum relationship:
+
+$$
+\eta_{j,i}=\min\left(\eta^{1}_{j,i},\eta^{2}_{j,i}\right),
+$$
+
+where
+
+$$
+\eta^{1}_{j,i}=\min\left(\eta^{1,1}_{j,i},\eta^{1,2}_{j,i}\right),
+\qquad
+\eta^{2}_{j,i}=\min\left(\eta^{2,1}_{j,i},\eta^{2,2}_{j,i}\right).
+$$
+These spatially varying components were first generated at the 6 m $\times$ 6 m cell scale and then aggregated to the 18 m $\times$ 12 m subplot scale used for model estimation. For subplot $j$, the observed field-characteristic vector can therefore be written as
+
+
+$$
+\begin{aligned}
+X_j = (&\beta^{1,1}_{j},\beta^{1,2}_{j},\beta^{2,1}_{j},\beta^{2,2}_{j},
+\tau^{1,1}_{j},\tau^{1,2}_{j},\tau^{2,1}_{j},\tau^{2,2}_{j},\\
+&\eta^{1,1}_{j},\eta^{1,2}_{j},\eta^{2,1}_{j},\eta^{2,2}_{j}).
+\end{aligned}
+$$
+
+The resulting field-characteristic information contained information about the underlying response parameters without directly providing the true response function to the candidate models. The quadratic-plateau parameter relationships also imply
+
+$$
+\tau_{j,i}=-\frac{\beta_{j,i}}{2\gamma_{j,i}},
+$$
+
+and
+
+$$
+\eta_{j,i}=\alpha_{j,i}+\beta_{j,i}\tau_{j,i}+\gamma_{j,i}\tau_{j,i}^{2}.
+$$
+
+Thus, although the true response function was written using five parameters $(\alpha,\beta,\gamma,\tau,\eta)$, two restrictions linked those parameters. Consequently, the true yield-response function has three degrees of freedom across the five parameters and the two restrictions above. The candidate models were not supplied with these structural relationships and instead had to learn the association among observed field characteristics, experimental N rate, and yield from the simulated OFPE data.
+
+
+# S2. Detailed candidate-model specifications
+
+All five candidate models used corn yield as the outcome and experimental N rate together with the observed field-characteristic vector $X_j$ as predictors or effect modifiers. The candidate models differed in how they represented the relationship between N, the field characteristics, and yield response.
+
+## S2.1 Linear and spatial error models
+
+The linear model (LM) estimated the following quadratic model:
+
+$$
+\begin{align}
+y_j = \alpha + \lambda_1 N_j +  NX_j \lambda_2 + \lambda_3 N^2_j + N^2X_j\lambda_4  + X_j\lambda_5 + v_j.
+\end{align}
+$$ {#eq-sup-lm}
+
+In this model, $NX_j$ is a vector of interactions between $N$ and $X_j$ (for example, $N_j\tau^{1,1}_j$, $N_j\tau^{1,2}_j$, ...) and $\lambda_2$ contains their respective coefficients. $N^2X_j$ is a vector of interactions between $N^2$ and $X_j$ (for example, $N^2_j\tau^{1,1}_j$, $N^2_j\tau^{1,2}_j$, ...) and $\lambda_4$ contains their respective coefficients. These interaction terms allow the marginal response to $N$ to vary with the observed field characteristics. The quadratic specification was intentionally simpler than the quadratic-plateau function used to generate the true yield responses.
+
+The spatial error (SE) model used the same estimating equation but additionally accounted for spatial correlation in the error term.
+
+For either LM or SE, the site-specific EONR was obtained from the same closed-form expression used in the original model specification. Using the notation of the revised manuscript, for model $m \in \{LM,SE\}$ and subplot $j$,
+
+$$
+\begin{align}
+\hat{N}^*_{m,j} = (\frac{w}{p} - \lambda_1 - X_j\lambda_2)/2(\lambda_3+X_j\lambda_4),
+\end{align}
+$$ {#eq-sup-lm-se-eonr}
+
+where $p$ and $w$ denote corn and nitrogen prices, respectively.
+
+## S2.2 Random forest and boosted regression forest
+
+Random forest (RF) [@breiman2001random] and boosted regression forest (BRF) [@friedman2001greedy] estimated yield response nonparametrically. Both were estimated with the `grf` package [@tibshirani2018package] using 1,000 trees, with tuning parameters selected by the package's internal cross-validation procedure.
+
+Letting $\widehat{f}_m(N, X)$ denote the estimated yield-response function from candidate model $m$, site-specific EONRs were calculated numerically by solving the same profit-maximization problem used in the original specification. For subplot $j$,
+
+$$
+\hat{N}^*_{m,j} =  argmax_{N}\;\; p\widehat{f}_m(N, X_j) - wN.
+$$ {#eq-sup-rf-brf-eonr}
+
+## S2.3 Causal forest
+
+Let $N_k$ indicate the $k$th lowest experimental N rate ($N_1$ is the lowest and $N_5$ is the highest). In the causal forest (CF) approach, four treatments were defined with the lowest rate $N_1$ serving as the comparison baseline: $N_2$ vs. $N_1$, $N_3$ vs. $N_1$, $N_4$ vs. $N_1$, and $N_5$ vs. $N_1$. Let $T_k$ indicate the treatment $N_k$ vs. $N_1$. The multi-arm CF model was written as follows:
+
+$$
+\begin{align}
+y_j = \sum_{k=2}^5 \theta_k(X_j)\cdot T_k + g(X_j).
+\end{align}
+$$ {#eq-sup-cf}
+
+In this equation, $\theta_k(X_j)$ represents the heterogeneous treatment effect of $T_k$ as a function of the site-specific field characteristics $X_j$. For example, $\theta_2(X_j)$ represents the impact of increasing N from $N_1$ to $N_2$ at the observed field characteristics. The final term, $g(X_j)$, represents the direct contribution of $X_j$ that does not arise through a change in N rate.
+
+The estimated CF model predicts treatment effects rather than yield levels directly:
+
+$$
+\begin{align}
+\mathbb{E}\left[\,y_j|_{N_k} - y_j|_{N_1} \mid X_j\,\right] = \theta_k(X_j).
+\end{align}
+$$ {#eq-sup-cf-effect}
+
+The corresponding change in profit at subplot $j$ from increasing the N rate from $N_1$ to $N_k$ is
+
+$$
+\begin{align}
+p\cdot \theta_k(X_j) - w \cdot (N_k - N_1).
+\end{align}
+$$ {#eq-sup-cf-profit}
+
+To obtain a site-specific EONR that was not restricted to the five experimental rates, a smooth curve (a thin-plate spline) was fitted through the estimated treatment effects $\{\theta_k(X_j)\}_{k=1}^5$ as a function of N rate, with the effect set to zero at the base rate $N_1$. The profit-maximization problem was then solved numerically over a fine grid of N using the smoothed profit curve. The resulting EONR was continuous and directly comparable with the EONRs produced by the other candidate models.
+
+
+# S3. Mathematical definitions of candidate-model performance
+
+Candidate-model performance was evaluated using the known simulation truth. These quantities were used to establish evaluation benchmarks and were not available to the model-selection criteria described in Section S4.
+
+## S3.1 EONR estimation accuracy
+
+For each subplot $j$, the true subplot-specific EONR, $N_j^*$, was calculated from the known yield-response function using the economic optimization criterion defined in the main manuscript. Let $\widehat{N}^*_{m,j}$ denote the EONR estimated by candidate model $m$ for subplot $j$.
+
+The accuracy of each candidate model was evaluated using the root mean squared error (RMSE) of $\widehat{N}^*_{m,j}$ relative to $N_j^*$ across all subplots. Within each simulation, the candidate with the lowest EONR RMSE was defined as the best-performing candidate for EONR estimation. This benchmark was used to evaluate model-selection accuracy.
+
+## S3.2 Economic performance of candidate-model recommendations
+
+Economic performance was evaluated separately using the profit generated by each candidate model's site-specific N recommendations. Let $J$ denote the number of observed subplots. The average profit obtained by applying the true subplot-specific EONRs, denoted $\pi_{true}$, was
+
+$$
+\begin{align}
+\pi_{true}
+=
+\frac{1}{J}
+\sum_{j=1}^{J}
+\left[
+p \cdot f(N_j^*,X_j)
+-
+w \cdot N_j^*
+\right].
+\end{align}
+$$ 
+
+Because $N_j^*$ is the true economically optimal N rate for each subplot under the known simulation response, $\pi_{true}$ represents the maximum attainable average profit under the simulation truth.
+
+For candidate model $m$, the average profit associated with its site-specific EONR recommendations was
+
+$$
+\begin{align}
+\pi_m
+=
+\frac{1}{J}
+\sum_{j=1}^{J}
+\left[
+p \cdot f(\widehat{N}^*_{m,j},X_j)
+-
+w \cdot \widehat{N}^*_{m,j}
+\right].
+\end{align}
+$$ 
+
+The profit shortfall of candidate model $m$ relative to the true site-specific optimum was then
+
+$$
+\begin{align}
+\Delta \pi_m
+=
+\pi_{true}
+-
+\pi_m.
+\end{align}
+$$ 
+
+A smaller value of $\Delta\pi_m$ indicates that the candidate model's N recommendations generated profit closer to the true site-specific optimum. Because $\pi_{true}$ is common to all candidate models within a simulation, the candidate with the smallest profit shortfall is also the candidate generating the highest profit and is therefore defined as the most profitable candidate model.
+
+## S3.3 Distinction between the two candidate-model benchmarks
+
+The EONR-RMSE and profit-based evaluations measure different aspects of candidate-model performance. The candidate with the lowest EONR RMSE was used as the benchmark for evaluating model-selection accuracy, whereas the most profitable candidate model was used as the benchmark for evaluating the economic consequences of model selection. These two candidates need not be the same because differences in EONR accuracy do not necessarily translate proportionally into differences in profit.
+
+# S4. Mathematical definitions of the model-selection criteria
+
+The model-selection procedures used spatial cross-validation and did not use the true EONRs or true yield-response functions from the simulation. For each fold, candidate models were trained on the training portion and evaluated on the corresponding spatially clustered test portion.
+
+The implementation used spatially clustered resampling with the combinations of folds and repeats reported in the main manuscript. When highly overlapping assessment sets were generated, redundant test sets with more than 80\% overlap were removed before evaluation.
+
+## S4.1 Yield-based model selection
+
+For model $m$ and fold $f$, let $n_f$ denote the number of test observations, $y_{j,f}$ the observed test-fold yield, and $\widehat y_{m,j,f}$ the yield predicted by the candidate trained on the corresponding training data. Fold-specific yield-prediction RMSE was
+
+$$
+RMSE^{Y}_{m,f}
+=
+\sqrt{
+\frac{1}{n_f}
+\sum_{j\in f}
+\left(\widehat y_{m,j,f}-y_{j,f}\right)^2
+}.
+$$
+
+Across the $F$ fold evaluations retained for a cross-validation design,
+
+$$
+RMSE^{Y}_{m}
+=
+\frac{1}{F}\sum_{f=1}^{F}RMSE^{Y}_{m,f}.
+$$
+
+The yield-based approach selected the candidate model with the smallest $RMSE^{Y}_{m}$.
+
+## S4.2 GAM-estimated local EONR validation target
+
+For each test fold $f$, a generalized additive model was fitted only to the observed yield and experimental N-rate observations in that test fold:
+
+$$
+y_j = s_f(N_j)+\varepsilon_j,
+$$
+
+where the implementation used `mgcv::gam(yield ~ s(N, k = 4, m = 2))`. The observed field-characteristic covariates used by the candidate models were not included in this GAM.
+
+The fitted local response was evaluated over the experimental N range in 1 kg/ha increments. The GAM-estimated local EONR was
+
+$$
+\widehat N^{*}_{f,GAM}
+=
+\operatorname*{arg\,max}_{N}
+\left[P_c\widehat s_f(N)-P_NN\right].
+$$
+
+The GAM was not included among the five candidate models. Its sole role was to provide an independently estimated fold-level economic validation target.
+
+## S4.3 Local-EONR-based model selection
+
+For the same fold $f$, candidate model $m$ was trained using the corresponding training observations and used to estimate site-specific EONRs for all $n_f$ observations in the test fold. Those site-specific recommendations were averaged to obtain a fold-level candidate recommendation:
+
+$$
+\overline N^{*}_{m,f}
+=
+\frac{1}{n_f}
+\sum_{j\in f}
+\widehat N^{*}_{m,j,f}.
+$$
+
+The candidate's agreement with the GAM-estimated local EONR was summarized across fold evaluations by
+
+$$
+RMSE^{Local}_{m}
+=
+\sqrt{
+\frac{1}{F}
+\sum_{f=1}^{F}
+\left(
+\overline N^{*}_{m,f}-\widehat N^{*}_{f,GAM}
+\right)^2
+}.
+$$
+The local-EONR-based approach selected the candidate model with the smallest $RMSE^{Local}_{m}$.
+
+# S5. Evaluation of model-selection performance
+
+Let $s=1,\ldots,S$ index Monte Carlo simulations, with $S=500$, and let $a$ index the two selection approaches.
+
+## S5.1 Selection accuracy
+
+For simulation $s$, define the EONR-performance benchmark as
+
+$$
+m^{EONR}_{s}
+=
+\operatorname*{arg\,min}_{m}RMSE^{EONR}_{m,s}.
+$$
+
+Let $\widehat m_{a,s}$ denote the candidate selected by approach $a$. The selection indicator was
+
+$$
+I_{a,s}
+=
+\mathbb{1}\left(\widehat m_{a,s}=m^{EONR}_{s}\right),
+$$
+
+and model-selection accuracy was
+
+$$
+Accuracy_a
+=
+\frac{1}{S}\sum_{s=1}^{S}I_{a,s}.
+$$
+Thus, selection accuracy measures how often a selection approach chose the candidate with the lowest true site-specific EONR RMSE.
+
+## S5.2 Profit loss from model selection
+
+Economic performance was evaluated against a different benchmark. For each simulation, the most profitable candidate among the five candidate models was
+
+$$
+m^{Profit}_{s}
+=
+\operatorname*{arg\,max}_{m}\overline{\pi}_{m,s}.
+$$
+
+The profit loss associated with the candidate selected by approach $a$ was
+
+$$
+L_{a,s}
+=
+\overline{\pi}_{m^{Profit}_{s},s}
+-
+\overline{\pi}_{\widehat m_{a,s},s}.
+$$
+
+A value of zero indicates that the selection approach chose the most profitable candidate available in that simulation. This benchmark is the best of the five candidate models and is distinct from the theoretical maximum profit obtained by applying the known true site-specific EONRs.
+
+# S6. Weaker-spatial-correlation analysis
+
+The weaker-spatial-correlation analysis repeated the simulation and model-selection workflow using a spatial range of 30 m rather than the 600 m range used for the main simulation. The spherical variogram form and the remainder of the data-generation and model-selection workflow were retained. This sensitivity analysis was designed to test whether the relative performance of the model-selection criteria depended on the strong within-field spatial structure used in the main simulation.
+
+
+# References
